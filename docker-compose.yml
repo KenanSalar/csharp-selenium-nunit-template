@@ -1,0 +1,13 @@
+services:
+  allure-reporter-service:
+    image: "frankescobar/allure-docker-service:latest"
+    container_name: allure_live_report_server
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=3
+      - KEEP_HISTORY=1
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./SeleniumTraining/bin/Release/net9.0/allure-results:/app/allure-results
+      - ./SeleniumTraining/bin/Release/net9.0/TestOutput/AllureReportLive:/app/default-reports
+    restart: unless-stopped
