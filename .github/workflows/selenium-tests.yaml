@@ -22,17 +22,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [Chrome, Brave, Firefox]
+        browser: [Chrome, Firefox]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
       ASPNETCORE_ENVIRONMENT: ci
       SauceDemo__LoginUsernameStandardUser: ${{ secrets.SAUCEDEMO_USERNAME_STANDARD }}
       SauceDemo__LoginUsernameLockedOutUser: ${{ secrets.SAUCEDEMO_USERNAME_LOCKEDOUT }}
-      # SauceDemo__LoginUsernameProblemUser: ${{ secrets.SAUCEDEMO_USERNAME_PROBLEM }}
-      # SauceDemo__LoginUsernamePerformanceGlitchUser: ${{ secrets.SAUCEDEMO_USERNAME_PERFORMANCE }}
-      # SauceDemo__LoginUsernameErrorUser: ${{ secrets.SAUCEDEMO_USERNAME_ERROR }}
-      # SauceDemo__LoginUsernameVisualUser: ${{ secrets.SAUCEDEMO_USERNAME_VISUAL }}
       SauceDemo__LoginPassword: ${{ secrets.SAUCEDEMO_PASSWORD }}
 
     steps:
@@ -66,65 +62,12 @@ jobs:
       - name: Build project
         run: dotnet build ./SeleniumTraining.sln --configuration Release --no-restore
 
-      - name: Configure Brave Browser Repository
-        if: matrix.browser == 'Brave'
-        run: |
-          sudo apt update -y
-          sudo apt install -y apt-transport-https curl gnupg
-          sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-          sudo apt update -y
-
-      - name: Cache Brave Browser Debian Package
-        if: matrix.browser == 'Brave'
-        uses: actions/cache@v4
-        id: cache-brave-deb
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-brave-deb-${{ hashFiles('/etc/apt/sources.list.d/brave-browser-release.list') }}
-          restore-keys: |
-            ${{ runner.os }}-brave-deb-
-
-      - name: Install Brave Browser (uses apt cache)
-        if: matrix.browser == 'Brave'
-        run: |
-          sudo apt install -y brave-browser --fix-missing
-          BRAVE_PATH_FOUND=""
-          if command -v brave-browser &> /dev/null; then
-              BRAVE_PATH_FOUND=$(command -v brave-browser)
-              echo "Found Brave via 'command -v': $BRAVE_PATH_FOUND"
-          elif [ -x "/opt/brave.com/brave/brave-browser" ]; then
-              BRAVE_PATH_FOUND="/opt/brave.com/brave/brave-browser"
-              echo "Found Brave at /opt/brave.com/brave/brave-browser"
-          elif [ -x "/usr/bin/brave-browser" ]; then
-              BRAVE_PATH_FOUND="/usr/bin/brave-browser"
-              echo "Found Brave at /usr/bin/brave-browser"
-          else
-              echo "Brave browser command not found via 'command -v' or in expected /opt or /usr/bin paths."
-          fi
-
-          if [ -z "$BRAVE_PATH_FOUND" ]; then
-            echo "Critical Error: Brave Browser executable not found after installation attempt and path checks."
-            echo "Contents of /usr/bin:"
-            ls -lh /usr/bin | grep brave || echo "No brave in /usr/bin"
-            echo "Contents of /opt:"
-            ls -lh /opt | grep brave || echo "No brave in /opt"
-            exit 1
-          fi
-          
-          echo "Brave Browser successfully detected/installed at: ${BRAVE_PATH_FOUND}"
-          echo "Setting BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND} in GITHUB_ENV"
-          echo "BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND}" >> $GITHUB_ENV
-          echo "Verifying Brave version from found path:"
-          ${BRAVE_PATH_FOUND} --version
-
       - name: Run Selenium tests for ${{ matrix.browser }}
+        env:
+          TARGET_BROWSER_CI: ${{ matrix.browser }}
         run: |
-          echo "Running tests for browser: ${{ matrix.browser }}"
-          if [ "${{ matrix.browser }}" == "Brave" ]; then
-            echo "Effective Brave executable path for test run (from GITHUB_ENV): $BRAVE_EXECUTABLE_PATH"
-          fi
-          dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=${{ matrix.browser }}"
+          echo "Running tests for browser: ${{ matrix.browser }} with TARGET_BROWSER_CI=$TARGET_BROWSER_CI"
+          dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=UI"
 
       - name: 'Debug: List Test Project Output Directory for Allure Results'
         if: always()

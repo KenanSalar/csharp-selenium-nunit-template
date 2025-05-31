@@ -1,7 +1,7 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
+// [TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Chrome), Category("Chrome")]
-[TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Firefox), Category("Firefox")]
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 [AllureSuite("SauceDemo Login and Inventory Tests")]

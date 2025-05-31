@@ -33,17 +33,53 @@ public abstract class BaseTest : IDisposable
     public virtual void SetUp()
     {
         _testScope = TestHost.Services.CreateScope();
-
         IServiceProvider scopedServiceProvider = _testScope.ServiceProvider;
+
+        ILoggerFactory loggerFactoryForBase = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
+        Logger = loggerFactoryForBase.CreateLogger(TestName);
+
+        string? targetBrowserCiEnv = Environment.GetEnvironmentVariable("TARGET_BROWSER_CI");
+        Logger.LogInformation("CI Environment Variable TARGET_BROWSER_CI: '{TargetBrowserCiEnv}'", targetBrowserCiEnv ?? "Not Set");
+        Logger.LogInformation("NUnit Test Fixture is configured for BrowserType: '{BrowserType}'", BrowserType);
+
+        if (!string.IsNullOrEmpty(targetBrowserCiEnv))
+        {
+            if (Enum.TryParse(targetBrowserCiEnv, true, out BrowserType ciBrowserType))
+            {
+                if (BrowserType != ciBrowserType)
+                {
+                    string skipMessage = $"Skipping test fixture: Fixture is for '{BrowserType}', but CI job is targeting '{ciBrowserType}'.";
+                    Logger.LogWarning(
+                        "Skipping test fixture: Fixture is for '{BrowserType}', but CI job is targeting '{CiBrowserType}'.",
+                        BrowserType,
+                        ciBrowserType
+                    );
+                    Assert.Ignore(skipMessage);
+
+                    return;
+                }
+                Logger.LogInformation("CI Target Browser '{CiBrowserType}' matches Test Fixture Browser '{FixtureBrowserType}'. Proceeding with test setup.", ciBrowserType, BrowserType);
+            }
+            else
+            {
+                Logger.LogWarning(
+                    "Could not parse TARGET_BROWSER_CI environment variable '{TargetBrowserCiEnvVar}' to a known BrowserType. Running test as per fixture: {FixtureBrowserType}",
+                    targetBrowserCiEnv,
+                    BrowserType
+                );
+
+            }
+        }
+        else
+        {
+            Logger.LogInformation("TARGET_BROWSER_CI environment variable not set (likely a local run). Running test as per fixture: {FixtureBrowserType}", BrowserType);
+        }
 
         SettingsProvider = scopedServiceProvider.GetRequiredService<ISettingsProviderService>()!;
         DirectoryManager = scopedServiceProvider.GetRequiredService<IDirectoryManagerService>()!;
         PageObjectLoggerFactory = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
         WebDriverManager = scopedServiceProvider.GetRequiredService<ITestWebDriverManager>()!;
         TestReporter = scopedServiceProvider.GetRequiredService<ITestReporterService>()!;
-
-        ILoggerFactory loggerFactoryForBase = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
-        Logger = loggerFactoryForBase.CreateLogger(TestName);
 
         CorrelationId = Guid.NewGuid().ToString("N")[..12];
         string testLogFileKey = TestName;
@@ -52,6 +88,7 @@ public abstract class BaseTest : IDisposable
         {
             ["CorrelationId"] = CorrelationId,
             ["TestClassName"] = TestName,
+            ["TestMethodName"] = TestContext.CurrentContext.Test.MethodName ?? "UnknownMethod",
             ["BrowserType"] = BrowserType.ToString(),
             ["TestLogFileKey"] = testLogFileKey
         };
@@ -65,10 +102,10 @@ public abstract class BaseTest : IDisposable
 
 
         DirectoryManager.EnsureBaseDirectoriesExist();
-        CurrentTestScreenshotDirectory = DirectoryManager.GetAndEnsureTestScreenshotDirectory(TestName);
+        CurrentTestScreenshotDirectory = DirectoryManager.GetAndEnsureTestScreenshotDirectory(TestContext.CurrentContext.Test.Name);
         Logger.LogInformation("Screenshot directory prepared: {ScreenshotDir}", CurrentTestScreenshotDirectory);
 
-        string? baseMethodName = TestContext.CurrentContext.Test.MethodName;
+        string? baseMethodName = TestContext.CurrentContext.Test.MethodName ?? "UnknownMethod";
         string browserName = BrowserType.ToString();
         string allureDisplayName = $"{baseMethodName} ({browserName})";
 
@@ -86,10 +123,20 @@ public abstract class BaseTest : IDisposable
     [TearDown]
     public void Cleanup()
     {
+        if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Skipped &&
+            TestContext.CurrentContext.Result.Message.Contains("Skipping test fixture:"))
+        {
+            Logger.LogInformation("BaseTest Cleanup (NUnit TearDown) skipped due to Assert.Ignore in SetUp for test: {TestFullName}", TestContext.CurrentContext.Test.FullName);
+            _loggingScope?.Dispose();
+            _testScope?.Dispose();
+
+            return;
+        }
+
         Logger.LogInformation("BaseTest Cleanup (NUnit TearDown) started for test: {TestFullName}", TestContext.CurrentContext.Test.FullName);
 
         IWebDriver? driverForActions = null;
-        if (WebDriverManager.IsDriverActive)
+        if (WebDriverManager != null && WebDriverManager.IsDriverActive)
         {
             try
             {
@@ -110,21 +157,36 @@ public abstract class BaseTest : IDisposable
             Logger.LogWarning("WebDriver was not active at the start of Cleanup for {TestFullName}.", TestContext.CurrentContext.Test.FullName);
         }
 
-        Logger.LogDebug("Finalizing test report via TestReporter.");
-        TestReporter.FinalizeTestReport(
-            TestContext.CurrentContext,
-            driverForActions,
-            BrowserType,
-            CurrentTestScreenshotDirectory,
-            CorrelationId
-        );
-        Logger.LogInformation(
-            "Test report finalized. Test Outcome: {OutcomeStatus} - {OutcomeLabel}",
-            TestContext.CurrentContext.Result.Outcome.Status,
-            TestContext.CurrentContext.Result.Outcome.Label
-        );
+        if (TestReporter != null)
+        {
+            Logger.LogDebug("Finalizing test report via TestReporter.");
+
+            TestReporter.FinalizeTestReport(
+                TestContext.CurrentContext,
+                driverForActions,
+                BrowserType,
+                CurrentTestScreenshotDirectory,
+                CorrelationId
+            );
+
+            Logger.LogInformation(
+                "Test report finalized. Test Outcome: {OutcomeStatus} - {OutcomeLabel}",
+                TestContext.CurrentContext.Result.Outcome.Status,
+                TestContext.CurrentContext.Result.Outcome.Label
+            );
+        }
+        else
+        {
+            Logger.LogWarning("TestReporter was null during Cleanup. Report finalization skipped for {TestFullName}.", TestContext.CurrentContext.Test.FullName);
+        }
 
         Logger.LogInformation("BaseTest Cleanup (NUnit TearDown) completed for {TestFullName}.", TestContext.CurrentContext.Test.FullName);
+
+        _loggingScope?.Dispose();
+        _loggingScope = null;
+
+        _testScope?.Dispose();
+        _testScope = null;
     }
 
     public void Dispose()
