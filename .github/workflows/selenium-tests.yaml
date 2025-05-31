@@ -52,6 +52,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      - name: Cache WebDriverManager drivers
+        uses: actions/cache@v4
+        with:
+          path: ~/.wdm
+          key: ${{ runner.os }}-wdm-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-wdm-
+
       - name: Restore dependencies
         run: dotnet restore ./SeleniumTraining.sln --locked-mode
 
@@ -61,6 +69,7 @@ jobs:
       - name: Configure Brave Browser Repository
         if: matrix.browser == 'Brave'
         run: |
+          echo "Configuring Brave Browser repository..."
           sudo apt update -y
           sudo apt install -y apt-transport-https curl gnupg
           sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
@@ -80,26 +89,32 @@ jobs:
       - name: Install Brave Browser (uses apt cache)
         if: matrix.browser == 'Brave'
         run: |
+          echo "Attempting to install Brave Browser (apt will use cache if available)..."
           sudo apt install -y brave-browser --fix-missing
-          BRAVE_PATH_FOUND=$(which brave-browser || echo "/opt/brave.com/brave/brave-browser" || echo "/usr/bin/brave-browser")
-          if [ ! -x "$BRAVE_PATH_FOUND" ] || [ ! -f "$BRAVE_PATH_FOUND" ]; then
-            echo "Brave Browser executable not found at standard 'which' paths."
-            if [ -f "/opt/brave.com/brave/brave-browser" ] && [ -x "/opt/brave.com/brave/brave-browser" ]; then
+          
+          BRAVE_PATH_FOUND=""
+          if command -v brave-browser &> /dev/null; then
+              BRAVE_PATH_FOUND=$(command -v brave-browser)
+          elif [ -x "/opt/brave.com/brave/brave-browser" ]; then
               BRAVE_PATH_FOUND="/opt/brave.com/brave/brave-browser"
-            elif [ -f "/usr/bin/brave-browser" ] && [ -x "/usr/bin/brave-browser" ]; then
+          elif [ -x "/usr/bin/brave-browser" ]; then
               BRAVE_PATH_FOUND="/usr/bin/brave-browser"
-            else
-              echo "Brave Browser executable truly not found or not executable after installation attempt."
-              exit 1
-            fi
           fi
-          echo "BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND}" >> $GITHUB_ENV
+
+          if [ -z "$BRAVE_PATH_FOUND" ]; then
+            echo "Critical Error: Brave Browser executable not found after installation attempt."
+            echo "Searched with 'command -v brave-browser', and checked /opt/brave.com/brave/brave-browser, /usr/bin/brave-browser."
+            exit 1
+          fi
+          
           echo "Brave Browser detected/installed at: ${BRAVE_PATH_FOUND}"
+          echo "BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND}" >> $GITHUB_ENV
           ${BRAVE_PATH_FOUND} --version
 
       - name: Run Selenium tests for ${{ matrix.browser }}
         run: |
           echo "Running tests for browser: ${{ matrix.browser }}"
+          echo "Effective Brave executable path for test run (from GITHUB_ENV): $BRAVE_EXECUTABLE_PATH"
           dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=${{ matrix.browser }}"
 
       - name: 'Debug: List Test Project Output Directory for Allure Results'

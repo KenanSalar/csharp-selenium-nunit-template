@@ -2,10 +2,12 @@ using System.Runtime.InteropServices;
 using OpenQA.Selenium.Chrome;
 using WebDriverManager;
 using WebDriverManager.DriverConfigs.Impl;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
-public class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrowserDriverFactoryService
+public partial class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrowserDriverFactoryService
 {
     public BrowserType Type => BrowserType.Brave;
     protected override BrowserType ConcreteBrowserType => BrowserType.Brave;
@@ -18,7 +20,7 @@ public class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrow
 
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
-        if (settingsBase is not BraveSettings settings) // Cast to specific BraveSettings
+        if (settingsBase is not BraveSettings settings)
         {
             var ex = new ArgumentException($"Invalid settings type provided. Expected {nameof(BraveSettings)}, got {settingsBase.GetType().Name}.", nameof(settingsBase));
             Logger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(BraveDriverFactoryService));
@@ -31,12 +33,6 @@ public class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrow
 
         Logger.LogInformation("Skipping explicit WebDriverManager setup for {BrowserType}. ChromeDriver is expected to be found via NuGet package or system PATH.", Type);
 
-        ChromeOptions braveOptions = ConfigureCommonChromeOptions(
-            settings,
-            options,
-            out List<string> appliedOptionsForLog
-        );
-
         Logger.LogDebug("Attempting to locate Brave browser executable for {BrowserType}.", Type);
         string? braveExecutablePath = GetBraveExecutablePathInternal();
         if (string.IsNullOrEmpty(braveExecutablePath))
@@ -47,13 +43,53 @@ public class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrow
             Logger.LogError(ex, "Critical error: Brave browser executable could not be located for {BrowserType}.", Type);
             throw ex;
         }
+
+        Logger.LogInformation("Brave browser binary location found for {BrowserType}: {BraveBinaryPath}", Type, braveExecutablePath);
+
+        try
+        {
+            string? chromiumVersionForDriver = GetChromiumVersionFromBraveExecutable(braveExecutablePath);
+
+            if (!string.IsNullOrEmpty(chromiumVersionForDriver))
+            {
+                Logger.LogInformation("Attempting to set up ChromeDriver matching detected Chromium version {ChromiumVersion} using WebDriverManager for Brave.", chromiumVersionForDriver);
+                _ = new DriverManager().SetUpDriver(new ChromeConfig(), chromiumVersionForDriver);
+                Logger.LogInformation("WebDriverManager successfully completed ChromeDriver setup for Brave using specific version: {ChromiumVersion}.", chromiumVersionForDriver);
+            }
+            else
+            {
+                Logger.LogWarning("Could not determine specific Chromium version for Brave from path {BravePath}. Falling back to WebDriverManager's default behavior for ChromeConfig (likely latest ChromeDriver). This might lead to version mismatches.", braveExecutablePath);
+                _ = new DriverManager().SetUpDriver(new ChromeConfig());
+                Logger.LogInformation("WebDriverManager completed ChromeDriver setup for Brave using default ChromeConfig (latest driver).");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "WebDriverManager failed to set up ChromeDriver for Brave (path: {BravePath}).", braveExecutablePath);
+            throw;
+        }
+
+        ChromeOptions braveOptions = ConfigureCommonChromeOptions(
+            settings,
+            options,
+            out List<string> appliedOptionsForLog
+        );
+
         braveOptions.BinaryLocation = braveExecutablePath;
         Logger.LogInformation("Brave browser binary location set for {BrowserType}: {BraveBinaryPath}", Type, braveExecutablePath);
-        appliedOptionsForLog.Add($"--binary={braveExecutablePath}");
+        
+        string binaryLog = $"--binary={braveExecutablePath}";
+        // if (!appliedOptionsForLog.Contains(binaryLog))
+        // {
+        //     appliedOptionsForLog.Add(binaryLog);
+        // }
 
         Logger.LogInformation(
             "ChromeOptions (for {BrowserType}) configured. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]",
-            Type, braveOptions.BinaryLocation, string.Join(", ", appliedOptionsForLog.Distinct()));
+            Type,
+            braveOptions.BinaryLocation,
+            string.Join(", ", appliedOptionsForLog.Distinct())
+        );
 
         return CreateDriverInstanceWithChecks(braveOptions);
     }
@@ -109,9 +145,99 @@ public class BraveDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrow
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            string[] linuxPaths = ["/usr/bin/brave-browser", "/opt/brave.com/brave/brave-browser", "/snap/bin/brave"];
+            string[] linuxPaths = ["/usr/bin/brave-browser", "/opt/brave.com/brave/brave-browser", "/snap/bin/brave", "/opt/brave.com"];
             return linuxPaths.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
         }
         return null;
+    }
+
+    [GeneratedRegex(@"Chromium:\s*([\d\.]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex ChromiumVersionRegex();
+
+    [GeneratedRegex(@"Brave Browser\s*([\d\.]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex BraveBrowserVersionRegex();
+
+
+    private string? GetChromiumVersionFromBraveExecutable(string braveExecutablePath)
+    {
+        if (string.IsNullOrEmpty(braveExecutablePath) || !File.Exists(braveExecutablePath))
+        {
+            Logger.LogWarning("Cannot get Brave version; executable path is invalid or file does not exist: {BravePath}", braveExecutablePath);
+            return null;
+        }
+
+        try
+        {
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = braveExecutablePath,
+                Arguments = "--version",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            using var process = Process.Start(processStartInfo);
+            if (process == null)
+            {
+                Logger.LogWarning("Failed to start process to get Brave version for path: {BravePath}", braveExecutablePath);
+                return null;
+            }
+
+            string output = string.Empty;
+            if (process.WaitForExit(5000))
+            {
+                output = process.StandardOutput.ReadToEnd();
+            }
+            else
+            {
+                Logger.LogWarning("Timeout waiting for Brave --version command to exit for path: {BravePath}. Process might be hanging.", braveExecutablePath);
+                try { process.Kill(true); } catch { /* ignored */ }
+                return null;
+            }
+
+            if (process.ExitCode != 0)
+            {
+                Logger.LogWarning("Brave --version command exited with code {ExitCode} for path: {BravePath}. Output: {StdOutput}", process.ExitCode, braveExecutablePath, output);
+                return null;
+            }
+
+            Logger.LogDebug("Brave --version output for path {BravePath}: {Output}", braveExecutablePath, output);
+
+            Match chromiumMatch = ChromiumVersionRegex().Match(output);
+            if (chromiumMatch.Success && chromiumMatch.Groups.Count > 1)
+            {
+                string chromiumVersion = chromiumMatch.Groups[1].Value;
+                if (chromiumVersion.Split('.').Length >= 3)
+                {
+                    Logger.LogInformation("Extracted Chromium version {ChromiumVersion} from Brave version output.", chromiumVersion);
+                    return chromiumVersion;
+                }
+                Logger.LogWarning("Parsed Chromium version '{ChromiumVersion}' from Brave output appears incomplete. Output: {Output}", chromiumVersion, output);
+            }
+
+            Match braveVersionMatch = BraveBrowserVersionRegex().Match(output);
+            if (braveVersionMatch.Success && braveVersionMatch.Groups.Count > 1)
+            {
+                string braveVersion = braveVersionMatch.Groups[1].Value;
+                if (braveVersion.Split('.').Length >= 3)
+                {
+                    Logger.LogInformation(
+                        "Using Brave Browser version {BraveVersion} as a proxy for Chromium version (Chromium prefix not found in output: {Output}).",
+                        braveVersion, output);
+                    return braveVersion;
+                }
+                Logger.LogWarning("Parsed Brave Browser version '{BraveVersion}' from output appears incomplete. Output: {Output}", braveVersion, output);
+            }
+
+            Logger.LogWarning("Could not parse a suitable Chromium version from Brave output: {Output}", output);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting Brave version from executable: {BravePath}", braveExecutablePath);
+            return null;
+        }
     }
 }
