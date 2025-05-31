@@ -29,10 +29,10 @@ jobs:
       ASPNETCORE_ENVIRONMENT: ci
       SauceDemo__LoginUsernameStandardUser: ${{ secrets.SAUCEDEMO_USERNAME_STANDARD }}
       SauceDemo__LoginUsernameLockedOutUser: ${{ secrets.SAUCEDEMO_USERNAME_LOCKEDOUT }}
-      SauceDemo__LoginUsernameProblemUser: ${{ secrets.SAUCEDEMO_USERNAME_PROBLEM }}
-      SauceDemo__LoginUsernamePerformanceGlitchUser: ${{ secrets.SAUCEDEMO_USERNAME_PERFORMANCE }}
-      SauceDemo__LoginUsernameErrorUser: ${{ secrets.SAUCEDEMO_USERNAME_ERROR }}
-      SauceDemo__LoginUsernameVisualUser: ${{ secrets.SAUCEDEMO_USERNAME_VISUAL }}
+      # SauceDemo__LoginUsernameProblemUser: ${{ secrets.SAUCEDEMO_USERNAME_PROBLEM }}
+      # SauceDemo__LoginUsernamePerformanceGlitchUser: ${{ secrets.SAUCEDEMO_USERNAME_PERFORMANCE }}
+      # SauceDemo__LoginUsernameErrorUser: ${{ secrets.SAUCEDEMO_USERNAME_ERROR }}
+      # SauceDemo__LoginUsernameVisualUser: ${{ secrets.SAUCEDEMO_USERNAME_VISUAL }}
       SauceDemo__LoginPassword: ${{ secrets.SAUCEDEMO_PASSWORD }}
 
     steps:
