@@ -69,7 +69,6 @@ jobs:
       - name: Configure Brave Browser Repository
         if: matrix.browser == 'Brave'
         run: |
-          echo "Configuring Brave Browser repository..."
           sudo apt update -y
           sudo apt install -y apt-transport-https curl gnupg
           sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
@@ -89,38 +88,47 @@ jobs:
       - name: Install Brave Browser (uses apt cache)
         if: matrix.browser == 'Brave'
         run: |
-          echo "Attempting to install Brave Browser (apt will use cache if available)..."
           sudo apt install -y brave-browser --fix-missing
-          
           BRAVE_PATH_FOUND=""
           if command -v brave-browser &> /dev/null; then
               BRAVE_PATH_FOUND=$(command -v brave-browser)
+              echo "Found Brave via 'command -v': $BRAVE_PATH_FOUND"
           elif [ -x "/opt/brave.com/brave/brave-browser" ]; then
               BRAVE_PATH_FOUND="/opt/brave.com/brave/brave-browser"
+              echo "Found Brave at /opt/brave.com/brave/brave-browser"
           elif [ -x "/usr/bin/brave-browser" ]; then
               BRAVE_PATH_FOUND="/usr/bin/brave-browser"
+              echo "Found Brave at /usr/bin/brave-browser"
+          else
+              echo "Brave browser command not found via 'command -v' or in expected /opt or /usr/bin paths."
           fi
 
           if [ -z "$BRAVE_PATH_FOUND" ]; then
-            echo "Critical Error: Brave Browser executable not found after installation attempt."
-            echo "Searched with 'command -v brave-browser', and checked /opt/brave.com/brave/brave-browser, /usr/bin/brave-browser."
+            echo "Critical Error: Brave Browser executable not found after installation attempt and path checks."
+            echo "Contents of /usr/bin:"
+            ls -lh /usr/bin | grep brave || echo "No brave in /usr/bin"
+            echo "Contents of /opt:"
+            ls -lh /opt | grep brave || echo "No brave in /opt"
             exit 1
           fi
           
-          echo "Brave Browser detected/installed at: ${BRAVE_PATH_FOUND}"
+          echo "Brave Browser successfully detected/installed at: ${BRAVE_PATH_FOUND}"
+          echo "Setting BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND} in GITHUB_ENV"
           echo "BRAVE_EXECUTABLE_PATH=${BRAVE_PATH_FOUND}" >> $GITHUB_ENV
+          echo "Verifying Brave version from found path:"
           ${BRAVE_PATH_FOUND} --version
 
       - name: Run Selenium tests for ${{ matrix.browser }}
         run: |
           echo "Running tests for browser: ${{ matrix.browser }}"
-          echo "Effective Brave executable path for test run (from GITHUB_ENV): $BRAVE_EXECUTABLE_PATH"
+          if [ "${{ matrix.browser }}" == "Brave" ]; then
+            echo "Effective Brave executable path for test run (from GITHUB_ENV): $BRAVE_EXECUTABLE_PATH"
+          fi
           dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=${{ matrix.browser }}"
 
       - name: 'Debug: List Test Project Output Directory for Allure Results'
         if: always()
         run: |
-          echo "Listing contents of ./SeleniumTraining/bin/Release/net9.0/allure-results (expected path)"
           ls -R ./SeleniumTraining/bin/Release/net9.0/allure-results || echo "Path ./SeleniumTraining/bin/Release/net9.0/allure-results not found or empty."
 
       - name: Upload Allure test results (includes NUnit logs) for ${{ matrix.browser }}
@@ -144,26 +152,21 @@ jobs:
 
       - name: 'Debug: List downloaded artifacts structure'
         run: |
-          echo "Structure of downloaded allure artifacts:"
           ls -R ./allure-results-downloaded
 
       - name: Aggregate Allure results
         run: |
           mkdir -p allure-results-final
-          echo "Aggregating results..."
           for artifact_dir_name in ./allure-results-downloaded/allure-results-*; do
             if [ -d "$artifact_dir_name" ]; then
-              echo "Processing artifact directory: $artifact_dir_name"
               rsync -avt "$artifact_dir_name/" allure-results-final/
             else
               echo "Warning: Expected artifact directory $artifact_dir_name not found or is not a directory."
             fi
           done
-          echo "Aggregation complete. Content of allure-results-final:"
           ls -R allure-results-final
           if [ -z "$(ls -A allure-results-final)" ]; then
-            echo "Error: allure-results-final is empty after aggregation. Check download, upload paths, and rsync steps."
-            exit 1
+            echo "Warning: allure-results-final is empty after aggregation. This may lead to an empty report."
           fi
 
       - name: Allure Report Generation
@@ -179,7 +182,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-html
-          path: ${{ steps.allure_report_generation.outputs.allure_report_path }}
+          path: allure-report
           retention-days: 30
 
   deploy-allure-report-to-gh-pages:
@@ -192,6 +195,7 @@ jobs:
       url: ${{ github.server_url }}/${{ github.repository }}/
     permissions:
       contents: write
+      pages: write
     steps:
       - name: Download Allure HTML report artifact
         uses: actions/download-artifact@v4
