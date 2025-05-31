@@ -71,14 +71,21 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
     {
         if (settingsBase is not ChromeSettings settings)
         {
-            var ex = new ArgumentException($"Invalid settings type provided. Expected {nameof(ChromeSettings)}, got {settingsBase.GetType().Name}.", nameof(settingsBase));
+            var ex = new ArgumentException(
+                $"Invalid settings type provided. Expected {nameof(ChromeSettings)}, got {settingsBase.GetType().Name}.",
+                nameof(settingsBase)
+            );
             Logger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(ChromeDriverFactoryService));
             throw ex;
         }
 
         Logger.LogInformation(
             "Creating {BrowserType} WebDriver. Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if specified).",
-            Type, settings.Headless, settings.WindowWidth ?? -1, settings.WindowHeight ?? -1);
+            Type,
+            settings.Headless,
+            settings.WindowWidth ?? -1,
+            settings.WindowHeight ?? -1
+        );
 
         string chromeExecutablePath = GetChromeExecutablePathInternal();
         
@@ -91,17 +98,17 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
             Logger.LogInformation("Chrome executable path determined to be: {ChromePath}", chromeExecutablePath);
         }
 
-        try
-        {
-            Logger.LogInformation("Attempting to set up ChromeDriver using WebDriverManager's default behavior for ChromeConfig (will attempt auto-detection).");
-            _ = new DriverManager().SetUpDriver(new ChromeConfig());
-            Logger.LogInformation("WebDriverManager successfully completed default ChromeDriver setup for Chrome.");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "WebDriverManager failed to set up ChromeDriver using default ChromeConfig.");
-            throw;
-        }
+        // try
+        // {
+        //     Logger.LogInformation("Attempting to set up ChromeDriver using WebDriverManager's default behavior for ChromeConfig (will attempt auto-detection).");
+        //     _ = new DriverManager().SetUpDriver(new ChromeConfig());
+        //     Logger.LogInformation("WebDriverManager successfully completed default ChromeDriver setup for Chrome.");
+        // }
+        // catch (Exception ex)
+        // {
+        //     Logger.LogError(ex, "WebDriverManager failed to set up ChromeDriver using default ChromeConfig.");
+        //     throw;
+        // }
 
         ChromeOptions chromeOptions = ConfigureCommonChromeOptions(settings, options, out List<string> appliedOptionsForLog);
         
@@ -114,7 +121,13 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
             Logger.LogDebug("Chrome binary location not explicitly set in options; Selenium will use default system path or detected driver's expectation.");
         }
 
-        Logger.LogInformation("ChromeOptions configured for {BrowserType}. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]", Type, chromeOptions.BinaryLocation ?? "Default/System PATH", string.Join(", ", appliedOptionsForLog.Distinct()));
+        Logger.LogInformation(
+            "ChromeOptions configured for {BrowserType}. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]",
+            Type, chromeOptions.BinaryLocation ?? "Default/System PATH",
+            string.Join(", ",
+            appliedOptionsForLog.Distinct())
+        );
+
         return CreateDriverInstanceWithChecks(chromeOptions);
     }
 }
