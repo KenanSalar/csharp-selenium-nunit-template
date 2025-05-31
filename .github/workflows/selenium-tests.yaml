@@ -113,7 +113,7 @@ jobs:
           fi
 
       - name: Allure Report Generation
-        uses: allure-framework/allure-action@v2.15.1
+        uses: allure-framework/allure-action@v2
         id: allure_report_generation
         with:
           results_path: allure-results-final
