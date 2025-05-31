@@ -1,0 +1,4 @@
+Operation: TestStep_GetLoginErrorMessage_LockedOut
+Duration: 18 ms (0.019 s)
+Expected Max: 1000 ms
+Status: PASS

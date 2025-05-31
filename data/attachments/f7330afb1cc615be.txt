@@ -1,0 +1,4 @@
+Operation: TestStep_UserLogin_Standard
+Duration: 800 ms (0.801 s)
+Expected Max: 7000 ms
+Status: PASS

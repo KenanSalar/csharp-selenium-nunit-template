@@ -1,0 +1,4 @@
+Operation: TestStep_VerifyAllSortOptions
+Duration: 1562 ms (1.563 s)
+Expected Max: 10000 ms
+Status: PASS
