@@ -2,7 +2,7 @@ namespace SeleniumTraining.Enums;
 
 public enum BrowserType
 {
+    // Brave,
     Chrome = 0,
-    Brave = 1,
-    Firefox = 2
+    Firefox = 1
 }

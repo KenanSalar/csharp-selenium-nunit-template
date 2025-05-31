@@ -20,6 +20,14 @@ public abstract class BasePage
 
         Logger.LogInformation("Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s.", PageName, defaultTimeoutSeconds);
 
+        var pageLoadTimer = new PerformanceTimer(
+            $"PageLoad_{PageName}",
+            Logger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            new Dictionary<string, object> { { "PageType", PageName } }
+        );
+        bool initializationSuccessful = false;
+
         try
         {
             Logger.LogDebug("Attempting to wait for {PageName} to load fully.", PageName);
@@ -29,11 +37,22 @@ public abstract class BasePage
             EnsureCriticalElementsAreDisplayed();
 
             Logger.LogInformation("{PageName} initialized successfully.", PageName);
+            initializationSuccessful = true;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to initialize {PageName} due to an error during page load or critical element validation.", PageName);
             throw;
+        }
+        finally
+        {
+            long expectedPageLoadTimeMs = 3000;
+            pageLoadTimer.StopAndLog(
+                attachToAllure: true,
+                expectedMaxMilliseconds: initializationSuccessful
+                    ? expectedPageLoadTimeMs
+                    : null
+            );
         }
     }
 
@@ -44,7 +63,8 @@ public abstract class BasePage
         {
             Logger.LogDebug(
                 "Waiting for {PageName} document.readyState to be 'complete'. Timeout: {TimeoutSeconds}s.",
-                PageName, Wait.Timeout.TotalSeconds
+                PageName,
+                Wait.Timeout.TotalSeconds
             );
             bool pageLoaded = Wait.Until(d =>
                 ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState")?.Equals("complete") ?? false);
@@ -59,7 +79,8 @@ public abstract class BasePage
             Logger.LogError(
                 ex,
                 "{PageName} timed out waiting for document.readyState to be 'complete'. Timeout: {TimeoutSeconds}s.",
-                PageName, Wait.Timeout.TotalSeconds
+                PageName,
+                Wait.Timeout.TotalSeconds
             );
             throw;
         }

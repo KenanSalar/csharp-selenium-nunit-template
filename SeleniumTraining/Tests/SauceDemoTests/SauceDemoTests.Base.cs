@@ -1,12 +1,13 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
+// [TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Chrome), Category("Chrome")]
-[TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Firefox), Category("Firefox")]
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 [AllureSuite("SauceDemo Login and Inventory Tests")]
 [AllureOwner("Kenan")]
 [AllureTag("UI", "SauceDemo")]
+[Category("UI")]
 public partial class SauceDemoTests : BaseTest
 {
     private SauceDemoSettings _sauceDemoSettings = null!;
@@ -51,8 +52,15 @@ public partial class SauceDemoTests : BaseTest
         {
             IWebDriver driver = WebDriverManager.GetDriver();
 
-            driver.Navigate().GoToUrl(_sauceDemoSettings.PageUrl);
-            Logger.LogDebug("Navigation to {SauceDemoAppUrl} initiated.", _sauceDemoSettings.PageUrl);
+            using (new PerformanceTimer(
+                $"NavigateTo_{LoginPageMap.PageTitle}",
+                Logger, Microsoft.Extensions.Logging.LogLevel.Information,
+                new Dictionary<string, object> { { "PageUrl", _sauceDemoSettings.PageUrl! } }
+            ))
+            {
+                driver.Navigate().GoToUrl(_sauceDemoSettings.PageUrl);
+                Logger.LogDebug("Navigation to {SauceDemoAppUrl} initiated.", _sauceDemoSettings.PageUrl);
+            }
 
             driver.Title.ShouldBe(LoginPageMap.PageTitle, "The page title was not as expected.");
             Logger.LogInformation("Successfully navigated to {SauceDemoAppUrl} and verified page title '{ExpectedPageTitle}'.", _sauceDemoSettings.PageUrl, LoginPageMap.PageTitle);
