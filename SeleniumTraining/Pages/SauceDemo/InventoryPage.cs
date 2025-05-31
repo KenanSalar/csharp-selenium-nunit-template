@@ -14,17 +14,32 @@ public class InventoryPage : BasePage
     [AllureStep("Sort products by {selectorType} using option '{sortOption}'")]
     public InventoryPage SortProducts(SortByType selectorType, string sortOption)
     {
-        Logger.LogInformation(
-            "Attempting to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'.",
-            PageName,
-            selectorType.ToString(),
-            sortOption
+        var additionalProps = new Dictionary<string, object>
+        {
+            { "SortByType", selectorType.ToString() },
+            { "SortOption", sortOption }
+        };
+        var timer = new PerformanceTimer(
+            $"SortProducts_{PageName}",
+            Logger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            additionalProps
         );
+        bool success;
 
         try
         {
+            Logger.LogInformation(
+                "Attempting to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'.",
+                PageName,
+                selectorType.ToString(),
+                sortOption
+            );
+
             IWebElement sortContainer = Wait.WaitForElement(Logger, PageName, InventoryPageMap.SortDropdown);
             sortContainer.SelectDropDown(selectorType, sortOption, Wait);
+
+            success = true;
 
             string sortOptionDisplay = selectorType.GetDisplayName();
             Logger.LogInformation(
@@ -45,8 +60,14 @@ public class InventoryPage : BasePage
                 selectorType.ToString(),
                 sortOption
             );
+
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+            timer.Dispose();
             throw;
         }
+
+        timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 2000 : null);
+        timer.Dispose();
 
         return this;
     }

@@ -44,6 +44,22 @@ public class LoginPage : BasePage
     {
         Logger.LogInformation("Attempting login on {PageName} using {LoginMode} mode.", PageName, mode);
 
+        string operationName = $"LoginAndNavigate_{PageName}_{mode}";
+        var additionalProps = new Dictionary<string, object>
+        {
+            { "LoginMode", mode.ToString() }
+        };
+        long expectedMaxLoginTimeMs = 5000;
+        bool loginSuccessful = false;
+
+        var timer = new PerformanceTimer(
+            operationName,
+            Logger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            additionalProps
+        );
+
+        BasePage nextPage;
         if (mode == LoginMode.Submit)
         {
             Logger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
@@ -60,7 +76,8 @@ public class LoginPage : BasePage
             Wait.EnsureElementIsVisible(Logger, PageName, InventoryPageMap.InventoryContainer);
             Logger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
 
-            return new InventoryPage(Driver, LoggerFactory);
+            loginSuccessful = true;
+            nextPage = new InventoryPage(Driver, LoggerFactory);
         }
         catch (Exception ex)
         {
@@ -71,30 +88,59 @@ public class LoginPage : BasePage
                 PageName
             );
 
-            return this;
+            loginSuccessful = false;
+            nextPage = this;
         }
+        finally
+        {
+            timer.StopAndLog(
+                attachToAllure: true,
+                expectedMaxMilliseconds: loginSuccessful ? expectedMaxLoginTimeMs : null
+            );
+            timer.Dispose();
+        }
+
+        return nextPage;
     }
 
     [AllureStep("Getting error message from login page")]
     public string GetErrorMessage()
     {
-        Logger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
+        string errorMessageText;
+        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", Logger);
+        bool success;
+
         try
         {
+            Logger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
             IWebElement errorMessageElement = Wait.WaitForElement(Logger, PageName, LoginPageMap.ErrorMessageContainer);
-            string errorMessage = errorMessageElement.Text;
-            Logger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessage);
-            return errorMessage;
+
+            errorMessageText = errorMessageElement.Text;
+            Logger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessageText);
+
+            success = true;
         }
         catch (WebDriverTimeoutException ex)
         {
             Logger.LogError(ex, "Error message element not found or not visible on {PageName} within the timeout period.", PageName);
+
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+            timer.Dispose();
+
             throw new NoSuchElementException($"Error message element defined by {LoginPageMap.ErrorMessageContainer} was not found on {PageName}.", ex);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An unexpected error occurred while trying to retrieve the error message from {PageName}.", PageName);
+
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+            timer.Dispose();
+
             throw;
         }
+
+        timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 1000 : null);
+        timer.Dispose();
+        return errorMessageText;
     }
 }

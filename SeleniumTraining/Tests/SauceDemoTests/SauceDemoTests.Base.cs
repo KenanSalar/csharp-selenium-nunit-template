@@ -51,8 +51,15 @@ public partial class SauceDemoTests : BaseTest
         {
             IWebDriver driver = WebDriverManager.GetDriver();
 
-            driver.Navigate().GoToUrl(_sauceDemoSettings.PageUrl);
-            Logger.LogDebug("Navigation to {SauceDemoAppUrl} initiated.", _sauceDemoSettings.PageUrl);
+            using (new PerformanceTimer(
+                $"NavigateTo_{LoginPageMap.PageTitle}",
+                Logger, Microsoft.Extensions.Logging.LogLevel.Information,
+                new Dictionary<string, object> { { "PageUrl", _sauceDemoSettings.PageUrl! } }
+            ))
+            {
+                driver.Navigate().GoToUrl(_sauceDemoSettings.PageUrl);
+                Logger.LogDebug("Navigation to {SauceDemoAppUrl} initiated.", _sauceDemoSettings.PageUrl);
+            }
 
             driver.Title.ShouldBe(LoginPageMap.PageTitle, "The page title was not as expected.");
             Logger.LogInformation("Successfully navigated to {SauceDemoAppUrl} and verified page title '{ExpectedPageTitle}'.", _sauceDemoSettings.PageUrl, LoginPageMap.PageTitle);
