@@ -62,7 +62,6 @@ jobs:
       - name: Build project
         run: dotnet build ./SeleniumTraining.sln --configuration Release --no-restore
 
-      # Create allure-results directory first
       - name: Create allure-results directory
         run: mkdir -p ./SeleniumTraining/bin/Release/net9.0/allure-results
 
@@ -71,14 +70,8 @@ jobs:
           TARGET_BROWSER_CI: ${{ matrix.browser }}
         run: |
           echo "Running tests for browser: ${{ matrix.browser }} with TARGET_BROWSER_CI=$TARGET_BROWSER_CI"
-          dotnet test ./SeleniumTraining/SeleniumTraining.csproj \
-            --configuration Release \
-            --no-build \
-            --logger "allure;LogFilePath=allure-results" \
-            --filter "TestCategory=UI" \
-            --verbosity normal
+          dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=UI"
 
-      # Debug: Check what was actually created
       - name: 'Debug: List all possible output directories'
         if: always()
         run: |
@@ -96,7 +89,6 @@ jobs:
           echo "=== Searching for any .json files (allure results) ==="
           find . -name "*.json" -path "*/allure-results/*" 2>/dev/null || echo "No allure result files found"
 
-      # Try to upload from both possible locations
       - name: Upload Allure test results for ${{ matrix.browser }} (Release)
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,34 +96,6 @@ jobs:
           name: allure-results-release-${{ matrix.browser }}
           path: ./SeleniumTraining/bin/Release/net9.0/allure-results
           retention-days: 7
-        continue-on-error: true
-
-      - name: Upload Allure test results for ${{ matrix.browser }} (Debug fallback)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results-debug-${{ matrix.browser }}
-          path: ./SeleniumTraining/bin/Debug/net9.0/allure-results
-          retention-days: 7
-        continue-on-error: true
-
-      # Upload any allure-results found anywhere
-      - name: Upload any Allure results found
-        if: always()
-        run: |
-          # Find all allure-results directories and create a combined artifact
-          mkdir -p combined-allure-results
-          find . -name "allure-results" -type d -exec cp -r {}/* combined-allure-results/ \; 2>/dev/null || true
-          ls -la combined-allure-results/ || echo "No combined results"
-
-      - name: Upload combined Allure results for ${{ matrix.browser }}
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results-combined-${{ matrix.browser }}
-          path: combined-allure-results
-          retention-days: 7
-        continue-on-error: true
 
   generate-allure-report:
     name: Generate Allure Report
