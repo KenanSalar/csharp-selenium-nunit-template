@@ -25,7 +25,10 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         Logger.LogInformation(
             "Creating FirefoxDriver (GeckoDriver). Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if applicable).",
-            settings.Headless, settings.WindowWidth ?? -1, settings.WindowHeight ?? -1);
+            settings.Headless,
+            settings.WindowWidth ?? -1,
+            settings.WindowHeight ?? -1
+        );
 
         Logger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
         try

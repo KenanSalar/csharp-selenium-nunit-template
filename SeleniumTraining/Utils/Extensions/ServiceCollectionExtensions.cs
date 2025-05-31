@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IDirectoryManagerService, DirectoryManagerService>()
             .AddSingleton<IBrowserFactoryManagerService, BrowserFactoryManagerService>()
             .AddSingleton<IBrowserDriverFactoryService, ChromeDriverFactoryService>()
-            .AddSingleton<IBrowserDriverFactoryService, BraveDriverFactoryService>()
+            // .AddSingleton<IBrowserDriverFactoryService, BraveDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, FirefoxDriverFactoryService>()
             .AddTransient<IThreadLocalDriverStorageService, ThreadLocalDriverStorageService>()
             .AddTransient<IDriverInitializationService, DriverInitializationService>()

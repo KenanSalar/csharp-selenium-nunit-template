@@ -8,7 +8,7 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
 {
     public BrowserType Type => BrowserType.Chrome;
     protected override BrowserType ConcreteBrowserType => BrowserType.Chrome;
-    protected override Version MinimumSupportedVersion { get; } = new("110.0"); // Set Chrome's min version
+    protected override Version MinimumSupportedVersion { get; } = new("110.0");
 
     public ChromeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
@@ -26,7 +26,11 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
 
         Logger.LogInformation(
             "Creating {BrowserType} WebDriver. Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if specified).",
-            Type, settings.Headless, settings.WindowWidth ?? -1, settings.WindowHeight ?? -1);
+            Type,
+            settings.Headless,
+            settings.WindowWidth ?? -1,
+            settings.WindowHeight ?? -1
+        );
 
         Logger.LogDebug("Attempting to set up ChromeDriver using WebDriverManager (ChromeConfig) for {BrowserType}.", Type);
         try
