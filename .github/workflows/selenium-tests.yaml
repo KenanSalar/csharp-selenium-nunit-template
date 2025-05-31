@@ -62,30 +62,63 @@ jobs:
       - name: Build project
         run: dotnet build ./SeleniumTraining.sln --configuration Release --no-restore
 
-      - name: Create allure-results directory
-        run: mkdir -p ./SeleniumTraining/bin/Release/net9.0/allure-results
-
       - name: Run Selenium tests for ${{ matrix.browser }}
         env:
           TARGET_BROWSER_CI: ${{ matrix.browser }}
         run: |
           echo "Running tests for browser: ${{ matrix.browser }} with TARGET_BROWSER_CI=$TARGET_BROWSER_CI"
-          dotnet test ./SeleniumTraining/SeleniumTraining.csproj --configuration Release --no-build --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" --filter "TestCategory=UI"
+          dotnet test ./SeleniumTraining/SeleniumTraining.csproj \
+            --configuration Release \
+            --no-build \
+            --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" \
+            --filter "TestCategory=UI"
 
-      - name: 'Debug: List Allure Results Output Directory Contents'
+      - name: 'Debug: List All Possible Allure Results Locations'
         if: always()
         run: |
-          echo "Listing contents of ./SeleniumTraining/bin/Release/net9.0/allure-results/ for browser ${{ matrix.browser }}"
-          ls -R ./SeleniumTraining/bin/Release/net9.0/allure-results/
-          echo "Looking for JSON files specifically:"
-          find ./SeleniumTraining/bin/Release/net9.0/allure-results/ -name "*-result.json" -o -name "*-container.json" || echo "No Allure JSON result files found."
+          echo "=== Searching for Allure results in common locations ==="
+          echo "1. Project bin directory (expected location for Allure .NET output):"
+          find ${{ github.workspace }}/SeleniumTraining/bin -name "allure-results" -type d -exec echo "Found allure-results in: {}" \; -exec ls -la {} \; 2>/dev/null || echo "No allure-results directory found in project bin path."
+          
+          echo "2. Searching for any JSON files that might be Allure results in project output:"
+          find ${{ github.workspace }}/SeleniumTraining/bin -name "*-result.json" -o -name "*-container.json" 2>/dev/null | head -10 || echo "No Allure JSON files found in project bin path."
+          
+          echo "3. Current working directory contents:"
+          pwd && ls -la
+
+      - name: Copy Allure results to upload location
+        if: always()
+        run: |
+          mkdir -p ${{ github.workspace }}/allure-upload
+          FOUND_RESULTS=false
+          
+          find ${{ github.workspace }}/SeleniumTraining/bin -name "allure-results" -type d 2>/dev/null | while read dir; do
+            if [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
+              echo "Found results in: $dir and copying to ${{ github.workspace }}/allure-upload/"
+              cp -r "$dir"/* ${{ github.workspace }}/allure-upload/
+              FOUND_RESULTS=true
+            else
+              echo "Directory $dir is empty."
+            fi
+          done
+          
+          if [ "$FOUND_RESULTS" = false ] || [ -z "$(ls -A ${{ github.workspace }}/allure-upload 2>/dev/null)" ]; then
+            echo "No Allure results found in expected locations - creating debug info"
+            echo "Browser: ${{ matrix.browser }}" > ${{ github.workspace }}/allure-upload/debug-info-${{ matrix.browser }}.txt
+            echo "Test run completed but no Allure JSON or NUnit XML files were copied for upload." >> ${{ github.workspace }}/allure-upload/debug-info-${{ matrix.browser }}.txt
+            echo "Check if Allure.NUnit package is correctly generating files into project_output/allure-results/" >> ${{ github.workspace }}/allure-upload/debug-info-${{ matrix.browser }}.txt
+            echo "And if NUnit logger is writing to project_output/allure-results/nunit-log-browser.xml" >> ${{ github.workspace }}/allure-upload/debug-info-${{ matrix.browser }}.txt
+          fi
+          
+          echo "Final upload directory contents for browser ${{ matrix.browser }}:"
+          ls -laR ${{ github.workspace }}/allure-upload/
 
       - name: Upload Allure test results for ${{ matrix.browser }}
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results-${{ matrix.browser }}
-          path: ./SeleniumTraining/bin/Release/net9.0/allure-results
+          path: ${{ github.workspace }}/allure-upload
           if-no-files-found: warn
           retention-days: 7
 
@@ -102,33 +135,23 @@ jobs:
 
       - name: 'Debug: List downloaded artifacts structure'
         run: |
-          echo "Structure of downloaded allure artifacts:"
           ls -R ./allure-results-downloaded || echo "No artifacts downloaded or directory empty."
-          echo "Looking for allure-results-* directories:"
           find ./allure-results-downloaded -name "allure-results-*" -type d || echo "No allure-results-* directories found in download."
-
 
       - name: Aggregate Allure results
         run: |
           mkdir -p allure-results-final
-          echo "Looking for directories matching ./allure-results-downloaded/allure-results-* pattern"
           find ./allure-results-downloaded -maxdepth 1 -type d -name "allure-results-*" -print0 | while IFS= read -r -d $'\0' artifact_dir; do
-            echo "Processing artifact directory: $artifact_dir"
-            # Check if the directory contains any files before attempting to copy
             if [ -n "$(ls -A "$artifact_dir" 2>/dev/null)" ]; then
-              echo "Copying files from $artifact_dir to allure-results-final/"
-              # Using rsync to preserve structure and handle subdirectories if Allure results are nested
               rsync -av "$artifact_dir/" allure-results-final/
             else
               echo "Artifact directory $artifact_dir is empty."
             fi
           done
 
-          echo "=== Final allure results after aggregation ==="
           ls -laR allure-results-final/
           if [ -z "$(ls -A allure-results-final)" ]; then
             echo "WARNING: No allure results found after aggregation! Report will be empty or based on dummy data."
-            # Creating dummy results so the next step doesn't fail if absolutely no results are present
             echo '{"uuid":"dummy-uuid","testCaseId":"dummy-testCaseId","fullName":"Dummy Test","labels":[{"name":"suite","value":"Dummy Suite"}],"status":"passed","start":1609459200000,"stop":1609459201000}' > allure-results-final/dummy-result.json
             echo "environment.properties" > allure-results-final/environment.properties
           fi
