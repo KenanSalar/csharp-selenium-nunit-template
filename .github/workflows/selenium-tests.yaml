@@ -74,6 +74,15 @@ jobs:
             --logger "nunit;LogFilePath=allure-results/nunit-log-${{ matrix.browser }}.xml" \
             --filter "TestCategory=UI"
 
+      - name: Upload Visual Baselines for ${{ matrix.browser }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines-${{ matrix.browser }}-${{ github.run_id }}
+          path: ${{ github.workspace }}/SeleniumTraining/ProjectVisualBaselines/${{ matrix.browser }}
+          retention-days: 7
+          if-no-files-found: warn
+
       - name: 'Debug: List All Possible Allure Results Locations'
         if: always()
         run: |

@@ -60,13 +60,20 @@ public class VisualTestService : BaseService, IVisualTestService
                 ICompareResult? comparisonResult = null;
                 try
                 {
-                    comparisonResult = ImageSharpCompare.CalcDiff(actualImagePath, baselineImagePath);
+                    comparisonResult = ImageSharpCompare.CalcDiff(actualImagePath, baselineImagePath, ResizeOption.DontResize);
+                }
+                catch (ImageSharpCompareException imgEx) when (imgEx.Message.Contains("Size of images differ."))
+                {
+                    ServiceLogger.LogError(imgEx, "Image size mismatch during visual comparison. Actual: {ActualPath}, Baseline: {BaselinePath}. Ensure baseline generation environment matches test execution environment.", actualImagePath, baselineImagePath);
+                    Assert.Fail($"Visual comparison failed due to image size mismatch. Details: {imgEx.Message}");
+
+                    return;
                 }
                 catch (Exception ex)
                 {
                     ServiceLogger.LogError(ex, "Error during image comparison between {ActualPath} and {BaselinePath}", actualImagePath, baselineImagePath);
                     Assert.Fail($"Visual comparison failed due to an error: {ex.Message}");
-
+                    
                     return;
                 }
 
