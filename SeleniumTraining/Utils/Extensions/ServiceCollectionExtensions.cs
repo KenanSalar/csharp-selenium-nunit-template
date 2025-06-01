@@ -26,7 +26,8 @@ public static class ServiceCollectionExtensions
             .AddTransient<IDriverInitializationService, DriverInitializationService>()
             .AddTransient<IDriverLifecycleService, DriverLifecycleService>()
             .AddScoped<ITestWebDriverManager, TestWebDriverManager>()
-            .AddTransient<ITestReporterService, TestReporterService>();
+            .AddTransient<ITestReporterService, TestReporterService>()
+            .AddScoped<IVisualTestService, VisualTestService>();
 
         return services;
     }
@@ -50,6 +51,11 @@ public static class ServiceCollectionExtensions
 
         _ = services.AddOptions<SauceDemoSettings>()
             .Bind(configuration.GetSection("SauceDemo"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        _ = services.AddOptions<VisualTestSettings>()
+            .Bind(configuration.GetSection("VisualTestSettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

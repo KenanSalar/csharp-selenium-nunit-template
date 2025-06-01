@@ -15,6 +15,7 @@ public abstract class BaseTest : IDisposable
     protected IDirectoryManagerService DirectoryManager { get; private set; } = null!;
     protected ITestWebDriverManager WebDriverManager { get; private set; } = null!;
     protected ITestReporterService TestReporter { get; private set; } = null!;
+    protected IVisualTestService VisualTester { get; private set; } = null!;
     public ILogger Logger { get; protected set; } = null!;
 
     protected string CurrentTestScreenshotDirectory { get; private set; } = string.Empty;
@@ -80,6 +81,7 @@ public abstract class BaseTest : IDisposable
         PageObjectLoggerFactory = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
         WebDriverManager = scopedServiceProvider.GetRequiredService<ITestWebDriverManager>()!;
         TestReporter = scopedServiceProvider.GetRequiredService<ITestReporterService>()!;
+        VisualTester = scopedServiceProvider.GetRequiredService<IVisualTestService>()!;
 
         CorrelationId = Guid.NewGuid().ToString("N")[..12];
         string testLogFileKey = TestName;
