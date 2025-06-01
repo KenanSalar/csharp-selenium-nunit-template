@@ -217,40 +217,50 @@ public partial class SauceDemoTests : BaseTest
             InventoryItemComponent? boltTShirtComponent = inventoryPage.GetInventoryItems()
                 .FirstOrDefault(item => item.ItemName == "Sauce Labs Bolt T-Shirt");
 
-            By boltTShirtImageLocator = SmartLocators.DataTest("inventory-item-sauce-labs-bolt-t-shirt-img");
-            IWebElement? boltTShirtImageElement = null;
-            try
+            if (boltTShirtComponent != null)
             {
-                boltTShirtImageElement = WebDriverManager.GetDriver().FindElement(boltTShirtImageLocator);
-            }
-            catch (NoSuchElementException nseEx)
-            {
-                TestLogger.LogWarning(nseEx, "Could not find the 'Sauce Labs Bolt T-Shirt' image using locator {Locator} for specific visual check in {TestName}. Skipping element-specific visual check.", boltTShirtImageLocator, currentTestName);
-            }
+                TestLogger.LogInformation("Found 'Sauce Labs Bolt T-Shirt' component. Proceeding with image visual check.");
+                IWebElement boltTShirtImageElement = boltTShirtComponent.ItemImage;
 
-
-            if (boltTShirtImageElement != null && boltTShirtImageElement.Displayed)
-            {
-                TestLogger.LogInformation(
-                    "Performing element-specific visual assertion for ID '{BaselineID}' (Bolt T-Shirt Image) in test '{TestName}'.",
-                    boltTShirtImageBaselineId,
-                    currentTestName
-                );
-                VisualTester.AssertVisualMatch(
-                    baselineIdentifier: boltTShirtImageBaselineId,
-                    testName: TestName,
-                    browserType: BrowserType,
-                    elementToCapture: boltTShirtImageElement
-                );
-                TestLogger.LogInformation(
-                    "Element-specific visual assertion completed for ID '{BaselineID}' in {TestName}.",
-                    boltTShirtImageBaselineId,
-                    currentTestName
-                );
+                if (boltTShirtImageElement != null && boltTShirtImageElement.Displayed)
+                {
+                    TestLogger.LogInformation(
+                        "Performing element-specific visual assertion for ID '{BaselineID}' (Bolt T-Shirt Image) in test '{TestName}'.",
+                        boltTShirtImageBaselineId,
+                        currentTestName
+                    );
+                    VisualTester.AssertVisualMatch(
+                        baselineIdentifier: boltTShirtImageBaselineId,
+                        testName: TestName,
+                        browserType: BrowserType,
+                        elementToCapture: boltTShirtImageElement
+                    );
+                    TestLogger.LogInformation(
+                        "Element-specific visual assertion completed for ID '{BaselineID}' in {TestName}.",
+                        boltTShirtImageBaselineId,
+                        currentTestName
+                    );
+                }
+                else if (boltTShirtImageElement != null && !boltTShirtImageElement.Displayed)
+                {
+                    TestLogger.LogWarning(
+                        "'Sauce Labs Bolt T-Shirt' image element found via component but was not displayed. Skipping element-specific visual check for {BaselineID} in {TestName}.",
+                        boltTShirtImageBaselineId,
+                        currentTestName
+                    );
+                }
+                else
+                {
+                    TestLogger.LogWarning(
+                        "Could not retrieve 'ItemImage' from the 'Sauce Labs Bolt T-Shirt' component (element was null). Skipping check for {BaselineID} in {TestName}.",
+                        boltTShirtImageBaselineId,
+                        currentTestName
+                    );
+                }
             }
-            else if (boltTShirtImageElement != null && !boltTShirtImageElement.Displayed)
+            else
             {
-                TestLogger.LogWarning("'Sauce Labs Bolt T-Shirt' image found but was not displayed. Skipping element-specific visual check for {BaselineID} in {TestName}.", boltTShirtImageBaselineId, currentTestName);
+                TestLogger.LogWarning("Could not find the 'Sauce Labs Bolt T-Shirt' item component using InventoryPage.GetInventoryItems(). Skipping element-specific visual check for {BaselineID} in {TestName}.", boltTShirtImageBaselineId, currentTestName);
             }
         }
         catch (Exception ex)

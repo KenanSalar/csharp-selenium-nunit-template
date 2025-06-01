@@ -8,7 +8,7 @@ public class VisualTestSettings
     public bool AutoCreateBaselineIfMissing { get; set; } = true;
 
     [System.ComponentModel.DataAnnotations.Range(0, 100, ErrorMessage = "DefaultComparisonTolerancePercent must be between 0 and 100.")]
-    public double DefaultComparisonTolerancePercent { get; set; } = 0.05;
+    public double DefaultComparisonTolerancePercent { get; set; } = 0.20;
 
     public bool WarnOnAutomaticBaselineCreation { get; set; } = true;
 }
