@@ -104,15 +104,16 @@ public abstract class BaseTest : IDisposable
 
 
         DirectoryManager.EnsureBaseDirectoriesExist();
-        CurrentTestScreenshotDirectory = DirectoryManager.GetAndEnsureTestScreenshotDirectory(TestContext.CurrentContext.Test.Name);
+
+        CurrentTestScreenshotDirectory = DirectoryManager.GetAndEnsureTestScreenshotDirectory(TestName);
         TestLogger.LogInformation("Screenshot directory prepared: {ScreenshotDir}", CurrentTestScreenshotDirectory);
 
         string? baseMethodName = TestContext.CurrentContext.Test.MethodName ?? "UnknownMethod";
-        string browserName = BrowserType.ToString();
-        string allureDisplayName = $"{baseMethodName} ({browserName})";
+        string browserNameString = BrowserType.ToString();
+        string allureDisplayName = $"{baseMethodName} ({browserNameString})";
 
         TestLogger.LogDebug("Initializing test report via TestReporter. AllureDisplayName: {AllureDisplayName}", allureDisplayName);
-        TestReporter.InitializeTestReport(allureDisplayName, browserName, CorrelationId);
+        TestReporter.InitializeTestReport(allureDisplayName, browserNameString, CorrelationId);
         TestLogger.LogInformation("Test report initialized for Allure.");
 
         TestLogger.LogDebug("Initializing WebDriver via WebDriverManager for {Browser}.", BrowserType);

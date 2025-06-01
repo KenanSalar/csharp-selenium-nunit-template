@@ -91,8 +91,11 @@ public class VisualTestService : BaseService, IVisualTestService
                     }
                     AllureApi.AddAttachment($"Difference - {baselineIdentifier}", "image/png", diffImagePath);
 
-                    comparisonResult.PixelErrorPercentage.ShouldBeLessThanOrEqualTo(effectiveTolerance,
-                        $"Visual mismatch for '{baselineIdentifier}'. Pixel error {comparisonResult.PixelErrorPercentage:F3}% exceeded tolerance {effectiveTolerance:F3}%. See attached difference image.");
+                    comparisonResult.PixelErrorPercentage.ShouldBeLessThanOrEqualTo(
+                        effectiveTolerance,
+                        $"Visual mismatch for '{baselineIdentifier}'. " +
+                        "Pixel error {comparisonResult.PixelErrorPercentage:F3}% exceeded tolerance {effectiveTolerance:F3}%. See attached difference image."
+                    );
                 }
                 else
                 {
@@ -116,7 +119,7 @@ public class VisualTestService : BaseService, IVisualTestService
         catch (Exception ex)
         {
             ServiceLogger.LogError(ex, "Unexpected error during visual assertion for ID '{BaselineID}'", baselineIdentifier);
-            // Optionally save actual image even on error for debugging
+            // Save actual image even on error for debugging
             if (!File.Exists(actualImagePath) && ex is not ShouldAssertException)
             {
                 // Attempt to save actual image if capture failed mid-way but driver is available
@@ -138,7 +141,10 @@ public class VisualTestService : BaseService, IVisualTestService
             elementRect.Intersect(image.Bounds);
             if (elementRect.Width <= 0 || elementRect.Height <= 0)
             {
-                throw new InvalidOperationException($"Element for visual comparison '{elementToCapture.TagName}' resulted in an invalid crop area (zero or negative width/height) after intersection. Element Rect: {location.X},{location.Y} {size.Width}x{size.Height}. Image Bounds: {image.Width}x{image.Height}");
+                throw new InvalidOperationException(
+                    $"Element for visual comparison '{elementToCapture.TagName}' resulted in an invalid crop area (zero or negative width/height) after intersection. " +
+                    "Element Rect: {location.X},{location.Y} {size.Width}x{size.Height}. Image Bounds: {image.Width}x{image.Height}"
+                );
             }
             image.Mutate(x => x.Crop(elementRect));
             ServiceLogger.LogDebug("Cropped actual image to element bounds: {Rect}", elementRect);
@@ -149,7 +155,10 @@ public class VisualTestService : BaseService, IVisualTestService
             validCropArea.Intersect(image.Bounds);
             if (validCropArea.Width <= 0 || validCropArea.Height <= 0)
             {
-                throw new InvalidOperationException($"Specified cropArea for visual comparison resulted in an invalid crop area after intersection. CropArea: {cropArea.Value}. Image Bounds: {image.Width}x{image.Height}");
+                throw new InvalidOperationException(
+                    $"Specified cropArea for visual comparison resulted in an invalid crop area after intersection. " +
+                    "CropArea: {cropArea.Value}. Image Bounds: {image.Width}x{image.Height}"
+                );
             }
             image.Mutate(x => x.Crop(validCropArea));
             ServiceLogger.LogDebug("Cropped actual image to specified Rectangle: {Rect}", validCropArea);
@@ -181,24 +190,23 @@ public class VisualTestService : BaseService, IVisualTestService
 
     private (string BaselineImagePath, string ActualImagePath, string DiffImagePath) PrepareFilePaths(string baselineIdentifier, string testName, string browserName)
     {
-        string baselineRoot = Path.Combine(_directoryManager.TestAssemblyRootDirectory, _settings.BaselineDirectory);
+        string baselineRoot = Path.Combine(_directoryManager.ProjectRootDirectory, _settings.BaselineDirectory);
         string baselineBrowserPath = Path.Combine(baselineRoot, browserName);
-        string baselineTestPath = Path.Combine(baselineBrowserPath, testName);
+        string baselineTestPath = Path.Combine(baselineBrowserPath, SanitizeFilename(testName));
         string baselineImagePath = Path.Combine(baselineTestPath, $"{SanitizeFilename(baselineIdentifier)}.png");
 
-        string testRunVisualsRoot = _directoryManager.GetAndEnsureTestScreenshotDirectory(SanitizeFilename(testName));
+        string testClassScreenshotsDir = _directoryManager.GetAndEnsureTestScreenshotDirectory(SanitizeFilename(testName));
 
-        string actualImageDir = Path.Combine(testRunVisualsRoot, "VisualActuals", browserName, testName);
-        string actualImagePath = Path.Combine(actualImageDir, $"{SanitizeFilename(baselineIdentifier)}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff}.png");
+        string actualImageDir = Path.Combine(testClassScreenshotsDir, "VisualActuals", browserName);
+        string actualImagePath = Path.Combine(actualImageDir, $"{SanitizeFilename(baselineIdentifier)}_actual_{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff}.png");
+        string diffImageDir = Path.Combine(testClassScreenshotsDir, "VisualDiffs", browserName);
+        string diffImagePath = Path.Combine(diffImageDir, $"{SanitizeFilename(baselineIdentifier)}_diff_{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff}.png");
 
-        string diffImageDir = Path.Combine(testRunVisualsRoot, "VisualDiffs", browserName, testName);
-        string diffImagePath = Path.Combine(diffImageDir, $"{SanitizeFilename(baselineIdentifier)}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff}_diff.png");
-
-        // Ensure directories exist
-        _ = Directory.CreateDirectory(baselineTestPath);
+        _ = Directory.CreateDirectory(baselineTestPath);;
         _ = Directory.CreateDirectory(actualImageDir);
         _ = Directory.CreateDirectory(diffImageDir);
 
+        ServiceLogger.LogDebug("Prepared paths: Baseline='{BaselineP}', Actual='{ActualP}', Diff='{DiffP}'", baselineImagePath, actualImagePath, diffImagePath);
         return (baselineImagePath, actualImagePath, diffImagePath);
     }
 
@@ -206,6 +214,7 @@ public class VisualTestService : BaseService, IVisualTestService
     {
         string invalidChars = Regex.Escape(new string(Path.GetInvalidFileNameChars()));
         string invalidRegStr = string.Format(CultureInfo.InvariantCulture, @"([{0}]*\.+$)|([{0}]+)", invalidChars);
+
         return Regex.Replace(name, invalidRegStr, "_");
     }
 }

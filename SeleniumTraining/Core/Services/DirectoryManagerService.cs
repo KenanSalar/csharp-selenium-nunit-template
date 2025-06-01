@@ -2,17 +2,40 @@ namespace SeleniumTraining.Core.Services;
 
 public class DirectoryManagerService : BaseService, IDirectoryManagerService
 {
-    public string TestAssemblyRootDirectory { get; } = string.Empty;
+    public string TestAssemblyRootDirectory { get; } = string.Empty; // /bin/Debug/net9.0/
     public string BaseTestOutputDirectory { get; } = string.Empty; // /TestOutput/
     public string BaseScreenshotDirectoryRoot { get; } = string.Empty; // /TestOutput/Screenshots/
     public string BaseLogDirectoryRoot { get; } = string.Empty; // TestOutput/Logs/
+    public string ProjectRootDirectory { get; } = string.Empty; // SeleniumTraining/
 
-    public DirectoryManagerService(ILoggerFactory loggerFactory) : base(loggerFactory)
+    public DirectoryManagerService(ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{ServiceName} initializing directory paths.", nameof(DirectoryManagerService));
 
         TestAssemblyRootDirectory = AppContext.BaseDirectory;
         ServiceLogger.LogDebug("Determined Test Assembly Root Directory: {TestAssemblyRootDir}", TestAssemblyRootDirectory);
+
+        string? currentDirectory = TestAssemblyRootDirectory;
+        while (currentDirectory != null)
+        {
+            if (Directory.GetFiles(currentDirectory, "*.csproj").Length != 0)
+            {
+                ProjectRootDirectory = currentDirectory;
+                break;
+            }
+
+            DirectoryInfo? parentDir = Directory.GetParent(currentDirectory);
+            
+            if (parentDir == null)
+            {
+                ProjectRootDirectory = TestAssemblyRootDirectory;
+                ServiceLogger.LogWarning("Could not determine project root by finding .csproj. Falling back to TestAssemblyRootDirectory: {FallbackDir}", ProjectRootDirectory);
+                break;
+            }
+            currentDirectory = parentDir.FullName;
+        }
+        ServiceLogger.LogDebug("Determined Project Root Directory: {ProjectRootDir}", ProjectRootDirectory);
 
         BaseTestOutputDirectory = Path.Combine(TestAssemblyRootDirectory, "TestOutput");
         ServiceLogger.LogDebug("Set Base Test Output Directory: {BaseTestOutputDir}", BaseTestOutputDirectory);
@@ -22,6 +45,8 @@ public class DirectoryManagerService : BaseService, IDirectoryManagerService
 
         BaseLogDirectoryRoot = Path.Combine(BaseTestOutputDirectory, "Logs");
         ServiceLogger.LogDebug("Set Base Log Root Directory: {BaseLogRootDir}", BaseLogDirectoryRoot);
+
+        EnsureBaseDirectoriesExist();
     }
 
     public void EnsureBaseDirectoriesExist()
