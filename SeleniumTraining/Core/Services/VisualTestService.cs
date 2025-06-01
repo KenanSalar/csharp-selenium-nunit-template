@@ -131,7 +131,16 @@ public class VisualTestService : BaseService, IVisualTestService
     private void CaptureAndSaveActualImage(string actualImagePath, IWebElement? elementToCapture, Rectangle? cropArea)
     {
         Screenshot screenshot = ((ITakesScreenshot)_webDriverManager.GetDriver()).GetScreenshot();
+
         using var image = Image.Load(screenshot.AsByteArray);
+
+        ServiceLogger.LogInformation(
+            "[VISUAL_DEBUG_CI] Actual image dimensions BEFORE crop: Width={Width}, Height={Height}. Path: {Path}",
+            image.Width,
+            image.Height,
+            actualImagePath
+        );
+
         if (elementToCapture != null)
         {
             System.Drawing.Point location = elementToCapture.Location;
