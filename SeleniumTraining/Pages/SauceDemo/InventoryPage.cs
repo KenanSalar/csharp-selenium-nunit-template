@@ -6,9 +6,10 @@ public class InventoryPage : BasePage
 {
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => InventoryPageMap.InventoryPageElements;
 
-    public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory) : base(driver, loggerFactory)
+    public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
+        : base(driver, loggerFactory, settingsProvider)
     {
-        Logger.LogDebug("{PageName} instance fully created and validated (critical elements checked by BasePage).", PageName);
+        PageLogger.LogDebug("{PageName} instance fully created and validated (critical elements checked by BasePage).", PageName);
     }
 
     [AllureStep("Sort products by {selectorType} using option '{sortOption}'")]
@@ -21,7 +22,7 @@ public class InventoryPage : BasePage
         };
         var timer = new PerformanceTimer(
             $"SortProducts_{PageName}",
-            Logger,
+            PageLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             additionalProps
         );
@@ -29,20 +30,20 @@ public class InventoryPage : BasePage
 
         try
         {
-            Logger.LogInformation(
+            PageLogger.LogInformation(
                 "Attempting to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'.",
                 PageName,
                 selectorType.ToString(),
                 sortOption
             );
 
-            IWebElement sortContainer = Wait.WaitForElement(Logger, PageName, InventoryPageMap.SortDropdown);
-            sortContainer.SelectDropDown(selectorType, sortOption, Wait);
+            IWebElement sortContainer = Wait.WaitForElement(PageLogger, PageName, InventoryPageMap.SortDropdown);
+            sortContainer.SelectDropDown(selectorType, sortOption, Wait, Driver, PageLogger, FrameworkSettings);
 
             success = true;
 
             string sortOptionDisplay = selectorType.GetDisplayName();
-            Logger.LogInformation(
+            PageLogger.LogInformation(
                 "Products on {PageName} successfully sorted by '{SortOptionDisplay}' (option value: '{SortOptionValue}').",
                 PageName,
                 string.IsNullOrEmpty(sortOptionDisplay)
@@ -53,7 +54,7 @@ public class InventoryPage : BasePage
         }
         catch (Exception ex)
         {
-            Logger.LogError(
+            PageLogger.LogError(
                 ex,
                 "Failed to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'.",
                 PageName,
@@ -75,23 +76,23 @@ public class InventoryPage : BasePage
     [AllureStep("Get selected sort option text")]
     public string GetSelectedSortText()
     {
-        Logger.LogDebug("Getting selected sort option text from product sort container on {PageName}.", PageName);
+        PageLogger.LogDebug("Getting selected sort option text from product sort container on {PageName}.", PageName);
 
         try
         {
             string selectedText = new SelectElement(Wait.WaitForElement(
-                Logger,
+                PageLogger,
                 PageName,
                 InventoryPageMap.SortDropdown
             )).SelectedOption.Text;
 
-            Logger.LogInformation("Retrieved selected sort option text from {PageName}: '{SelectedSortText}'.", PageName, selectedText);
+            PageLogger.LogInformation("Retrieved selected sort option text from {PageName}: '{SelectedSortText}'.", PageName, selectedText);
 
             return selectedText;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get selected sort option text from {PageName}.", PageName);
+            PageLogger.LogError(ex, "Failed to get selected sort option text from {PageName}.", PageName);
             throw;
         }
     }
@@ -99,24 +100,60 @@ public class InventoryPage : BasePage
     [AllureStep("Get selected sort option value")]
     public string GetSelectedSortValue()
     {
-        Logger.LogDebug("Getting selected sort option value attribute from product sort container on {PageName}.", PageName);
+        PageLogger.LogDebug("Getting selected sort option value attribute from product sort container on {PageName}.", PageName);
 
         try
         {
             string selectedValue = new SelectElement(Wait.WaitForElement(
-                Logger,
+                PageLogger,
                 PageName,
                 InventoryPageMap.SortDropdown
             )).SelectedOption.GetAttribute("value") ?? string.Empty;
 
-            Logger.LogInformation("Retrieved selected sort option value from {PageName}: '{SelectedSortValue}'.", PageName, selectedValue);
+            PageLogger.LogInformation("Retrieved selected sort option value from {PageName}: '{SelectedSortValue}'.", PageName, selectedValue);
 
             return selectedValue;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get selected sort option value from {PageName}.", PageName);
+            PageLogger.LogError(ex, "Failed to get selected sort option value from {PageName}.", PageName);
             throw;
         }
+    }
+
+    [AllureStep("Get all inventory items on the page")]
+    public IEnumerable<InventoryItemComponent> GetInventoryItems()
+    {
+        PageLogger.LogDebug("Attempting to find all inventory item elements on {PageName} using locator: {Locator}.", PageName, InventoryPageMap.InventoryItem);
+
+        IEnumerable<IWebElement> itemElements = Wait.WaitForElements(PageLogger, PageName, InventoryPageMap.InventoryItem);
+
+        if (!itemElements.Any())
+        {
+            PageLogger.LogWarning("No inventory items found on {PageName} using locator {Locator}.", PageName, InventoryPageMap.InventoryItem);
+            return [];
+        }
+
+        PageLogger.LogInformation("Found {Count} inventory item elements on {PageName}. Creating components.", itemElements.Count(), PageName);
+
+        return itemElements.Select(element =>
+        {
+            string? outerHtml = element.GetAttribute("outerHTML");
+            string elementIdSnippet;
+
+            if (string.IsNullOrEmpty(outerHtml))
+            {
+                elementIdSnippet = "[outerHTML not available or empty]";
+                PageLogger.LogWarning("outerHTML for an inventory item element was null or empty.");
+            }
+            else
+            {
+                elementIdSnippet = outerHtml.Length <= 100 ? outerHtml : string.Concat(outerHtml.AsSpan(0, 100), "...");
+            }
+
+            PageLogger.LogTrace("Creating InventoryItemComponent for element snippet: {ElementIdSnippet}", elementIdSnippet);
+
+            return new InventoryItemComponent(element, Driver, LoggerFactory, PageSettingsProvider);
+        }).ToList();
     }
 }

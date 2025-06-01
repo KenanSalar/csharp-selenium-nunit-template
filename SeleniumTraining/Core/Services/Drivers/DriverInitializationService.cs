@@ -11,7 +11,7 @@ public class DriverInitializationService : BaseService, IDriverInitializationSer
     {
         _browserFactory = browserFactory ?? throw new ArgumentNullException(nameof(browserFactory));
         _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
-        Logger.LogInformation("{ServiceName} initialized.", nameof(DriverInitializationService));
+        ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(DriverInitializationService));
     }
 
     public IWebDriver InitializeDriver(BrowserType browserType, string testName, string correlationId)
@@ -23,22 +23,22 @@ public class DriverInitializationService : BaseService, IDriverInitializationSer
             ["BrowserType"] = browserType.ToString()
         };
 
-        using (Logger.BeginScope(logProps!))
+        using (ServiceLogger.BeginScope(logProps!))
         {
-            Logger.LogInformation("Attempting to initialize WebDriver for test: {TestName}, browser: {BrowserType}", testName, browserType);
+            ServiceLogger.LogInformation("Attempting to initialize WebDriver for test: {TestName}, browser: {BrowserType}", testName, browserType);
             IWebDriver? driver = null;
             try
             {
-                Logger.LogDebug("Retrieving browser-specific settings for {BrowserType}.", browserType);
+                ServiceLogger.LogDebug("Retrieving browser-specific settings for {BrowserType}.", browserType);
                 BaseBrowserSettings browserSettings = _settingsProvider.GetBrowserSettings(browserType);
-                Logger.LogDebug("Successfully retrieved browser-specific settings for {BrowserType}.", browserType);
+                ServiceLogger.LogDebug("Successfully retrieved browser-specific settings for {BrowserType}.", browserType);
 
                 driver = _browserFactory.UseBrowserDriver(browserType, browserSettings);
 
                 if (driver != null)
                 {
                     Size initialSize = driver.Manage().Window.Size;
-                    Logger.LogInformation(
+                    ServiceLogger.LogInformation(
                         "WebDriver initialized successfully. Initial window size: {WindowWidth}x{WindowHeight}. Headless: {IsHeadless}. ImplicitWait: {ImplicitWaitSeconds}s",
                         initialSize.Width, initialSize.Height, browserSettings.Headless, browserSettings.TimeoutSeconds);
                     driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(browserSettings.TimeoutSeconds);
@@ -46,24 +46,24 @@ public class DriverInitializationService : BaseService, IDriverInitializationSer
                 }
                 else
                 {
-                    Logger.LogError("WebDriver initialization failed: BrowserFactory returned null for {BrowserType} during test {TestName}.", browserType, testName);
+                    ServiceLogger.LogError("WebDriver initialization failed: BrowserFactory returned null for {BrowserType} during test {TestName}.", browserType, testName);
                     throw new WebDriverException($"WebDriver failed to initialize (factory returned null) for {browserType} in test {testName}.");
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Exception during WebDriver initialization for test {TestName}, browser {BrowserType}.", testName, browserType);
+                ServiceLogger.LogError(ex, "Exception during WebDriver initialization for test {TestName}, browser {BrowserType}.", testName, browserType);
                 if (driver != null)
                 {
-                    Logger.LogWarning("Attempting to quit partially initialized WebDriver for test {TestName} due to an error.", testName);
+                    ServiceLogger.LogWarning("Attempting to quit partially initialized WebDriver for test {TestName} due to an error.", testName);
                     try
                     {
                         driver.Quit();
-                        Logger.LogInformation("Successfully quit partially initialized WebDriver for test {TestName}.", testName);
+                        ServiceLogger.LogInformation("Successfully quit partially initialized WebDriver for test {TestName}.", testName);
                     }
                     catch (Exception quitEx)
                     {
-                        Logger.LogError(quitEx, "Failed to quit partially initialized WebDriver for test {TestName}.", testName);
+                        ServiceLogger.LogError(quitEx, "Failed to quit partially initialized WebDriver for test {TestName}.", testName);
                     }
                 }
                 throw;

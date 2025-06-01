@@ -1,5 +1,4 @@
-using System.CodeDom;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.ObjectModel;
 using System.Reflection;
 
 namespace SeleniumTraining.Utils.Extensions;
@@ -223,6 +222,65 @@ public static partial class ExtensionMethods
                 pageName,
                 locator.ToString()
             );
+            throw;
+        }
+    }
+
+    [AllureStep("Wait and find all elements: {locator}")]
+    public static IEnumerable<IWebElement> WaitForElements(this WebDriverWait wait, ILogger logger, string pageName, By locator)
+    {
+        logger.LogDebug(
+            "Waiting for all elements to be present on {PageName}. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s",
+            pageName,
+            locator.ToString(),
+            wait.Timeout.TotalSeconds
+        );
+
+        try
+        {
+            ReadOnlyCollection<IWebElement> elements = wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(locator));
+
+            if (elements != null && elements.Count != 0)
+            {
+                logger.LogInformation(
+                    "{Count} element(s) found successfully on {PageName}. Locator: {ElementLocator}",
+                    elements.Count,
+                    pageName,
+                    locator.ToString()
+                );
+                return elements;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "No elements found on {PageName} for locator {ElementLocator} after wait, though no timeout occurred.",
+                    pageName,
+                    locator.ToString()
+                );
+                return [];
+            }
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Timeout waiting for elements to be present on {PageName}. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s. Returning empty collection.",
+                pageName,
+                locator.ToString(),
+                wait.Timeout.TotalSeconds
+            );
+
+            return [];
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An unexpected error occurred while waiting for elements on {PageName}. Locator: {ElementLocator}.",
+                pageName,
+                locator.ToString()
+            );
+
             throw;
         }
     }

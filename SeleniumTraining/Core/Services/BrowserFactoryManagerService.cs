@@ -8,7 +8,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
         : base(loggerFactory)
     {
         _factories = factories.ToDictionary(f => f.Type);
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "{ServiceName} initialized with {FactoryCount} browser driver factories.",
             nameof(BrowserFactoryManagerService),
             _factories.Count
@@ -18,7 +18,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
         {
             foreach (KeyValuePair<BrowserType, IBrowserDriverFactoryService> factoryEntry in _factories)
             {
-                Logger.LogDebug(
+                ServiceLogger.LogDebug(
                     "Registered factory: BrowserType={RegisteredBrowserType}, FactoryType={RegisteredFactoryType}",
                     factoryEntry.Key,
                     factoryEntry.Value.GetType().Name
@@ -27,13 +27,13 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
         }
         else
         {
-            Logger.LogWarning("{ServiceName} initialized with ZERO browser driver factories. WebDriver creation will fail.", nameof(BrowserFactoryManagerService));
+            ServiceLogger.LogWarning("{ServiceName} initialized with ZERO browser driver factories. WebDriver creation will fail.", nameof(BrowserFactoryManagerService));
         }
     }
 
     public IWebDriver UseBrowserDriver(BrowserType browserType, BaseBrowserSettings settings, DriverOptions? options = null)
     {
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "Requesting WebDriver creation for {BrowserTypeRequested}. Headless requested: {IsHeadlessRequested}, WindowSize requested: {RequestedWindowSize}",
             browserType,
             settings.Headless,
@@ -44,7 +44,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
 
         if (_factories.TryGetValue(browserType, out IBrowserDriverFactoryService? factory))
         {
-            Logger.LogDebug(
+            ServiceLogger.LogDebug(
                 "Found factory {SelectedFactoryType} for requested browser {BrowserTypeRequested}.",
                 factory.GetType().Name,
                 browserType
@@ -53,7 +53,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
             {
                 IWebDriver driver = factory.CreateDriver(settings, options);
 
-                Logger.LogInformation(
+                ServiceLogger.LogInformation(
                     "Successfully created WebDriver for {BrowserTypeRequested} using factory {SelectedFactoryType}. Driver hash: {DriverHashCode}",
                     browserType,
                     factory.GetType().Name,
@@ -63,7 +63,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
             }
             catch (Exception ex)
             {
-                Logger.LogError(
+                ServiceLogger.LogError(
                     ex,
                     "Error creating WebDriver for {BrowserTypeRequested} using factory {SelectedFactoryType}.",
                     browserType,
@@ -75,7 +75,7 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
         else
         {
             string availableFactories = string.Join(", ", _factories.Keys.Select(k => k.ToString()));
-            Logger.LogError(
+            ServiceLogger.LogError(
                 "Unsupported browser: {BrowserTypeRequested}. No factory registered for this browser type. Available factories: [{RegisteredFactories}]",
                 browserType,
                 string.IsNullOrEmpty(availableFactories)

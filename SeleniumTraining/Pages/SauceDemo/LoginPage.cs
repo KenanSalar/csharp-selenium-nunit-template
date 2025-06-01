@@ -4,45 +4,46 @@ public class LoginPage : BasePage
 {
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => LoginPageMap.LoginPageElements;
 
-    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory)
-        : base(driver, loggerFactory)
+    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
+        : base(driver, loggerFactory, settingsProvider)
     {
-        Logger.LogDebug("Performing LoginPage-specific initialization checks for {PageName}.", PageName);
+
+        PageLogger.LogDebug("Performing LoginPage-specific initialization checks for {PageName}.", PageName);
 
         try
         {
-            Wait.WaitForPageTitle(Driver, Logger, PageName, LoginPageMap.PageTitle);
-            Logger.LogInformation("Page title 'Swag Labs' verified for {PageName}.", PageName);
+            Wait.WaitForPageTitle(Driver, PageLogger, PageName, LoginPageMap.PageTitle);
+            PageLogger.LogInformation("Page title 'Swag Labs' verified for {PageName}.", PageName);
         }
         catch (WebDriverTimeoutException ex)
         {
-            Logger.LogError(ex, "{PageName} did not load with the expected title 'Swag Labs'.", PageName);
+            PageLogger.LogError(ex, "{PageName} did not load with the expected title 'Swag Labs'.", PageName);
             throw;
         }
 
-        Logger.LogDebug("{PageName} instance fully created and validated.", PageName);
+        PageLogger.LogDebug("{PageName} instance fully created and validated.", PageName);
     }
 
     [AllureStep("Entering username: {username}")]
     public LoginPage EnterUsername(string username)
     {
-        Logger.LogInformation("Entering username '{UsernameValue}' into username field on {PageName}.", username, PageName);
-        LoginPageMap.UsernameInput.EnterUsername(username, Driver, Wait);
+        PageLogger.LogInformation("Entering username '{UsernameValue}' into username field on {PageName}.", username, PageName);
+        LoginPageMap.UsernameInput.EnterUsername(username, Driver, Wait, PageLogger, FrameworkSettings);
 
         return this;
     }
 
     public LoginPage EnterPassword(string password)
     {
-        Logger.LogInformation("Entering password into password field on {PageName}.", PageName);
-        LoginPageMap.PasswordInput.EnterPassword(password, Driver, Wait);
+        PageLogger.LogInformation("Entering password into password field on {PageName}.", PageName);
+        LoginPageMap.PasswordInput.EnterPassword(password, Driver, Wait, PageLogger, FrameworkSettings);
 
         return this;
     }
 
     public BasePage LoginAndExpectNavigation(LoginMode mode = LoginMode.Submit)
     {
-        Logger.LogInformation("Attempting login on {PageName} using {LoginMode} mode.", PageName, mode);
+        PageLogger.LogInformation("Attempting login on {PageName} using {LoginMode} mode.", PageName, mode);
 
         string operationName = $"LoginAndNavigate_{PageName}_{mode}";
         var additionalProps = new Dictionary<string, object>
@@ -54,7 +55,7 @@ public class LoginPage : BasePage
 
         var timer = new PerformanceTimer(
             operationName,
-            Logger,
+            PageLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             additionalProps
         );
@@ -62,26 +63,28 @@ public class LoginPage : BasePage
         BasePage nextPage;
         if (mode == LoginMode.Submit)
         {
-            Logger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
-            Wait.WaitForElement(Logger, PageName, LoginPageMap.PasswordInput).Submit();
+            PageLogger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
+            _ = HighlightIfEnabled(LoginPageMap.PasswordInput);
+            Wait.WaitForElement(PageLogger, PageName, LoginPageMap.PasswordInput).Submit();
         }
         else
         {
-            Logger.LogDebug("Clicking login button on {PageName}.", PageName);
-            Wait.WaitForElement(Logger, PageName, LoginPageMap.LoginButton).Click();
+            PageLogger.LogDebug("Clicking login button on {PageName}.", PageName);
+            _ = HighlightIfEnabled(LoginPageMap.LoginButton);
+            Wait.WaitForElement(PageLogger, PageName, LoginPageMap.LoginButton).Click();
         }
 
         try
         {
-            Wait.EnsureElementIsVisible(Logger, PageName, InventoryPageMap.InventoryContainer);
-            Logger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
+            Wait.EnsureElementIsVisible(PageLogger, PageName, InventoryPageMap.InventoryContainer);
+            PageLogger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
 
             loginSuccessful = true;
-            nextPage = new InventoryPage(Driver, LoggerFactory);
+            nextPage = new InventoryPage(Driver, LoggerFactory, PageSettingsProvider);
         }
         catch (Exception ex)
         {
-            Logger.LogError(
+            PageLogger.LogError(
                 ex,
                 "Login action on {PageName} did not result in navigation to InventoryPage. User likely remained on {PageName}.",
                 PageName,
@@ -107,22 +110,22 @@ public class LoginPage : BasePage
     public string GetErrorMessage()
     {
         string errorMessageText;
-        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", Logger);
+        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", PageLogger);
         bool success;
 
         try
         {
-            Logger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
-            IWebElement errorMessageElement = Wait.WaitForElement(Logger, PageName, LoginPageMap.ErrorMessageContainer);
+            PageLogger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
+            IWebElement errorMessageElement = Wait.WaitForElement(PageLogger, PageName, LoginPageMap.ErrorMessageContainer);
 
             errorMessageText = errorMessageElement.Text;
-            Logger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessageText);
+            PageLogger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessageText);
 
             success = true;
         }
         catch (WebDriverTimeoutException ex)
         {
-            Logger.LogError(ex, "Error message element not found or not visible on {PageName} within the timeout period.", PageName);
+            PageLogger.LogError(ex, "Error message element not found or not visible on {PageName} within the timeout period.", PageName);
 
             timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
             timer.Dispose();
@@ -131,7 +134,7 @@ public class LoginPage : BasePage
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An unexpected error occurred while trying to retrieve the error message from {PageName}.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred while trying to retrieve the error message from {PageName}.", PageName);
 
             timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
             timer.Dispose();

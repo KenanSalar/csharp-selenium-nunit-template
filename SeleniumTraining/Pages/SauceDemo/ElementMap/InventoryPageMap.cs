@@ -2,10 +2,10 @@ namespace SeleniumTraining.Pages.SauceDemo.ElementMap;
 
 public static class InventoryPageMap
 {
-    public static By SortDropdown => By.CssSelector(".product_sort_container");
-    public static By InventoryContainer => By.Id("inventory_container");
-    public static By InventoryItem => By.ClassName("inventory_item");
-    public static By InventoryItemList => By.ClassName("inventory_list");
+    public static By SortDropdown => SmartLocators.DataTest("product-sort-container");
+    public static By InventoryContainer => SmartLocators.DataTest("inventory-container");
+    public static By InventoryItemList => SmartLocators.DataTest("inventory-list");
+    public static By InventoryItem => SmartLocators.DataTest("inventory-item");
 
     public static By[] InventoryPageElements { get; } = [
         SortDropdown,

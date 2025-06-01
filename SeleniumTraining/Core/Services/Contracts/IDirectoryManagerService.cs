@@ -6,6 +6,7 @@ public interface IDirectoryManagerService
     public string BaseTestOutputDirectory { get; }
     public string BaseScreenshotDirectoryRoot { get; }
     public string BaseLogDirectoryRoot { get; }
+    public string ProjectRootDirectory { get; }
     public void EnsureBaseDirectoriesExist();
     public string GetAndEnsureTestScreenshotDirectory(string testSpecificFolderName);
 }
