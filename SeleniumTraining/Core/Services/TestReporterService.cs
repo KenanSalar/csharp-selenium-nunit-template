@@ -6,7 +6,7 @@ public class TestReporterService : BaseService, ITestReporterService
 {
     public TestReporterService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
-        Logger.LogInformation("{ServiceName} initialized.", nameof(TestReporterService));
+        ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestReporterService));
     }
 
     public void InitializeTestReport(string allureDisplayName, string browserName, string correlationId)
@@ -18,9 +18,9 @@ public class TestReporterService : BaseService, ITestReporterService
             ["BrowserName"] = browserName
         };
 
-        using (Logger.BeginScope(scopeProperties!))
+        using (ServiceLogger.BeginScope(scopeProperties!))
         {
-            Logger.LogInformation("Initializing Allure test case: {AllureDisplayName}, Browser: {BrowserName}", allureDisplayName, browserName);
+            ServiceLogger.LogInformation("Initializing Allure test case: {AllureDisplayName}, Browser: {BrowserName}", allureDisplayName, browserName);
             try
             {
                 _ = AllureLifecycle.Instance.UpdateTestCase(tc =>
@@ -28,11 +28,11 @@ public class TestReporterService : BaseService, ITestReporterService
                     tc.name = allureDisplayName;
                     tc.parameters.Add(new Parameter { name = "Browser", value = browserName, mode = ParameterMode.Default });
                 });
-                Logger.LogDebug("Allure test case details updated successfully.");
+                ServiceLogger.LogDebug("Allure test case details updated successfully.");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to update Allure test case details for {AllureDisplayName}.", allureDisplayName);
+                ServiceLogger.LogError(ex, "Failed to update Allure test case details for {AllureDisplayName}.", allureDisplayName);
             }
         }
     }
@@ -56,15 +56,15 @@ public class TestReporterService : BaseService, ITestReporterService
             ["BrowserType"] = browserType.ToString()
         };
 
-        using (Logger.BeginScope(scopeProperties!))
+        using (ServiceLogger.BeginScope(scopeProperties!))
         {
-            Logger.LogInformation("Finalizing report for test: {TestName}, Outcome: {Outcome}", testName, testOutcome.Status);
+            ServiceLogger.LogInformation("Finalizing report for test: {TestName}, Outcome: {Outcome}", testName, testOutcome.Status);
 
             try
             {
                 if (testOutcome.Status == TestStatus.Failed)
                 {
-                    Logger.LogError(
+                    ServiceLogger.LogError(
                         "Test FAILED: {TestFullName} on {BrowserType}. Label: {OutcomeLabel}. Message: {ResultMessage}. StackTrace: {StackTrace}",
                         testName,
                         browserType.ToString(),
@@ -78,7 +78,7 @@ public class TestReporterService : BaseService, ITestReporterService
                         string screenshotFileName = $"{testName}_{browserType}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
                         string screenshotFilePath = Path.Combine(screenshotDirectory, screenshotFileName);
 
-                        Logger.LogDebug(
+                        ServiceLogger.LogDebug(
                             "Attempting to save screenshot for failed test {TestFullName} to {ScreenshotFilePath}",
                             testName,
                             screenshotFilePath
@@ -87,23 +87,23 @@ public class TestReporterService : BaseService, ITestReporterService
 
                         // Attach to NUnit test result
                         TestContext.AddTestAttachment(screenshotFilePath, "Screenshot on failure");
-                        Logger.LogDebug("Screenshot {ScreenshotFilePath} added as NUnit test attachment.", screenshotFilePath);
+                        ServiceLogger.LogDebug("Screenshot {ScreenshotFilePath} added as NUnit test attachment.", screenshotFilePath);
 
                         // Attach to Allure report
                         if (File.Exists(screenshotFilePath))
                         {
                             AllureApi.AddAttachment(screenshotFileName, "image/png", screenshotFilePath);
-                            Logger.LogInformation("Screenshot saved to {ScreenshotFilePath} for {TestName}", screenshotFilePath, testName);
+                            ServiceLogger.LogInformation("Screenshot saved to {ScreenshotFilePath} for {TestName}", screenshotFilePath, testName);
                         }
                     }
                     else
                     {
-                        Logger.LogWarning("Test {TestName} failed but WebDriver was not available for screenshot.", testName);
+                        ServiceLogger.LogWarning("Test {TestName} failed but WebDriver was not available for screenshot.", testName);
                     }
                 }
                 else if (testOutcome.Status == TestStatus.Passed)
                 {
-                    Logger.LogWarning(
+                    ServiceLogger.LogWarning(
                         "Test {TestName} on {BrowserType} completed with outcome: {OutcomeStatus} ({OutcomeLabel}). Message: {ResultMessage}",
                         testName,
                         browserType.ToString(),
@@ -114,16 +114,16 @@ public class TestReporterService : BaseService, ITestReporterService
                 }
                 else
                 {
-                    Logger.LogWarning("Test {TestName} had outcome {Outcome} with message: {Message}", testName, testOutcome.Label, testContext.Result.Message);
+                    ServiceLogger.LogWarning("Test {TestName} had outcome {Outcome} with message: {Message}", testName, testOutcome.Label, testContext.Result.Message);
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Unexpected exception during report finalization for test {TestFullName}.", testName);
+                ServiceLogger.LogError(ex, "Unexpected exception during report finalization for test {TestFullName}.", testName);
             }
             finally
             {
-                Logger.LogInformation("Report finalization process complete for test {TestFullName}.", testName);
+                ServiceLogger.LogInformation("Report finalization process complete for test {TestFullName}.", testName);
             }
         }
     }
@@ -134,7 +134,7 @@ public class TestReporterService : BaseService, ITestReporterService
         {
             try
             {
-                Logger.LogDebug("Taking screenshot for test {TestNameForLog}, target path: {FilePath}", testNameForLog, filePath);
+                ServiceLogger.LogDebug("Taking screenshot for test {TestNameForLog}, target path: {FilePath}", testNameForLog, filePath);
                 Screenshot screenshot = screenshotDriver.GetScreenshot();
 
                 string? directory = Path.GetDirectoryName(filePath);
@@ -144,23 +144,23 @@ public class TestReporterService : BaseService, ITestReporterService
                 }
                 else
                 {
-                    Logger.LogWarning(
+                    ServiceLogger.LogWarning(
                         "Could not determine directory for screenshot path {FilePath} for test {TestNameForLog}. Screenshot may fail.",
                         filePath,
                         testNameForLog
                     );
                 }
                 screenshot.SaveAsFile(filePath);
-                Logger.LogInformation("Screenshot successfully saved to {FilePath} for test {TestNameForLog}", filePath, testNameForLog);
+                ServiceLogger.LogInformation("Screenshot successfully saved to {FilePath} for test {TestNameForLog}", filePath, testNameForLog);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to save screenshot for test {TestName} to {FilePath}.", testNameForLog, filePath);
+                ServiceLogger.LogError(ex, "Failed to save screenshot for test {TestName} to {FilePath}.", testNameForLog, filePath);
             }
         }
         else
         {
-            Logger.LogWarning("WebDriver instance does not support ITakesScreenshot for test {TestName}.", testNameForLog);
+            ServiceLogger.LogWarning("WebDriver instance does not support ITakesScreenshot for test {TestName}.", testNameForLog);
         }
     }
 }

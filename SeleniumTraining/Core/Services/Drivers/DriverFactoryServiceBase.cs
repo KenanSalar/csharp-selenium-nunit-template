@@ -18,11 +18,11 @@ public abstract class DriverFactoryServiceBase : BaseService
 
             if (string.IsNullOrWhiteSpace(browserVersionString))
             {
-                Logger.LogWarning("Could not determine {BrowserName} version from capabilities. Skipping version check.", browserNameForLog);
+                ServiceLogger.LogWarning("Could not determine {BrowserName} version from capabilities. Skipping version check.", browserNameForLog);
                 return;
             }
 
-            Logger.LogInformation("Detected {BrowserName} version string: {BrowserVersionString}", browserNameForLog, browserVersionString);
+            ServiceLogger.LogInformation("Detected {BrowserName} version string: {BrowserVersionString}", browserNameForLog, browserVersionString);
 
             IEnumerable<string> versionNumericParts = browserVersionString.Split('.')
                 .TakeWhile(part => part.All(char.IsDigit) || (part.Contains('-') && part[..part.IndexOf('-')].All(char.IsDigit)))
@@ -33,18 +33,18 @@ public abstract class DriverFactoryServiceBase : BaseService
 
             if (Version.TryParse(normalizedVersionString, out Version? detectedVersion) && detectedVersion != null)
             {
-                Logger.LogInformation("Parsed {BrowserName} version: {ParsedVersion}", browserNameForLog, detectedVersion);
+                ServiceLogger.LogInformation("Parsed {BrowserName} version: {ParsedVersion}", browserNameForLog, detectedVersion);
                 if (detectedVersion < minimumSupportedVersion)
                 {
-                    Logger.LogError("Unsupported {BrowserName} version. Detected: {DetectedVersion}, Minimum Required: {MinimumVersion}", browserNameForLog, detectedVersion, minimumSupportedVersion);
-                    driver.QuitSafely(Logger, $"Unsupported version {detectedVersion} for {browserNameForLog}");
+                    ServiceLogger.LogError("Unsupported {BrowserName} version. Detected: {DetectedVersion}, Minimum Required: {MinimumVersion}", browserNameForLog, detectedVersion, minimumSupportedVersion);
+                    driver.QuitSafely(ServiceLogger, $"Unsupported version {detectedVersion} for {browserNameForLog}");
                     throw new UnsupportedBrowserVersionException(browserNameForLog, detectedVersion.ToString(), minimumSupportedVersion.ToString());
                 }
-                Logger.LogInformation("{BrowserName} version {ParsedVersion} meets minimum requirement of {MinVersion}.", browserNameForLog, detectedVersion, minimumSupportedVersion);
+                ServiceLogger.LogInformation("{BrowserName} version {ParsedVersion} meets minimum requirement of {MinVersion}.", browserNameForLog, detectedVersion, minimumSupportedVersion);
             }
             else
             {
-                Logger.LogWarning("Could not parse {BrowserName} version from string '{RawVersionString}' (normalized to '{NormalizedString}'). Skipping version check.", browserNameForLog, browserVersionString, normalizedVersionString);
+                ServiceLogger.LogWarning("Could not parse {BrowserName} version from string '{RawVersionString}' (normalized to '{NormalizedString}'). Skipping version check.", browserNameForLog, browserVersionString, normalizedVersionString);
             }
         }
         catch (UnsupportedBrowserVersionException)
@@ -53,7 +53,7 @@ public abstract class DriverFactoryServiceBase : BaseService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An error occurred during browser version check for {BrowserName}. Proceeding without version verification.", browserNameForLog);
+            ServiceLogger.LogError(ex, "An error occurred during browser version check for {BrowserName}. Proceeding without version verification.", browserNameForLog);
         }
     }
 
@@ -66,7 +66,7 @@ public abstract class DriverFactoryServiceBase : BaseService
         }
         catch (Exception serializationEx)
         {
-            Logger.LogWarning(
+            ServiceLogger.LogWarning(
                 serializationEx,
                 "Failed to serialize driver options to JSON during error logging for {BrowserType}. Using default message. Context: {Context}",
                 browserType,
@@ -77,11 +77,11 @@ public abstract class DriverFactoryServiceBase : BaseService
         string baseErrorMessage = $"Error instantiating {browserType} WebDriver. {additionalContext}".Trim();
 
         if (ex is WebDriverException wdEx)
-            Logger.LogError(wdEx, "{BaseErrorMessage} WebDriverException. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
+            ServiceLogger.LogError(wdEx, "{BaseErrorMessage} WebDriverException. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
         else if (ex is InvalidOperationException ioEx)
-            Logger.LogError(ioEx, "{BaseErrorMessage} InvalidOperationException. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
+            ServiceLogger.LogError(ioEx, "{BaseErrorMessage} InvalidOperationException. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
         else
-            Logger.LogError(ex, "{BaseErrorMessage} Unexpected Exception. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
+            ServiceLogger.LogError(ex, "{BaseErrorMessage} Unexpected Exception. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
     }
 }
 

@@ -9,7 +9,7 @@ public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverSt
 
     public ThreadLocalDriverStorageService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
-        Logger.LogInformation("{ServiceName} initialized.", nameof(ThreadLocalDriverStorageService));
+        ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(ThreadLocalDriverStorageService));
     }
 
     public void SetDriverContext(IWebDriver driver, string testName, string correlationId)
@@ -17,7 +17,7 @@ public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverSt
         _webDriver.Value = driver ?? throw new ArgumentNullException(nameof(driver));
         _threadLocalTestName.Value = testName ?? throw new ArgumentNullException(nameof(testName));
         _threadLocalCorrelationId.Value = correlationId ?? throw new ArgumentNullException(nameof(correlationId));
-        Logger.LogDebug("WebDriver, TestName, and CorrelationId set for the current thread.");
+        ServiceLogger.LogDebug("WebDriver, TestName, and CorrelationId set for the current thread.");
     }
 
     public IWebDriver GetDriver()
@@ -26,7 +26,7 @@ public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverSt
         {
             string? testName = _threadLocalTestName.Value ?? "UnknownTest (GetDriver)";
             string? correlationId = _threadLocalCorrelationId.Value ?? "N/A (GetDriver)";
-            Logger.LogError("Attempted to get WebDriver for test {TestName} (CorrelationId: {CorrelationId}), but it was not initialized or already disposed for the current thread.", testName, correlationId);
+            ServiceLogger.LogError("Attempted to get WebDriver for test {TestName} (CorrelationId: {CorrelationId}), but it was not initialized or already disposed for the current thread.", testName, correlationId);
             throw new InvalidOperationException($"WebDriver is not initialized or has been disposed for the current thread (Test: {testName}).");
         }
         return _webDriver.Value;
@@ -52,7 +52,7 @@ public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverSt
         _webDriver.Value = null;
         _threadLocalTestName.Value = null;
         _threadLocalCorrelationId.Value = null;
-        Logger.LogDebug("WebDriver, TestName, and CorrelationId cleared for the current thread.");
+        ServiceLogger.LogDebug("WebDriver, TestName, and CorrelationId cleared for the current thread.");
     }
 
     protected virtual void Dispose(bool disposing)
@@ -60,11 +60,11 @@ public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverSt
         if (_disposed) return;
         if (disposing)
         {
-            Logger.LogInformation("Disposing {ServiceName}. Cleaning up ThreadLocal instances.", nameof(ThreadLocalDriverStorageService));
+            ServiceLogger.LogInformation("Disposing {ServiceName}. Cleaning up ThreadLocal instances.", nameof(ThreadLocalDriverStorageService));
             _webDriver.Dispose();
             _threadLocalTestName.Dispose();
             _threadLocalCorrelationId.Dispose();
-            Logger.LogInformation("ThreadLocal resources disposed within {ServiceName}.", nameof(ThreadLocalDriverStorageService));
+            ServiceLogger.LogInformation("ThreadLocal resources disposed within {ServiceName}.", nameof(ThreadLocalDriverStorageService));
         }
         _disposed = true;
     }

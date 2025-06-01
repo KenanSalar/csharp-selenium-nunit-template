@@ -5,7 +5,7 @@ public abstract class BasePage
     protected IWebDriver Driver { get; }
     protected WebDriverWait Wait { get; }
     protected ILoggerFactory LoggerFactory { get; }
-    protected ILogger Logger { get; }
+    protected ILogger PageLogger { get; }
     protected string PageName { get; }
 
     protected abstract IEnumerable<By> CriticalElementsToEnsureVisible { get; }
@@ -14,15 +14,15 @@ public abstract class BasePage
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
         LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        Logger = LoggerFactory.CreateLogger(GetType());
+        PageLogger = LoggerFactory.CreateLogger(GetType());
         PageName = GetType().Name;
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(defaultTimeoutSeconds));
 
-        Logger.LogInformation("Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s.", PageName, defaultTimeoutSeconds);
+        PageLogger.LogInformation("Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s.", PageName, defaultTimeoutSeconds);
 
         var pageLoadTimer = new PerformanceTimer(
             $"PageLoad_{PageName}",
-            Logger,
+            PageLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             new Dictionary<string, object> { { "PageType", PageName } }
         );
@@ -30,18 +30,18 @@ public abstract class BasePage
 
         try
         {
-            Logger.LogDebug("Attempting to wait for {PageName} to load fully.", PageName);
+            PageLogger.LogDebug("Attempting to wait for {PageName} to load fully.", PageName);
             WaitForPageLoad();
 
-            Logger.LogDebug("Attempting to ensure critical elements are visible on {PageName}.", PageName);
+            PageLogger.LogDebug("Attempting to ensure critical elements are visible on {PageName}.", PageName);
             EnsureCriticalElementsAreDisplayed();
 
-            Logger.LogInformation("{PageName} initialized successfully.", PageName);
+            PageLogger.LogInformation("{PageName} initialized successfully.", PageName);
             initializationSuccessful = true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize {PageName} due to an error during page load or critical element validation.", PageName);
+            PageLogger.LogError(ex, "Failed to initialize {PageName} due to an error during page load or critical element validation.", PageName);
             throw;
         }
         finally
@@ -61,7 +61,7 @@ public abstract class BasePage
     {
         try
         {
-            Logger.LogDebug(
+            PageLogger.LogDebug(
                 "Waiting for {PageName} document.readyState to be 'complete'. Timeout: {TimeoutSeconds}s.",
                 PageName,
                 Wait.Timeout.TotalSeconds
@@ -70,13 +70,13 @@ public abstract class BasePage
                 ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState")?.Equals("complete") ?? false);
 
             if (pageLoaded)
-                Logger.LogInformation("{PageName} document.readyState is 'complete'.", PageName);
+                PageLogger.LogInformation("{PageName} document.readyState is 'complete'.", PageName);
             else
-                Logger.LogWarning("{PageName} document.readyState check returned false, but Wait.Until did not time out. State may be indeterminate.", PageName);
+                PageLogger.LogWarning("{PageName} document.readyState check returned false, but Wait.Until did not time out. State may be indeterminate.", PageName);
         }
         catch (WebDriverTimeoutException ex)
         {
-            Logger.LogError(
+            PageLogger.LogError(
                 ex,
                 "{PageName} timed out waiting for document.readyState to be 'complete'. Timeout: {TimeoutSeconds}s.",
                 PageName,
@@ -86,7 +86,7 @@ public abstract class BasePage
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An unexpected error occurred while checking document.readyState for {PageName}.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred while checking document.readyState for {PageName}.", PageName);
             throw;
         }
     }
@@ -99,20 +99,20 @@ public abstract class BasePage
 
         if (locators?.Any() != true)
         {
-            Logger.LogTrace("No critical elements defined for {PageName} to ensure visibility.", PageName);
+            PageLogger.LogTrace("No critical elements defined for {PageName} to ensure visibility.", PageName);
             return;
         }
 
-        Logger.LogDebug("Checking visibility of {LocatorCount} critical element(s)/group(s) on {PageName}.", locators.Count(), PageName);
+        PageLogger.LogDebug("Checking visibility of {LocatorCount} critical element(s)/group(s) on {PageName}.", locators.Count(), PageName);
 
         try
         {
-            Wait.EnsureElementsAreVisible(Logger, pageName, locators);
-            Logger.LogInformation("All {LocatorCount} specified critical element(s)/group(s) on {PageName} are visible.", locators.Count(), PageName);
+            Wait.EnsureElementsAreVisible(PageLogger, pageName, locators);
+            PageLogger.LogInformation("All {LocatorCount} specified critical element(s)/group(s) on {PageName} are visible.", locators.Count(), PageName);
         }
         catch (WebDriverTimeoutException ex)
         {
-            Logger.LogError(
+            PageLogger.LogError(
                 ex,
                 "Failed to ensure all critical elements were visible on {PageName}. Timeout: {TimeoutSeconds}s.",
                 PageName, Wait.Timeout.TotalSeconds
@@ -121,7 +121,7 @@ public abstract class BasePage
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An unexpected error occurred while ensuring critical elements are visible on {PageName}.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred while ensuring critical elements are visible on {PageName}.", PageName);
             throw;
         }
     }

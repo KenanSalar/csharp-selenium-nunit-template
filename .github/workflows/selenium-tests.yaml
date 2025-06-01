@@ -29,6 +29,7 @@ jobs:
       ASPNETCORE_ENVIRONMENT: ci
       SauceDemo__LoginUsernameStandardUser: ${{ secrets.SAUCEDEMO_USERNAME_STANDARD }}
       SauceDemo__LoginUsernameLockedOutUser: ${{ secrets.SAUCEDEMO_USERNAME_LOCKEDOUT }}
+      SauceDemo__LoginUsernameVisualUser: ${{ secrets.SAUCEDEMO_USERNAME_VISUAL }}
       SauceDemo__LoginPassword: ${{ secrets.SAUCEDEMO_PASSWORD }}
 
     steps:

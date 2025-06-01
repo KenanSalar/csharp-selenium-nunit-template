@@ -15,16 +15,16 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
 
     public ChromeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
-        Logger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(ChromeDriverFactoryService), Type);
+        ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(ChromeDriverFactoryService), Type);
     }
 
     private string GetChromeExecutablePathInternal()
     {
-        Logger.LogDebug("Searching for Chrome executable...");
+        ServiceLogger.LogDebug("Searching for Chrome executable...");
         string? chromePathEnv = Environment.GetEnvironmentVariable("CHROME_EXECUTABLE_PATH");
         if (!string.IsNullOrEmpty(chromePathEnv) && File.Exists(chromePathEnv))
         {
-            Logger.LogInformation("Using Chrome executable from CHROME_EXECUTABLE_PATH: {ChromePathEnv}", chromePathEnv);
+            ServiceLogger.LogInformation("Using Chrome executable from CHROME_EXECUTABLE_PATH: {ChromePathEnv}", chromePathEnv);
             return chromePathEnv;
         }
 
@@ -49,7 +49,7 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         }
         else
         {
-            Logger.LogWarning("Unsupported OS platform for Chrome path detection: {OSPlatform}", RuntimeInformation.OSDescription);
+            ServiceLogger.LogWarning("Unsupported OS platform for Chrome path detection: {OSPlatform}", RuntimeInformation.OSDescription);
             return string.Empty;
         }
 
@@ -57,13 +57,13 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         {
             if (File.Exists(path))
             {
-                Logger.LogInformation("Found Chrome executable at: {ChromePath}", path);
+                ServiceLogger.LogInformation("Found Chrome executable at: {ChromePath}", path);
                 return path;
             }
-            Logger.LogDebug("Chrome executable not found at: {PathToTry}", path);
+            ServiceLogger.LogDebug("Chrome executable not found at: {PathToTry}", path);
         }
-        
-        Logger.LogWarning("Chrome executable not found in standard installation paths for OS {OSPlatform}.", RuntimeInformation.OSDescription);
+
+        ServiceLogger.LogWarning("Chrome executable not found in standard installation paths for OS {OSPlatform}.", RuntimeInformation.OSDescription);
         return string.Empty;
     }
 
@@ -75,11 +75,11 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
                 $"Invalid settings type provided. Expected {nameof(ChromeSettings)}, got {settingsBase.GetType().Name}.",
                 nameof(settingsBase)
             );
-            Logger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(ChromeDriverFactoryService));
+            ServiceLogger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(ChromeDriverFactoryService));
             throw ex;
         }
 
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "Creating {BrowserType} WebDriver. Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if specified).",
             Type,
             settings.Headless,
@@ -88,14 +88,14 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         );
 
         string chromeExecutablePath = GetChromeExecutablePathInternal();
-        
-        if (string.IsNullOrEmpty(chromeExecutablePath)) 
+
+        if (string.IsNullOrEmpty(chromeExecutablePath))
         {
-            Logger.LogWarning("Chrome executable path not found. WebDriverManager will use default detection if possible, and Selenium will rely on PATH.");
-        } 
-        else 
+            ServiceLogger.LogWarning("Chrome executable path not found. WebDriverManager will use default detection if possible, and Selenium will rely on PATH.");
+        }
+        else
         {
-            Logger.LogInformation("Chrome executable path determined to be: {ChromePath}", chromeExecutablePath);
+            ServiceLogger.LogInformation("Chrome executable path determined to be: {ChromePath}", chromeExecutablePath);
         }
 
         // try
@@ -111,17 +111,17 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         // }
 
         ChromeOptions chromeOptions = ConfigureCommonChromeOptions(settings, options, out List<string> appliedOptionsForLog);
-        
+
         if (!string.IsNullOrEmpty(chromeExecutablePath) && File.Exists(chromeExecutablePath))
         {
             chromeOptions.BinaryLocation = chromeExecutablePath;
         }
         else
         {
-            Logger.LogDebug("Chrome binary location not explicitly set in options; Selenium will use default system path or detected driver's expectation.");
+            ServiceLogger.LogDebug("Chrome binary location not explicitly set in options; Selenium will use default system path or detected driver's expectation.");
         }
 
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "ChromeOptions configured for {BrowserType}. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]",
             Type, chromeOptions.BinaryLocation ?? "Default/System PATH",
             string.Join(", ",

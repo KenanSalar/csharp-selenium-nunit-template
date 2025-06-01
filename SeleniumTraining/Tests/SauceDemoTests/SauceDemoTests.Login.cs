@@ -11,7 +11,7 @@ public partial class SauceDemoTests : BaseTest
     public void ShouldLoginSuccessfullyWithStandardUser()
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
-        Logger.LogInformation("Starting test: {TestName}", currentTestName);
+        TestLogger.LogInformation("Starting test: {TestName}", currentTestName);
 
         BasePage resultPage;
 
@@ -24,13 +24,13 @@ public partial class SauceDemoTests : BaseTest
         };
         var loginTimer = new PerformanceTimer(
             "TestStep_UserLogin_Standard",
-            Logger,
+            TestLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             loginOperationProps
         );
         bool loginStepSuccess = false;
 
-        Logger.LogInformation(
+        TestLogger.LogInformation(
             "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
             _sauceDemoSettings.LoginUsernameStandardUser,
             loginMode
@@ -54,11 +54,11 @@ public partial class SauceDemoTests : BaseTest
         }
 
         InventoryPage inventoryPage = resultPage.ShouldBeOfType<InventoryPage>("Login should be successful and navigate to the Inventory Page.");
-        Logger.LogInformation("Login successful, currently on InventoryPage.");
+        TestLogger.LogInformation("Login successful, currently on InventoryPage.");
 
-        var sortLoopTimer = new PerformanceTimer("TestStep_VerifyAllSortOptions", Logger);
+        var sortLoopTimer = new PerformanceTimer("TestStep_VerifyAllSortOptions", TestLogger);
 
-        Logger.LogInformation(
+        TestLogger.LogInformation(
             "Starting verification of product sorting options. Number of options to check: {SortOptionCount}",
             _inventoryProductsDropdownOptions.Count
         );
@@ -80,9 +80,9 @@ public partial class SauceDemoTests : BaseTest
             sortLoopTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 10000);
             sortLoopTimer.Dispose();
         }
-        Logger.LogInformation("All product sorting options verified successfully.");
+        TestLogger.LogInformation("All product sorting options verified successfully.");
 
-        Logger.LogInformation("Finished test: {TestName}", currentTestName);
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 
     [Test]
@@ -94,7 +94,7 @@ public partial class SauceDemoTests : BaseTest
     public void ShouldNotLoginSuccessfullyWithLockedOutUser()
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
-        Logger.LogInformation("Starting test: {TestName}", currentTestName);
+        TestLogger.LogInformation("Starting test: {TestName}", currentTestName);
 
         const LoginMode loginMode = LoginMode.Submit;
 
@@ -105,7 +105,7 @@ public partial class SauceDemoTests : BaseTest
         };
         var loginAttemptTimer = new PerformanceTimer(
             "TestStep_UserLogin_Standard",
-            Logger,
+            TestLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             loginAttemptProps
         );
@@ -114,7 +114,7 @@ public partial class SauceDemoTests : BaseTest
         BasePage resultPage;
         try
         {
-            Logger.LogDebug("Instantiating LoginPage.");
+            TestLogger.LogDebug("Instantiating LoginPage.");
             LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory);
 
             resultPage = loginPage
@@ -130,7 +130,7 @@ public partial class SauceDemoTests : BaseTest
             loginAttemptTimer.Dispose();
         }
 
-        Logger.LogInformation(
+        TestLogger.LogInformation(
             "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
             _sauceDemoSettings.LoginUsernameLockedOutUser,
             loginMode
@@ -139,7 +139,7 @@ public partial class SauceDemoTests : BaseTest
         LoginPage loginPageInstance = resultPage.ShouldBeOfType<LoginPage>("User should have remained on the Login Page.");
 
         const string expectedErrorMessage = "Epic sadface: Sorry, this user has been locked out.";
-        var errorMsgTimer = new PerformanceTimer("TestStep_GetLoginErrorMessage_LockedOut", Logger);
+        var errorMsgTimer = new PerformanceTimer("TestStep_GetLoginErrorMessage_LockedOut", TestLogger);
         string actualErrorMessage;
         try
         {
@@ -153,7 +153,118 @@ public partial class SauceDemoTests : BaseTest
 
         actualErrorMessage.ShouldBe(expectedErrorMessage, $"Error message should be: {expectedErrorMessage} but was: {actualErrorMessage}");
 
-        Logger.LogInformation("Login not successful, currently on LoginPage.");
-        Logger.LogInformation("Finished test: {TestName}", currentTestName);
+        TestLogger.LogInformation("Login not successful, currently on LoginPage.");
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
+    }
+
+    [Test]
+    [Retry(2)]
+    [AllureStep("Verify Visuals on Inventory Page for visual_user")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies the visual appearance of the inventory page when logged in as the visual_user, checking for known or unexpected visual discrepancies.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void ShouldDetectVisualAnomaliesForVisualUser()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting visual test: {TestName} for visual_user", currentTestName);
+
+        // 1. Instantiate LoginPage
+        TestLogger.LogDebug("Instantiating LoginPage for {TestName}.", currentTestName);
+        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory);
+
+        // 2. Login as visual_user
+        TestLogger.LogInformation(
+            "Attempting login with username: {LoginUsername} (visual_user) using Click action for {TestName}.",
+            _sauceDemoSettings.LoginUsernameVisualUser,
+            currentTestName
+        );
+        BasePage resultPage = loginPage
+            .EnterUsername(_sauceDemoSettings.LoginUsernameVisualUser)
+            .EnterPassword(_sauceDemoSettings.LoginPassword)
+            .LoginAndExpectNavigation(LoginMode.Click);
+
+        InventoryPage inventoryPage = resultPage.ShouldBeOfType<InventoryPage>("Login as visual_user should navigate to the Inventory Page.");
+        TestLogger.LogInformation("Successfully logged in as visual_user and navigated to InventoryPage for {TestName}.", currentTestName);
+
+        try
+        {
+            TestLogger.LogTrace("Pausing briefly to allow visual_user glitches to manifest (500ms) for {TestName}.", currentTestName);
+            Thread.Sleep(1000);
+        }
+        catch (ThreadInterruptedException tie)
+        {
+            TestLogger.LogWarning(tie, "Thread.Sleep was interrupted during visual test setup for {TestName}.", currentTestName);
+            Thread.CurrentThread.Interrupt();
+        }
+
+        string fullPageBaselineId = "InventoryPage_VisualUser_FullPage";
+        TestLogger.LogInformation(
+            "Performing full-page visual assertion for ID '{BaselineID}' in test '{TestName}'.",
+            fullPageBaselineId,
+            currentTestName
+        );
+        VisualTester.AssertVisualMatch(
+            baselineIdentifier: fullPageBaselineId,
+            testName: TestName,
+            browserType: BrowserType
+        );
+        TestLogger.LogInformation("Full-page visual assertion completed for ID '{BaselineID}' in {TestName}.", fullPageBaselineId, currentTestName);
+
+        string boltTShirtImageBaselineId = "InventoryPage_VisualUser_BoltTShirtImage";
+        try
+        {
+
+            TestLogger.LogDebug("Attempting to locate the 'Sauce Labs Bolt T-Shirt' image element for visual check in {TestName}.", currentTestName);
+
+            InventoryItemComponent? boltTShirtComponent = inventoryPage.GetInventoryItems()
+                .FirstOrDefault(item => item.ItemName == "Sauce Labs Bolt T-Shirt");
+
+            By boltTShirtImageLocator = SmartLocators.DataTest("inventory-item-sauce-labs-bolt-t-shirt-img");
+            IWebElement? boltTShirtImageElement = null;
+            try
+            {
+                boltTShirtImageElement = WebDriverManager.GetDriver().FindElement(boltTShirtImageLocator);
+            }
+            catch (NoSuchElementException nseEx)
+            {
+                TestLogger.LogWarning(nseEx, "Could not find the 'Sauce Labs Bolt T-Shirt' image using locator {Locator} for specific visual check in {TestName}. Skipping element-specific visual check.", boltTShirtImageLocator, currentTestName);
+            }
+
+
+            if (boltTShirtImageElement != null && boltTShirtImageElement.Displayed)
+            {
+                TestLogger.LogInformation(
+                    "Performing element-specific visual assertion for ID '{BaselineID}' (Bolt T-Shirt Image) in test '{TestName}'.",
+                    boltTShirtImageBaselineId,
+                    currentTestName
+                );
+                VisualTester.AssertVisualMatch(
+                    baselineIdentifier: boltTShirtImageBaselineId,
+                    testName: TestName,
+                    browserType: BrowserType,
+                    elementToCapture: boltTShirtImageElement
+                );
+                TestLogger.LogInformation(
+                    "Element-specific visual assertion completed for ID '{BaselineID}' in {TestName}.",
+                    boltTShirtImageBaselineId,
+                    currentTestName
+                );
+            }
+            else if (boltTShirtImageElement != null && !boltTShirtImageElement.Displayed)
+            {
+                TestLogger.LogWarning("'Sauce Labs Bolt T-Shirt' image found but was not displayed. Skipping element-specific visual check for {BaselineID} in {TestName}.", boltTShirtImageBaselineId, currentTestName);
+            }
+        }
+        catch (Exception ex)
+        {
+            TestLogger.LogError(
+                ex,
+                "An error occurred during the element-specific visual check for '{BaselineID}' in {TestName}. This check will be skipped.",
+                boltTShirtImageBaselineId,
+                currentTestName
+            );
+        }
+
+        TestLogger.LogInformation("Finished visual test: {TestName} for visual_user", currentTestName);
     }
 }

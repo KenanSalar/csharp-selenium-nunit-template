@@ -18,13 +18,13 @@ public class VisualTestService : BaseService, IVisualTestService
         IDirectoryManagerService directoryManager,
         ITestWebDriverManager webDriverManager,
         IOptions<VisualTestSettings> visualTestSettings
-    ) 
+    )
             : base(loggerFactory)
     {
         _directoryManager = directoryManager;
         _webDriverManager = webDriverManager;
         _settings = visualTestSettings.Value;
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "VisualTestService initialized. Baseline dir: {BaselineDir}, AutoCreate: {AutoCreate}",
             _settings.BaselineDirectory,
             _settings.AutoCreateBaselineIfMissing
@@ -43,7 +43,7 @@ public class VisualTestService : BaseService, IVisualTestService
         double effectiveTolerance = tolerancePercent ?? _settings.DefaultComparisonTolerancePercent;
         (string baselineImagePath, string actualImagePath, string diffImagePath) = PrepareFilePaths(baselineIdentifier, testName, browserType.ToString());
 
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "Performing visual assertion for ID '{BaselineID}' in test '{Test}'. Baseline: '{BaselinePath}', Tolerance: {Tolerance}%",
             baselineIdentifier, testName, baselineImagePath, effectiveTolerance);
 
@@ -55,7 +55,7 @@ public class VisualTestService : BaseService, IVisualTestService
             if (File.Exists(baselineImagePath))
             {
                 AllureApi.AddAttachment($"Baseline - {baselineIdentifier}", "image/png", baselineImagePath);
-                Logger.LogDebug("Baseline image exists: {BaselinePath}. Comparing...", baselineImagePath);
+                ServiceLogger.LogDebug("Baseline image exists: {BaselinePath}. Comparing...", baselineImagePath);
 
                 ICompareResult? comparisonResult = null;
                 try
@@ -64,13 +64,13 @@ public class VisualTestService : BaseService, IVisualTestService
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Error during image comparison between {ActualPath} and {BaselinePath}", actualImagePath, baselineImagePath);
+                    ServiceLogger.LogError(ex, "Error during image comparison between {ActualPath} and {BaselinePath}", actualImagePath, baselineImagePath);
                     Assert.Fail($"Visual comparison failed due to an error: {ex.Message}");
 
                     return;
                 }
 
-                Logger.LogInformation(
+                ServiceLogger.LogInformation(
                     "Comparison for '{BaselineID}': Pixel Error={ErrorPercentage}%, Absolute Error={AbsoluteErrorPixels}",
                     baselineIdentifier,
                     comparisonResult.PixelErrorPercentage,
@@ -79,7 +79,7 @@ public class VisualTestService : BaseService, IVisualTestService
 
                 if (comparisonResult.PixelErrorPercentage > effectiveTolerance)
                 {
-                    Logger.LogWarning(
+                    ServiceLogger.LogWarning(
                         "Visual mismatch detected for '{BaselineID}'. Error: {ErrorPercentage}%, Tolerance: {Tolerance}%",
                         baselineIdentifier,
                         comparisonResult.PixelErrorPercentage,
@@ -96,7 +96,7 @@ public class VisualTestService : BaseService, IVisualTestService
                 }
                 else
                 {
-                    Logger.LogInformation(
+                    ServiceLogger.LogInformation(
                         "Visual match successful for '{BaselineID}'. Error: {ErrorPercentage}% within tolerance {Tolerance}%",
                         baselineIdentifier,
                         comparisonResult.PixelErrorPercentage,
@@ -115,7 +115,7 @@ public class VisualTestService : BaseService, IVisualTestService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Unexpected error during visual assertion for ID '{BaselineID}'", baselineIdentifier);
+            ServiceLogger.LogError(ex, "Unexpected error during visual assertion for ID '{BaselineID}'", baselineIdentifier);
             // Optionally save actual image even on error for debugging
             if (!File.Exists(actualImagePath) && ex is not ShouldAssertException)
             {
@@ -141,7 +141,7 @@ public class VisualTestService : BaseService, IVisualTestService
                 throw new InvalidOperationException($"Element for visual comparison '{elementToCapture.TagName}' resulted in an invalid crop area (zero or negative width/height) after intersection. Element Rect: {location.X},{location.Y} {size.Width}x{size.Height}. Image Bounds: {image.Width}x{image.Height}");
             }
             image.Mutate(x => x.Crop(elementRect));
-            Logger.LogDebug("Cropped actual image to element bounds: {Rect}", elementRect);
+            ServiceLogger.LogDebug("Cropped actual image to element bounds: {Rect}", elementRect);
         }
         else if (cropArea.HasValue)
         {
@@ -152,20 +152,20 @@ public class VisualTestService : BaseService, IVisualTestService
                 throw new InvalidOperationException($"Specified cropArea for visual comparison resulted in an invalid crop area after intersection. CropArea: {cropArea.Value}. Image Bounds: {image.Width}x{image.Height}");
             }
             image.Mutate(x => x.Crop(validCropArea));
-            Logger.LogDebug("Cropped actual image to specified Rectangle: {Rect}", validCropArea);
+            ServiceLogger.LogDebug("Cropped actual image to specified Rectangle: {Rect}", validCropArea);
         }
 
         image.Save(actualImagePath);
-        Logger.LogInformation("Actual image saved: {ActualPath}", actualImagePath);
+        ServiceLogger.LogInformation("Actual image saved: {ActualPath}", actualImagePath);
     }
 
     private void HandleMissingBaseline(string baselineImagePath, string actualImagePath, string baselineIdentifier)
     {
-        Logger.LogWarning("Baseline image not found: {BaselinePath}", baselineImagePath);
+        ServiceLogger.LogWarning("Baseline image not found: {BaselinePath}", baselineImagePath);
         if (_settings.AutoCreateBaselineIfMissing)
         {
             File.Copy(actualImagePath, baselineImagePath, overwrite: true);
-            Logger.LogInformation("New baseline image automatically created: {BaselinePath}", baselineImagePath);
+            ServiceLogger.LogInformation("New baseline image automatically created: {BaselinePath}", baselineImagePath);
             AllureApi.AddAttachment($"Baseline (NEW) - {baselineIdentifier}", "image/png", baselineImagePath);
 
             if (_settings.WarnOnAutomaticBaselineCreation)

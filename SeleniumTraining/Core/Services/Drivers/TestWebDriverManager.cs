@@ -18,7 +18,7 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         _driverInitializer = driverInitializer ?? throw new ArgumentNullException(nameof(driverInitializer));
         _driverLifecycleManager = driverLifecycleManager ?? throw new ArgumentNullException(nameof(driverLifecycleManager));
         _driverStore = driverStore ?? throw new ArgumentNullException(nameof(driverStore));
-        Logger.LogInformation("{ServiceName} initialized.", nameof(TestWebDriverManager));
+        ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestWebDriverManager));
     }
 
     public bool IsDriverActive => _driverStore.IsDriverInitialized();
@@ -27,13 +27,13 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
     {
         if (_driverStore.IsDriverInitialized())
         {
-            Logger.LogWarning("InitializeDriver called for test {TestName}, but a driver is already active for this thread. This may indicate an issue in test setup/teardown logic. The existing driver will be overwritten.", testName);
+            ServiceLogger.LogWarning("InitializeDriver called for test {TestName}, but a driver is already active for this thread. This may indicate an issue in test setup/teardown logic. The existing driver will be overwritten.", testName);
         }
 
-        Logger.LogInformation("Orchestrating WebDriver initialization for test: {TestName}, browser: {BrowserType}", testName, browserType);
+        ServiceLogger.LogInformation("Orchestrating WebDriver initialization for test: {TestName}, browser: {BrowserType}", testName, browserType);
         IWebDriver driver = _driverInitializer.InitializeDriver(browserType, testName, correlationId);
         _driverStore.SetDriverContext(driver, testName, correlationId);
-        Logger.LogInformation("WebDriver initialization orchestrated successfully for test: {TestName}", testName);
+        ServiceLogger.LogInformation("WebDriver initialization orchestrated successfully for test: {TestName}", testName);
     }
 
     public IWebDriver GetDriver()
@@ -49,10 +49,10 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
             string correlationId = _driverStore.GetCorrelationId();
             IWebDriver driver = _driverStore.GetDriver();
 
-            Logger.LogInformation("Orchestrating WebDriver quit for test: {TestName}", testName);
+            ServiceLogger.LogInformation("Orchestrating WebDriver quit for test: {TestName}", testName);
             _driverLifecycleManager.QuitDriver(driver, testName, correlationId);
             _driverStore.ClearDriverContext();
-            Logger.LogInformation("WebDriver quit orchestrated successfully for test: {TestName}", testName);
+            ServiceLogger.LogInformation("WebDriver quit orchestrated successfully for test: {TestName}", testName);
         }
         else
         {
@@ -63,10 +63,10 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
             }
             catch (Exception ex)
             {
-                Logger.LogDebug(ex, "Failed to retrieve TestName while attempting to quit a non-active driver. Defaulting TestName for warning log.");
+                ServiceLogger.LogDebug(ex, "Failed to retrieve TestName while attempting to quit a non-active driver. Defaulting TestName for warning log.");
             }
 
-            Logger.LogWarning("Attempted to quit WebDriver for test {TestName}, but no active driver was found for the current thread.", currentTestName);
+            ServiceLogger.LogWarning("Attempted to quit WebDriver for test {TestName}, but no active driver was found for the current thread.", currentTestName);
         }
     }
 
@@ -77,7 +77,7 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
 
         if (disposing)
         {
-            Logger.LogInformation("Disposing {ServiceName}.", nameof(TestWebDriverManager));
+            ServiceLogger.LogInformation("Disposing {ServiceName}.", nameof(TestWebDriverManager));
             if (_driverStore.IsDriverInitialized())
             {
                 string testName = "UnknownTest_Dispose";
@@ -87,15 +87,15 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogDebug(ex, "Failed to retrieve TestName during Dispose. Defaulting TestName for warning log.");
+                    ServiceLogger.LogDebug(ex, "Failed to retrieve TestName during Dispose. Defaulting TestName for warning log.");
                 }
 
-                Logger.LogWarning("{ServiceName} is disposing, but a driver instance was still active for test {TestName}. Attempting force quit.", nameof(TestWebDriverManager), testName);
+                ServiceLogger.LogWarning("{ServiceName} is disposing, but a driver instance was still active for test {TestName}. Attempting force quit.", nameof(TestWebDriverManager), testName);
                 QuitDriver();
             }
 
             _driverStore.Dispose();
-            Logger.LogInformation("{ServiceName} dispose complete.", nameof(TestWebDriverManager));
+            ServiceLogger.LogInformation("{ServiceName} dispose complete.", nameof(TestWebDriverManager));
         }
         _disposed = true;
     }
