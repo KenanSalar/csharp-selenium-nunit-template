@@ -4,9 +4,10 @@ public class LoginPage : BasePage
 {
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => LoginPageMap.LoginPageElements;
 
-    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory)
-        : base(driver, loggerFactory)
+    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
+        : base(driver, loggerFactory, settingsProvider)
     {
+
         PageLogger.LogDebug("Performing LoginPage-specific initialization checks for {PageName}.", PageName);
 
         try
@@ -27,7 +28,7 @@ public class LoginPage : BasePage
     public LoginPage EnterUsername(string username)
     {
         PageLogger.LogInformation("Entering username '{UsernameValue}' into username field on {PageName}.", username, PageName);
-        LoginPageMap.UsernameInput.EnterUsername(username, Driver, Wait);
+        LoginPageMap.UsernameInput.EnterUsername(username, Driver, Wait, PageLogger, FrameworkSettings);
 
         return this;
     }
@@ -35,7 +36,7 @@ public class LoginPage : BasePage
     public LoginPage EnterPassword(string password)
     {
         PageLogger.LogInformation("Entering password into password field on {PageName}.", PageName);
-        LoginPageMap.PasswordInput.EnterPassword(password, Driver, Wait);
+        LoginPageMap.PasswordInput.EnterPassword(password, Driver, Wait, PageLogger, FrameworkSettings);
 
         return this;
     }
@@ -63,11 +64,13 @@ public class LoginPage : BasePage
         if (mode == LoginMode.Submit)
         {
             PageLogger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
+            _ = HighlightIfEnabled(LoginPageMap.PasswordInput);
             Wait.WaitForElement(PageLogger, PageName, LoginPageMap.PasswordInput).Submit();
         }
         else
         {
             PageLogger.LogDebug("Clicking login button on {PageName}.", PageName);
+            _ = HighlightIfEnabled(LoginPageMap.LoginButton);
             Wait.WaitForElement(PageLogger, PageName, LoginPageMap.LoginButton).Click();
         }
 
@@ -77,7 +80,7 @@ public class LoginPage : BasePage
             PageLogger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
 
             loginSuccessful = true;
-            nextPage = new InventoryPage(Driver, LoggerFactory);
+            nextPage = new InventoryPage(Driver, LoggerFactory, PageSettingsProvider);
         }
         catch (Exception ex)
         {

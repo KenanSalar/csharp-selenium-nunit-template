@@ -2,8 +2,8 @@ namespace SeleniumTraining.Pages.SauceDemo.Components;
 
 public class InventoryItemComponent : BasePageComponent
 {
-    public InventoryItemComponent(IWebElement rootElement, IWebDriver driver, ILoggerFactory loggerFactory)
-        : base(rootElement, driver, loggerFactory)
+    public InventoryItemComponent(IWebElement rootElement, IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
+        : base(rootElement, driver, loggerFactory, settingsProvider)
     {
         string outerHtml = RootElement.GetAttribute("outerHTML") ?? string.Empty;
         ComponentLogger.LogDebug(
@@ -57,12 +57,16 @@ public class InventoryItemComponent : BasePageComponent
         }
     }
 
+    [AllureStep("Click item action button")]
     public void ClickActionButton()
     {
         ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
         IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
         string buttonText = button.Text;
-        ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName); // Using ItemName property for context
+
+        _ = HighlightIfEnabled(button);
+
+        ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
         button.Click();
     }
 

@@ -1,5 +1,6 @@
 global using SeleniumTraining.Enums;
 global using SeleniumTraining.Utils;
+global using SeleniumTraining.Utils.Settings;
 global using SeleniumTraining.Utils.Locators;
 global using SeleniumTraining.Utils.Settings.TestFeatures;
 global using SeleniumTraining.Utils.Settings.BrowserSettings;

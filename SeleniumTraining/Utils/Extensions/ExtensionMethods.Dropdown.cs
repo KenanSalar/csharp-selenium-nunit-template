@@ -5,7 +5,15 @@ namespace SeleniumTraining.Utils.Extensions;
 public static partial class ExtensionMethods
 {
     [AllureStep("Select dropdown by {selectorType}")]
-    public static void SelectDropDown(this IWebElement element, SortByType selectorType, string selectorValue, WebDriverWait wait)
+    public static void SelectDropDown(
+        this IWebElement element,
+        SortByType selectorType,
+        string selectorValue,
+        WebDriverWait wait,
+        IWebDriver driver,
+        ILogger logger,
+        TestFrameworkSettings settings
+    )
     {
         _ = wait.Until(_ =>
         {
@@ -19,6 +27,9 @@ public static partial class ExtensionMethods
             }
         });
 
+        if (settings.HighlightElementsOnInteraction)
+            _ = element.HighlightElement(driver, logger, settings.HighlightDurationMs);
+
         var select = new SelectElement(element);
 
         switch (selectorType)
@@ -30,8 +41,16 @@ public static partial class ExtensionMethods
                 select.SelectByValue(selectorValue);
                 break;
             default:
+                logger.LogError("Unsupported sort selector type: {SelectorType}", selectorType);
                 throw new ArgumentOutOfRangeException(nameof(selectorType), selectorType, null);
         }
+
+        logger.LogInformation(
+            "Selected dropdown option by {SelectorType} with value '{SelectorValue}' for element: {ElementDescription}",
+            selectorType,
+            selectorValue,
+            WebElementHighlightingExtensions.GetElementDescription(element)
+        );
     }
 
     [AllureStep("Multi-selecting dropdown: {webElement} by values: {values}")]

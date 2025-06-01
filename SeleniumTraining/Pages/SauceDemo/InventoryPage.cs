@@ -6,7 +6,8 @@ public class InventoryPage : BasePage
 {
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => InventoryPageMap.InventoryPageElements;
 
-    public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory) : base(driver, loggerFactory)
+    public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
+        : base(driver, loggerFactory, settingsProvider)
     {
         PageLogger.LogDebug("{PageName} instance fully created and validated (critical elements checked by BasePage).", PageName);
     }
@@ -37,7 +38,7 @@ public class InventoryPage : BasePage
             );
 
             IWebElement sortContainer = Wait.WaitForElement(PageLogger, PageName, InventoryPageMap.SortDropdown);
-            sortContainer.SelectDropDown(selectorType, sortOption, Wait);
+            sortContainer.SelectDropDown(selectorType, sortOption, Wait, Driver, PageLogger, FrameworkSettings);
 
             success = true;
 
@@ -151,8 +152,8 @@ public class InventoryPage : BasePage
             }
 
             PageLogger.LogTrace("Creating InventoryItemComponent for element snippet: {ElementIdSnippet}", elementIdSnippet);
-            
-            return new InventoryItemComponent(element, Driver, LoggerFactory);
+
+            return new InventoryItemComponent(element, Driver, LoggerFactory, PageSettingsProvider);
         }).ToList();
     }
 }

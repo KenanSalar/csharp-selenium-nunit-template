@@ -9,16 +9,28 @@ public abstract class BasePage
     protected string PageName { get; }
 
     protected abstract IEnumerable<By> CriticalElementsToEnsureVisible { get; }
+    protected ISettingsProviderService PageSettingsProvider { get; }
+    protected TestFrameworkSettings FrameworkSettings { get; }
 
-    protected BasePage(IWebDriver driver, ILoggerFactory loggerFactory, int defaultTimeoutSeconds = 5)
+    protected BasePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, int defaultTimeoutSeconds = 5)
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
         LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         PageLogger = LoggerFactory.CreateLogger(GetType());
         PageName = GetType().Name;
+
+        ArgumentNullException.ThrowIfNull(settingsProvider);
+        PageSettingsProvider = settingsProvider;
+        FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
+
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(defaultTimeoutSeconds));
 
-        PageLogger.LogInformation("Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s.", PageName, defaultTimeoutSeconds);
+        PageLogger.LogInformation(
+            "Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s. HighlightOnInteraction: {HighlightSetting}",
+            PageName,
+            defaultTimeoutSeconds,
+            FrameworkSettings.HighlightElementsOnInteraction
+        );
 
         var pageLoadTimer = new PerformanceTimer(
             $"PageLoad_{PageName}",
@@ -124,5 +136,23 @@ public abstract class BasePage
             PageLogger.LogError(ex, "An unexpected error occurred while ensuring critical elements are visible on {PageName}.", PageName);
             throw;
         }
+    }
+
+    protected IWebElement HighlightIfEnabled(IWebElement element)
+    {
+        if (FrameworkSettings.HighlightElementsOnInteraction)
+            _ = element.HighlightElement(Driver, PageLogger, FrameworkSettings.HighlightDurationMs);
+
+        return element;
+    }
+
+    protected IWebElement HighlightIfEnabled(By locator)
+    {
+        IWebElement element = Driver.FindElement(locator);
+
+        if (FrameworkSettings.HighlightElementsOnInteraction)
+            _ = element.HighlightElement(Driver, PageLogger, FrameworkSettings.HighlightDurationMs);
+
+        return element;
     }
 }

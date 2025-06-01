@@ -12,7 +12,8 @@ public partial class SauceDemoTests : BaseTest
 {
     private SauceDemoSettings _sauceDemoSettings = null!;
 
-    public SauceDemoTests(BrowserType browserType) : base(browserType)
+    public SauceDemoTests(BrowserType browserType)
+        : base(browserType)
     {
     }
 
