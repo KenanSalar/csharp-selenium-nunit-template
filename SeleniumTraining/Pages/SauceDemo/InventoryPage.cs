@@ -10,22 +10,25 @@ public class InventoryPage : BasePage
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
         PageLogger.LogDebug("{PageName} instance fully created and validated (critical elements checked by BasePage).", PageName);
+        WaitForPageToBeFullyReady();
     }
 
     [AllureStep("Sort products by {selectorType} using option '{sortOption}'")]
     public InventoryPage SortProducts(SortByType selectorType, string sortOption)
     {
         var additionalProps = new Dictionary<string, object>
-            {
-                { "SortByType", selectorType.ToString() },
-                { "SortOption", sortOption }
-            };
+        {
+            { "SortByType", selectorType.ToString() },
+            { "SortOption", sortOption }
+        };
+
         var timer = new PerformanceTimer(
             $"SortProducts_{PageName}",
             PageLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             additionalProps
         );
+
         bool success = false;
 
         try
@@ -235,5 +238,80 @@ public class InventoryPage : BasePage
 
         getItemsTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 1000);
         return components;
+    }
+
+    [AllureStep("Wait for inventory page to be fully loaded and ready")]
+    public void WaitForPageToBeFullyReady(int expectedMinItemCount = 6)
+    {
+        PageLogger.LogInformation("Waiting for Inventory Page to be fully ready (container, cart, items). Expecting at least {ItemCount} items.", expectedMinItemCount);
+        try
+        {
+            bool isPageReady = Wait.Until(CustomExpectedConditions.AllOf(
+                driver =>
+                {
+                    try { return driver.FindElement(InventoryPageMap.InventoryContainer).Displayed; }
+                    catch { return false; }
+                },
+
+                driver =>
+                {
+                    try { return driver.FindElement(InventoryPageMap.ShoppingCartLink).Displayed; }
+                    catch { return false; }
+                },
+
+                driver =>
+                {
+                    Func<IWebDriver, IEnumerable<IWebElement>?> itemsFunc = CustomExpectedConditions.ElementCountToBeGreaterThanOrEqual(InventoryPageMap.InventoryItem, expectedMinItemCount);
+                    IEnumerable<IWebElement>? items = itemsFunc(driver);
+
+                    return items != null && items.Any() && items.All(item =>
+                        {
+                            try
+                            {
+                                return item.Displayed;
+                            }
+                            catch
+                            {
+                                return false;
+                            }
+                        }
+                    );
+                }
+            ));
+
+            if (isPageReady)
+            {
+                PageLogger.LogInformation("Inventory Page is fully loaded and ready with expected elements.");
+            }
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            PageLogger.LogError(ex, "Timeout waiting for Inventory Page to be fully ready. One or more conditions were not met.");
+            throw;
+        }
+    }
+
+    protected override bool DefinesAdditionalBaseReadinessConditions()
+    {
+        return true;
+    }
+
+    protected override IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
+    {
+        yield return driver =>
+        {
+            try
+            {
+                IWebElement sortDropdown = driver.FindElement(InventoryPageMap.SortDropdown);
+                bool clickable = sortDropdown.Displayed && sortDropdown.Enabled;
+                PageLogger.LogTrace("AdditionalBaseCondition (InventoryPage) - SortDropdown Clickable: {IsClickable}", clickable);
+                return clickable;
+            }
+            catch (Exception ex)
+            {
+                PageLogger.LogTrace(ex, "AdditionalBaseCondition (InventoryPage) - SortDropdown check exception.");
+                return false;
+            }
+        };
     }
 }

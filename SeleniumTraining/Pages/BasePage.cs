@@ -51,18 +51,38 @@ public abstract class BasePage
 
         try
         {
-            PageLogger.LogDebug("Attempting to wait for {PageName} to load fully.", PageName);
+            PageLogger.LogDebug("Attempting to wait for {PageName} to load (document.readyState).", PageName);
             WaitForPageLoad();
 
             PageLogger.LogDebug("Attempting to ensure critical elements are visible on {PageName}.", PageName);
             EnsureCriticalElementsAreDisplayed();
 
-            PageLogger.LogInformation("{PageName} initialized successfully.", PageName);
+            if (DefinesAdditionalBaseReadinessConditions())
+            {
+                PageLogger.LogDebug("Attempting to wait for additional base readiness conditions on {PageName} using AllOf.", PageName);
+                bool additionalConditionsMet = Wait.Until(CustomExpectedConditions.AllOf(
+                    PageLogger,
+                    GetAdditionalBaseReadinessConditions().ToArray()
+                ));
+
+                if (!additionalConditionsMet)
+                {
+                    PageLogger.LogWarning("Additional base readiness conditions for {PageName} were not met (AllOf returned false).", PageName);
+                }
+                PageLogger.LogInformation("Additional base readiness conditions met for {PageName}.", PageName);
+            }
+
+            PageLogger.LogInformation("{PageName} fully initialized successfully.", PageName);
             initializationSuccessful = true;
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            PageLogger.LogError(ex, "{PageName} timed out during initialization. Timeout: {TimeoutSeconds}s.", PageName, Wait.Timeout.TotalSeconds);
+            throw;
         }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "Failed to initialize {PageName} due to an error during page load or critical element validation.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred during page initialization for {PageName}.", PageName);
             throw;
         }
         finally
@@ -87,7 +107,7 @@ public abstract class BasePage
                 PageName,
                 Wait.Timeout.TotalSeconds
             );
-            
+
             bool pageLoaded = Wait.Until(CustomExpectedConditions.DocumentIsReady());
 
             if (pageLoaded)
@@ -163,5 +183,23 @@ public abstract class BasePage
             _ = element.HighlightElement(Driver, PageLogger, FrameworkSettings.HighlightDurationMs);
 
         return element;
+    }
+
+    /// <summary>
+    /// Override in derived pages to indicate if they have additional base readiness conditions
+    /// beyond document ready and critical elements.
+    /// </summary>
+    protected virtual bool DefinesAdditionalBaseReadinessConditions()
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// Override in derived pages to provide a list of additional Func<IWebDriver, bool> conditions
+    /// for the AllOf wait in the BasePage constructor.
+    /// </summary>
+    protected virtual IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
+    {
+        yield break;
     }
 }

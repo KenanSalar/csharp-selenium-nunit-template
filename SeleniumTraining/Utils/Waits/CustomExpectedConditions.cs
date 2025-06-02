@@ -234,7 +234,7 @@ public class CustomExpectedConditions
     /// <param name="firstItemSpecificElementLocator">Locator for a specific element within the first item (e.g., its name or title) whose text content should be checked.</param>
     /// <param name="logger">Logger for detailed trace messages during the wait.</param>
     /// <returns>A function that returns true if the condition is met, false otherwise.</returns>
-    public static Func<IWebDriver, bool> ListIsRenderedAndFirstItemIsReady(By allItemsContainerLocator,By firstItemSpecificElementLocator,ILogger logger)
+    public static Func<IWebDriver, bool> ListIsRenderedAndFirstItemIsReady(By allItemsContainerLocator, By firstItemSpecificElementLocator, ILogger logger)
     {
         return (driver) =>
         {
@@ -283,5 +283,98 @@ public class CustomExpectedConditions
                 return false;
             }
         };
+    }
+
+    /// <summary>
+    /// Waits until all provided individual wait conditions are met.
+    /// Each condition is a Func<IWebDriver, bool> that should return true when satisfied.
+    /// </summary>
+    /// <param name="driver">The IWebDriver instance (passed by WebDriverWait.Until).</param>
+    /// <param name="logger">Optional logger for diagnosing issues within sub-conditions.</param>
+    /// <param name="conditions">An array of functions, each representing a wait condition.</param>
+    /// <returns>True if all conditions are met, false otherwise.</returns>
+    private static bool CheckAllConditions(IWebDriver driver, ILogger? logger, Func<IWebDriver, bool>[] conditions)
+    {
+        foreach (Func<IWebDriver, bool> condition in conditions)
+        {
+            try
+            {
+                if (!condition(driver))
+                {
+                    logger?.LogTrace("A sub-condition in AllOf evaluated to false.");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "A sub-condition within AllOf threw an exception. Treating as false for this attempt.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /// <summary>
+    /// Waits until all provided individual wait conditions are met.
+    /// Each condition is a Func<IWebDriver, bool> that should return true when satisfied.
+    /// </summary>
+    /// <param name="logger">Optional logger for diagnosing issues within sub-conditions.</param>
+    /// <param name="conditions">An array of functions, each representing a wait condition.</param>
+    /// <returns>A function for WebDriverWait.Until that returns true if all conditions are met, false otherwise.</returns>
+    public static Func<IWebDriver, bool> AllOf(ILogger? logger, params Func<IWebDriver, bool>[] conditions)
+    {
+        return (driver) => CheckAllConditions(driver, logger, conditions);
+    }
+
+    public static Func<IWebDriver, bool> AllOf(params Func<IWebDriver, bool>[] conditions)
+    {
+        return (driver) => CheckAllConditions(driver, null, conditions);
+    }
+
+
+    /// <summary>
+    /// Waits until any one of the provided individual wait conditions is met.
+    /// Each condition is a Func<IWebDriver, bool> that should return true when satisfied.
+    /// </summary>
+    /// <param name="driver">The IWebDriver instance (passed by WebDriverWait.Until).</param>
+    /// <param name="logger">Optional logger for diagnosing issues within sub-conditions.</param>
+    /// <param name="conditions">An array of functions, each representing a wait condition.</param>
+    /// <returns>True if any condition is met, false otherwise.</returns>
+    private static bool CheckAnyConditions(IWebDriver driver, ILogger? logger, Func<IWebDriver, bool>[] conditions)
+    {
+        foreach (Func<IWebDriver, bool> condition in conditions)
+        {
+            try
+            {
+                if (condition(driver))
+                {
+                    logger?.LogTrace("A sub-condition in AnyOf evaluated to true.");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "A sub-condition within AnyOf threw an exception. This sub-condition is treated as false; checking next conditions.");
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Waits until any one of the provided individual wait conditions is met.
+    /// Each condition is a Func<IWebDriver, bool> that should return true when satisfied.
+    /// </summary>
+    /// <param name="logger">Optional logger for diagnosing issues within sub-conditions.</param>
+    /// <param name="conditions">An array of functions, each representing a wait condition.</param>
+    /// <returns>A function for WebDriverWait.Until that returns true if any condition is met, false otherwise.</returns>
+    public static Func<IWebDriver, bool> AnyOf(ILogger? logger, params Func<IWebDriver, bool>[] conditions)
+    {
+        return (driver) => CheckAnyConditions(driver, logger, conditions);
+    }
+
+    public static Func<IWebDriver, bool> AnyOf(params Func<IWebDriver, bool>[] conditions)
+    {
+        return (driver) => CheckAnyConditions(driver, null, conditions);
     }
 }
