@@ -16,17 +16,17 @@ public class InventoryPage : BasePage
     public InventoryPage SortProducts(SortByType selectorType, string sortOption)
     {
         var additionalProps = new Dictionary<string, object>
-        {
-            { "SortByType", selectorType.ToString() },
-            { "SortOption", sortOption }
-        };
+            {
+                { "SortByType", selectorType.ToString() },
+                { "SortOption", sortOption }
+            };
         var timer = new PerformanceTimer(
             $"SortProducts_{PageName}",
             PageLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             additionalProps
         );
-        bool success;
+        bool success = false;
 
         try
         {
@@ -40,35 +40,59 @@ public class InventoryPage : BasePage
             IWebElement sortContainer = Wait.WaitForElement(PageLogger, PageName, InventoryPageMap.SortDropdown);
             sortContainer.SelectDropDown(selectorType, sortOption, Wait, Driver, PageLogger, FrameworkSettings);
 
-            success = true;
-
             string sortOptionDisplay = selectorType.GetDisplayName();
             PageLogger.LogInformation(
-                "Products on {PageName} successfully sorted by '{SortOptionDisplay}' (option value: '{SortOptionValue}').",
+                "Sort action performed on {PageName} using '{SortOptionDisplay}' (value: '{SortOptionValue}'). Waiting for sort to apply.",
                 PageName,
-                string.IsNullOrEmpty(sortOptionDisplay)
-                    ? sortOption
-                    : sortOptionDisplay,
+                string.IsNullOrEmpty(sortOptionDisplay) ? sortOption : sortOptionDisplay,
                 sortOption
             );
+
+            PageLogger.LogDebug("Waiting for inventory items to re-render after sort on {PageName} using CustomExpectedCondition.", PageName);
+
+            bool sortAppliedSuccessfully = Wait.Until(
+                CustomExpectedConditions.ListIsRenderedAndFirstItemIsReady(
+                    InventoryPageMap.InventoryItem,
+                    InventoryPageMap.FirstInventoryItemName,
+                    PageLogger
+                )
+            );
+
+            if (sortAppliedSuccessfully)
+            {
+                PageLogger.LogInformation("Inventory items re-rendered and sort confirmed as applied on {PageName}.", PageName);
+                success = true;
+            }
+            else
+            {
+                PageLogger.LogWarning("Sort application verification did not confirm true within timeout on {PageName} (Wait.Until returned false).", PageName);
+                success = false;
+            }
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            PageLogger.LogWarning(ex, "Timeout waiting for inventory items to re-render and sort to apply on {PageName}. The sort might not have visually completed or failed to apply as expected.", PageName);
+            success = false;
         }
         catch (Exception ex)
         {
             PageLogger.LogError(
                 ex,
-                "Failed to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'.",
+                "Failed to sort products on {PageName} by {SortSelectorType} using option '{SortOptionValue}'. Error: {ErrorMessage}",
                 PageName,
                 selectorType.ToString(),
-                sortOption
+                sortOption,
+                ex.Message
             );
-
-            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
-            timer.Dispose();
+            success = false;
             throw;
         }
-
-        timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 2000 : null);
-        timer.Dispose();
+        finally
+        {
+            long expectedDuration = 2000;
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? expectedDuration : null);
+            timer.Dispose();
+        }
 
         return this;
     }
@@ -122,21 +146,72 @@ public class InventoryPage : BasePage
     }
 
     [AllureStep("Get all inventory items on the page")]
-    public IEnumerable<InventoryItemComponent> GetInventoryItems()
+    public IEnumerable<InventoryItemComponent> GetInventoryItems(int minExpectedItems = 1)
     {
-        PageLogger.LogDebug("Attempting to find all inventory item elements on {PageName} using locator: {Locator}.", PageName, InventoryPageMap.InventoryItem);
+        PageLogger.LogDebug(
+            "Attempting to find at least {MinCount} inventory item elements on {PageName} using locator: {Locator}.",
+            minExpectedItems,
+            PageName,
+            InventoryPageMap.InventoryItem
+        );
 
-        IEnumerable<IWebElement> itemElements = Wait.WaitForElements(PageLogger, PageName, InventoryPageMap.InventoryItem);
+        var getItemsTimer = new PerformanceTimer(
+            $"GetInventoryItems_{PageName}",
+            PageLogger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            new Dictionary<string, object>
+            {
+                { "PageType", PageName },
+                { "MinExpectedItems", minExpectedItems }
+            }
+        );
 
-        if (!itemElements.Any())
+        IEnumerable<IWebElement> itemElements;
+        try
         {
-            PageLogger.LogWarning("No inventory items found on {PageName} using locator {Locator}.", PageName, InventoryPageMap.InventoryItem);
-            return [];
+            itemElements = Wait.Until(
+                CustomExpectedConditions.ElementCountToBeGreaterThanOrEqual(InventoryPageMap.InventoryItem, minExpectedItems)
+            );
+
+            if (itemElements == null || (minExpectedItems > 0 && !itemElements.Any()))
+            {
+                PageLogger.LogWarning(
+                    "Condition for at least {MinCount} items met, but returned collection is null or empty. This should ideally be caught by timeout if MinCount > 0. Locator: {Locator}",
+                    minExpectedItems,
+                    InventoryPageMap.InventoryItem
+                );
+                getItemsTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+                return [];
+            }
+
+            PageLogger.LogInformation(
+                "Found {Count} inventory item elements on {PageName} (met minimum of {MinCount}). Creating components.",
+                itemElements.Count(),
+                PageName,
+                minExpectedItems
+            );
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            PageLogger.LogError(
+                ex,
+                "Timeout waiting for at least {MinCount} inventory items on {PageName}. Locator: {Locator}. Timeout: {TimeoutSeconds}s.",
+                minExpectedItems,
+                PageName,
+                InventoryPageMap.InventoryItem,
+                Wait.Timeout.TotalSeconds
+            );
+            getItemsTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "An unexpected error occurred while trying to get inventory items on {PageName}.", PageName);
+            getItemsTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
+            throw;
         }
 
-        PageLogger.LogInformation("Found {Count} inventory item elements on {PageName}. Creating components.", itemElements.Count(), PageName);
-
-        return itemElements.Select(element =>
+        var components = itemElements.Select(element =>
         {
             string? outerHtml = element.GetAttribute("outerHTML");
             string elementIdSnippet;
@@ -144,16 +219,21 @@ public class InventoryPage : BasePage
             if (string.IsNullOrEmpty(outerHtml))
             {
                 elementIdSnippet = "[outerHTML not available or empty]";
-                PageLogger.LogWarning("outerHTML for an inventory item element was null or empty.");
+                PageLogger.LogWarning("outerHTML for an inventory item element was null or empty during component creation.");
             }
             else
             {
-                elementIdSnippet = outerHtml.Length <= 100 ? outerHtml : string.Concat(outerHtml.AsSpan(0, 100), "...");
+                elementIdSnippet = outerHtml.Length <= 100
+                    ? outerHtml
+                    : string.Concat(outerHtml.AsSpan(0, 100), "...");
             }
 
             PageLogger.LogTrace("Creating InventoryItemComponent for element snippet: {ElementIdSnippet}", elementIdSnippet);
 
             return new InventoryItemComponent(element, Driver, LoggerFactory, PageSettingsProvider);
         }).ToList();
+
+        getItemsTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 1000);
+        return components;
     }
 }

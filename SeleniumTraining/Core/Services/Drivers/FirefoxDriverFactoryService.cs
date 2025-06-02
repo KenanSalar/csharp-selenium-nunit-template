@@ -4,7 +4,7 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
-public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDriverFactoryService // Inherit from DriverFactoryServiceBase
+public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDriverFactoryService
 {
     public BrowserType Type => BrowserType.Firefox;
     private static readonly Version _minimumSupportedVersion = new("110.0");
@@ -60,7 +60,12 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         if (settings.WindowWidth.HasValue && settings.WindowHeight.HasValue)
         {
-            bool sizeAlreadyInCustomArgs = settings.FirefoxArguments?.Any(arg => arg.StartsWith("--width=", StringComparison.Ordinal) || arg.StartsWith("--height=", StringComparison.Ordinal)) ?? false;
+            bool sizeAlreadyInCustomArgs = settings.FirefoxArguments?.Any(arg =>
+                arg.StartsWith("--width=",
+                StringComparison.Ordinal) || arg.StartsWith("--height=",
+                StringComparison.Ordinal)
+            ) ?? false;
+
             if (!sizeAlreadyInCustomArgs)
             {
                 string widthArg = $"--width={settings.WindowWidth.Value}";

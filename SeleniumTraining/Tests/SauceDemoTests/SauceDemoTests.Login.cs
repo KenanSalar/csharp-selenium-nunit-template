@@ -138,7 +138,6 @@ public partial class SauceDemoTests : BaseTest
 
         LoginPage loginPageInstance = resultPage.ShouldBeOfType<LoginPage>("User should have remained on the Login Page.");
 
-        const string expectedErrorMessage = "Epic sadface: Sorry, this user has been locked out.";
         var errorMsgTimer = new PerformanceTimer("TestStep_GetLoginErrorMessage_LockedOut", TestLogger);
         string actualErrorMessage;
         try
@@ -151,7 +150,7 @@ public partial class SauceDemoTests : BaseTest
             errorMsgTimer.Dispose();
         }
 
-        actualErrorMessage.ShouldBe(expectedErrorMessage, $"Error message should be: {expectedErrorMessage} but was: {actualErrorMessage}");
+        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, $"Error message should be: {SauceDemoMessages.LockedOutUserError} but was: {actualErrorMessage}");
 
         TestLogger.LogInformation("Login not successful, currently on LoginPage.");
         TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
