@@ -14,7 +14,8 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
     protected virtual ChromeOptions ConfigureCommonChromeOptions(
         ChromiumBasedSettings settings,
         DriverOptions? baseOptions,
-        out List<string> appliedOptionsForLog)
+        out List<string> appliedOptionsForLog
+    )
     {
         appliedOptionsForLog = [];
         ChromeOptions chromeOptions = baseOptions as ChromeOptions ?? new ChromeOptions();

@@ -78,8 +78,8 @@ public abstract class BasePage
                 PageName,
                 Wait.Timeout.TotalSeconds
             );
-            bool pageLoaded = Wait.Until(d =>
-                ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState")?.Equals("complete") ?? false);
+            
+            bool pageLoaded = Wait.Until(CustomExpectedConditions.DocumentIsReady());
 
             if (pageLoaded)
                 PageLogger.LogInformation("{PageName} document.readyState is 'complete'.", PageName);
