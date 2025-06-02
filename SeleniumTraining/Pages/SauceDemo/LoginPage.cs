@@ -4,8 +4,8 @@ public class LoginPage : BasePage
 {
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => LoginPageMap.LoginPageElements;
 
-    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
-        : base(driver, loggerFactory, settingsProvider)
+    public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
+        : base(driver, loggerFactory, settingsProvider, retryService)
     {
 
         PageLogger.LogDebug("Performing LoginPage-specific initialization checks for {PageName}.", PageName);
@@ -80,7 +80,7 @@ public class LoginPage : BasePage
             PageLogger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
 
             loginSuccessful = true;
-            nextPage = new InventoryPage(Driver, LoggerFactory, PageSettingsProvider);
+            nextPage = new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
         }
         catch (Exception ex)
         {
@@ -109,41 +109,45 @@ public class LoginPage : BasePage
     [AllureStep("Getting error message from login page")]
     public string GetErrorMessage()
     {
+        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", PageLogger); // Timer from your code
+        bool success = false;
         string errorMessageText;
-        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", PageLogger);
-        bool success;
 
         try
         {
             PageLogger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
-            IWebElement errorMessageElement = Wait.WaitForElement(PageLogger, PageName, LoginPageMap.ErrorMessageContainer);
 
-            errorMessageText = errorMessageElement.Text;
+            errorMessageText = Retry.ExecuteWithRetry(() =>
+                {
+                    IWebElement errorMessageElement = Wait.WaitForElement(PageLogger, PageName, LoginPageMap.ErrorMessageContainer);
+                    string text = errorMessageElement.Text;
+
+                    if (string.IsNullOrWhiteSpace(text))
+                    {
+                        PageLogger.LogWarning("Error message text is empty, will retry if attempts remain.");
+                    }
+                    return text;
+                },
+                maxRetryAttempts: 2,
+                initialDelay: TimeSpan.FromMilliseconds(200),
+                actionLogger: PageLogger,
+                resultCondition: (text) => !string.IsNullOrWhiteSpace(text)
+            );
+
             PageLogger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessageText);
-
             success = true;
-        }
-        catch (WebDriverTimeoutException ex)
-        {
-            PageLogger.LogError(ex, "Error message element not found or not visible on {PageName} within the timeout period.", PageName);
-
-            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
-            timer.Dispose();
-
-            throw new NoSuchElementException($"Error message element defined by {LoginPageMap.ErrorMessageContainer} was not found on {PageName}.", ex);
         }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "An unexpected error occurred while trying to retrieve the error message from {PageName}.", PageName);
-
-            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: null);
-            timer.Dispose();
+            PageLogger.LogError(ex, "Failed to get error message from {PageName} after retries.", PageName);
 
             throw;
         }
+        finally
+        {
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 1000 : null);
+        }
 
-        timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 1000 : null);
-        timer.Dispose();
         return errorMessageText;
     }
 }

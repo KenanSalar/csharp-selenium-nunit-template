@@ -19,7 +19,7 @@ public class VisualTestService : BaseService, IVisualTestService
         ITestWebDriverManager webDriverManager,
         IOptions<VisualTestSettings> visualTestSettings
     )
-            : base(loggerFactory)
+        : base(loggerFactory)
     {
         _directoryManager = directoryManager;
         _webDriverManager = webDriverManager;
@@ -73,7 +73,7 @@ public class VisualTestService : BaseService, IVisualTestService
                 {
                     ServiceLogger.LogError(ex, "Error during image comparison between {ActualPath} and {BaselinePath}", actualImagePath, baselineImagePath);
                     Assert.Fail($"Visual comparison failed due to an error: {ex.Message}");
-                    
+
                     return;
                 }
 

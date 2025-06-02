@@ -4,7 +4,6 @@ namespace SeleniumTraining.Core.Services.Drivers;
 
 public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBase
 {
-    // To be implemented by concrete Chrome and Brave factories
     protected abstract BrowserType ConcreteBrowserType { get; }
     protected abstract Version MinimumSupportedVersion { get; }
 
@@ -14,7 +13,8 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
     protected virtual ChromeOptions ConfigureCommonChromeOptions(
         ChromiumBasedSettings settings,
         DriverOptions? baseOptions,
-        out List<string> appliedOptionsForLog)
+        out List<string> appliedOptionsForLog
+    )
     {
         appliedOptionsForLog = [];
         ChromeOptions chromeOptions = baseOptions as ChromeOptions ?? new ChromeOptions();

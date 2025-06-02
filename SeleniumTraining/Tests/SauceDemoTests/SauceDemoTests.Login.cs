@@ -38,7 +38,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
@@ -115,7 +115,7 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage.");
-            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameLockedOutUser)
@@ -138,7 +138,6 @@ public partial class SauceDemoTests : BaseTest
 
         LoginPage loginPageInstance = resultPage.ShouldBeOfType<LoginPage>("User should have remained on the Login Page.");
 
-        const string expectedErrorMessage = "Epic sadface: Sorry, this user has been locked out.";
         var errorMsgTimer = new PerformanceTimer("TestStep_GetLoginErrorMessage_LockedOut", TestLogger);
         string actualErrorMessage;
         try
@@ -151,7 +150,7 @@ public partial class SauceDemoTests : BaseTest
             errorMsgTimer.Dispose();
         }
 
-        actualErrorMessage.ShouldBe(expectedErrorMessage, $"Error message should be: {expectedErrorMessage} but was: {actualErrorMessage}");
+        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, $"Error message should be: {SauceDemoMessages.LockedOutUserError} but was: {actualErrorMessage}");
 
         TestLogger.LogInformation("Login not successful, currently on LoginPage.");
         TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
@@ -169,7 +168,7 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Starting visual test: {TestName} for visual_user", currentTestName);
 
         TestLogger.LogDebug("Instantiating LoginPage for {TestName}.", currentTestName);
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
         TestLogger.LogInformation(
             "Attempting login with username: {LoginUsername} (visual_user) using Click action for {TestName}.",

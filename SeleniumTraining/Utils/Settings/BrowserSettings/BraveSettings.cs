@@ -1,6 +1,6 @@
-namespace SeleniumTraining.Utils.Settings.BrowserSettings;
+// namespace SeleniumTraining.Utils.Settings.BrowserSettings;
 
-public class BraveSettings : ChromiumBasedSettings
-{
+// public class BraveSettings : ChromiumBasedSettings
+// {
 
-}
+// }

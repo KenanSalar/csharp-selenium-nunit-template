@@ -16,6 +16,7 @@ public abstract class BaseTest : IDisposable
     protected ITestWebDriverManager WebDriverManager { get; private set; } = null!;
     protected ITestReporterService TestReporter { get; private set; } = null!;
     protected IVisualTestService VisualTester { get; private set; } = null!;
+    protected IRetryService RetryService { get; private set; } = null!;
     public ILogger TestLogger { get; protected set; } = null!;
 
     protected string CurrentTestScreenshotDirectory { get; private set; } = string.Empty;
@@ -38,6 +39,8 @@ public abstract class BaseTest : IDisposable
 
         ILoggerFactory loggerFactoryForBase = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
         TestLogger = loggerFactoryForBase.CreateLogger(TestName);
+
+        RetryService = scopedServiceProvider.GetRequiredService<IRetryService>()!;
 
         string? targetBrowserCiEnv = Environment.GetEnvironmentVariable("TARGET_BROWSER_CI");
         TestLogger.LogInformation("CI Environment Variable TARGET_BROWSER_CI: '{TargetBrowserCiEnv}'", targetBrowserCiEnv ?? "Not Set");

@@ -1,5 +1,6 @@
 global using SeleniumTraining.Enums;
 global using SeleniumTraining.Utils;
+global using SeleniumTraining.Utils.Waits;
 global using SeleniumTraining.Utils.Settings;
 global using SeleniumTraining.Utils.Locators;
 global using SeleniumTraining.Utils.Settings.TestFeatures;
@@ -24,6 +25,7 @@ global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using System.ComponentModel.DataAnnotations;
+global using System.Collections.ObjectModel;
 global using NUnit.Framework;
 global using Shouldly;
 global using Allure.NUnit;

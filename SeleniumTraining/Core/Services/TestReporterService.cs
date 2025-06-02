@@ -4,7 +4,8 @@ namespace SeleniumTraining.Core.Services;
 
 public class TestReporterService : BaseService, ITestReporterService
 {
-    public TestReporterService(ILoggerFactory loggerFactory) : base(loggerFactory)
+    public TestReporterService(ILoggerFactory loggerFactory) 
+        : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestReporterService));
     }

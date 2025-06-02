@@ -27,7 +27,8 @@ public static class ServiceCollectionExtensions
             .AddTransient<IDriverLifecycleService, DriverLifecycleService>()
             .AddScoped<ITestWebDriverManager, TestWebDriverManager>()
             .AddTransient<ITestReporterService, TestReporterService>()
-            .AddScoped<IVisualTestService, VisualTestService>();
+            .AddScoped<IVisualTestService, VisualTestService>()
+            .AddSingleton<IRetryService, RetryService>();
 
         return services;
     }
@@ -44,10 +45,10 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddOptions<BraveSettings>()
-            .Bind(configuration.GetSection("BraveBrowserOptions"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        // _ = services.AddOptions<BraveSettings>()
+        //     .Bind(configuration.GetSection("BraveBrowserOptions"))
+        //     .ValidateDataAnnotations()
+        //     .ValidateOnStart();
 
         _ = services.AddOptions<SauceDemoSettings>()
             .Bind(configuration.GetSection("SauceDemo"))
