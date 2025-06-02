@@ -4,7 +4,6 @@ namespace SeleniumTraining.Core.Services.Drivers;
 
 public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBase
 {
-    // To be implemented by concrete Chrome and Brave factories
     protected abstract BrowserType ConcreteBrowserType { get; }
     protected abstract Version MinimumSupportedVersion { get; }
 

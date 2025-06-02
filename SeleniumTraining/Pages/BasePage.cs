@@ -6,16 +6,25 @@ public abstract class BasePage
     protected WebDriverWait Wait { get; }
     protected ILoggerFactory LoggerFactory { get; }
     protected ILogger PageLogger { get; }
-    protected string PageName { get; }
+    protected IRetryService Retry { get; }
 
     protected abstract IEnumerable<By> CriticalElementsToEnsureVisible { get; }
     protected ISettingsProviderService PageSettingsProvider { get; }
     protected TestFrameworkSettings FrameworkSettings { get; }
 
-    protected BasePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, int defaultTimeoutSeconds = 5)
+    protected string PageName { get; }
+
+    protected BasePage(
+        IWebDriver driver,
+        ILoggerFactory loggerFactory,
+        ISettingsProviderService settingsProvider,
+        IRetryService retryService,
+        int defaultTimeoutSeconds = 5
+    )
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
         LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        Retry = retryService ?? throw new ArgumentNullException(nameof(retryService));
         PageLogger = LoggerFactory.CreateLogger(GetType());
         PageName = GetType().Name;
 

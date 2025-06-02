@@ -8,13 +8,22 @@ public abstract class BasePageComponent
     protected ILogger ComponentLogger { get; }
     protected ILoggerFactory LoggerFactory { get; }
     protected TestFrameworkSettings FrameworkSettings { get; }
+    protected IRetryService Retry { get; private set; }
 
-    protected BasePageComponent(IWebElement rootElement, IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, int defaultWaitSeconds = 5)
+    protected BasePageComponent(
+        IWebElement rootElement,
+        IWebDriver driver,
+        ILoggerFactory loggerFactory,
+        ISettingsProviderService settingsProvider,
+        IRetryService retryService,
+        int defaultWaitSeconds = 5
+    )
     {
         RootElement = rootElement ?? throw new ArgumentNullException(nameof(rootElement));
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
         LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         ComponentLogger = LoggerFactory.CreateLogger(GetType());
+        Retry = retryService;
 
         ArgumentNullException.ThrowIfNull(settingsProvider);
         FrameworkSettings = settingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
