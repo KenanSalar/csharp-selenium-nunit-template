@@ -2,8 +2,14 @@ namespace SeleniumTraining.Pages.SauceDemo.Components;
 
 public class InventoryItemComponent : BasePageComponent
 {
-    public InventoryItemComponent(IWebElement rootElement, IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider)
-        : base(rootElement, driver, loggerFactory, settingsProvider)
+    public InventoryItemComponent(
+        IWebElement rootElement,
+        IWebDriver driver,
+        ILoggerFactory loggerFactory,
+        ISettingsProviderService settingsProvider,
+        IRetryService retryService
+    )
+        : base(rootElement, driver, loggerFactory, settingsProvider, retryService)
     {
         string outerHtml = RootElement.GetAttribute("outerHTML") ?? string.Empty;
         ComponentLogger.LogDebug(
@@ -60,14 +66,22 @@ public class InventoryItemComponent : BasePageComponent
     [AllureStep("Click item action button")]
     public void ClickActionButton()
     {
-        ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
-        IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
-        string buttonText = button.Text;
+        Retry.ExecuteWithRetry(() =>
+            {
+                ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
+                IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
+                string buttonText = button.Text;
 
-        _ = HighlightIfEnabled(button);
+                _ = HighlightIfEnabled(button);
 
-        ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
-        button.Click();
+                ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
+                button.Click();
+                ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);     
+            },
+            maxRetryAttempts: 2,
+            initialDelay: TimeSpan.FromMilliseconds(500),
+            actionLogger: ComponentLogger
+        );
     }
 
     public string GetActionButtonText()

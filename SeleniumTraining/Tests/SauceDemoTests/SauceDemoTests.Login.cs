@@ -38,7 +38,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
@@ -115,7 +115,7 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage.");
-            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameLockedOutUser)
@@ -168,7 +168,7 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Starting visual test: {TestName} for visual_user", currentTestName);
 
         TestLogger.LogDebug("Instantiating LoginPage for {TestName}.", currentTestName);
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider);
+        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
         TestLogger.LogInformation(
             "Attempting login with username: {LoginUsername} (visual_user) using Click action for {TestName}.",
