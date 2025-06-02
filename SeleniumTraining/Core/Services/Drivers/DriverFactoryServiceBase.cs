@@ -1,13 +1,47 @@
 namespace SeleniumTraining.Core.Services.Drivers;
 
+/// <summary>
+/// Provides a base class for browser-specific WebDriver factory services.
+/// It includes common functionalities like browser version checking and standardized error logging for driver creation.
+/// </summary>
+/// <remarks>
+/// Derived classes (e.g., <c>ChromeDriverFactoryService</c>, <c>FirefoxDriverFactoryService</c>)
+/// should implement the <see cref="IBrowserDriverFactoryService"/> interface and can leverage
+/// the protected methods provided by this base class to ensure consistent behavior.
+/// This class inherits from <see cref="BaseService"/> to provide logging capabilities.
+/// </remarks>
 public abstract class DriverFactoryServiceBase : BaseService
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DriverFactoryServiceBase"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The factory used to create loggers.
+    /// This is typically passed to the base <see cref="BaseService"/> constructor.</param>
     protected DriverFactoryServiceBase(ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
 
     }
 
+    /// <summary>
+    /// Performs a check to ensure the detected version of the browser associated with the provided WebDriver instance
+    /// meets a specified minimum supported version.
+    /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance whose browser version is to be checked.
+    /// Must implement <see cref="IHasCapabilities"/>.</param>
+    /// <param name="browserNameForLog">A user-friendly name of the browser (e.g., "Chrome", "Firefox") for logging purposes.</param>
+    /// <param name="minimumSupportedVersion">The minimum <see cref="Version"/> that is supported by the framework or application.</param>
+    /// <exception cref="UnsupportedBrowserVersionException">
+    /// Thrown if the detected browser version is older than the <paramref name="minimumSupportedVersion"/>.
+    /// The driver is also quit before this exception is thrown.
+    /// </exception>
+    /// <remarks>
+    /// This method attempts to parse the browser version from the driver's capabilities.
+    /// If the version cannot be determined or parsed, a warning is logged, and the check is skipped.
+    /// It handles common version string formats (e.g., "100.0.1234.56", "101.0.2345-beta").
+    /// If an unexpected error occurs during the check (not an <see cref="UnsupportedBrowserVersionException"/>),
+    /// it's logged, and the method proceeds without version verification to allow the test to continue if possible.
+    /// </remarks>
     protected void PerformVersionCheck(IWebDriver driver, string browserNameForLog, Version minimumSupportedVersion)
     {
         try
@@ -57,6 +91,21 @@ public abstract class DriverFactoryServiceBase : BaseService
         }
     }
 
+    /// <summary>
+    /// Logs detailed information about an error encountered during WebDriver creation and then throws the original exception.
+    /// </summary>
+    /// <param name="ex">The exception that occurred during WebDriver instantiation.</param>
+    /// <param name="browserType">The <see cref="BrowserType"/> for which the WebDriver creation failed.</param>
+    /// <param name="driverOptions">The <see cref="DriverOptions"/> that were used in the attempt to create the WebDriver.
+    /// These options will be serialized to JSON for logging.</param>
+    /// <param name="additionalContext">Optional. Any additional context or information relevant to the failure scenario.</param>
+    /// <exception cref="Exception">Re-throws the original <paramref name="ex"/> after logging.</exception>
+    /// <remarks>
+    /// This method serializes the <paramref name="driverOptions"/> to JSON to provide a detailed snapshot
+    /// of the configuration at the time of failure, aiding in debugging.
+    /// It distinguishes between <see cref="WebDriverException"/>, <see cref="InvalidOperationException"/>,
+    /// and other unexpected exceptions for more specific logging.
+    /// </remarks>
     protected void LogAndThrowWebDriverCreationError(Exception ex, BrowserType browserType, DriverOptions driverOptions, string additionalContext = "")
     {
         string optionsJson = "Could not serialize options";
@@ -82,22 +131,5 @@ public abstract class DriverFactoryServiceBase : BaseService
             ServiceLogger.LogError(ioEx, "{BaseErrorMessage} InvalidOperationException. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
         else
             ServiceLogger.LogError(ex, "{BaseErrorMessage} Unexpected Exception. Options: {ConfiguredOptions}", baseErrorMessage, optionsJson);
-    }
-}
-
-public static class WebDriverQuitHelper
-{
-    public static void QuitSafely(this IWebDriver? driver, ILogger logger, string contextMessage)
-    {
-        if (driver == null) return;
-        try
-        {
-            driver.Quit();
-            logger.LogDebug("WebDriver QuitSafely successful for context: {Context}", contextMessage);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Exception during WebDriver QuitSafely ({Context}). Driver might not have been fully initialized or already closed.", contextMessage);
-        }
     }
 }

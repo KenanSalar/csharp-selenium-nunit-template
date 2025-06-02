@@ -1,23 +1,62 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using OpenQA.Selenium.Chrome;
-using WebDriverManager;
-using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
+/// <summary>
+/// Factory service specifically for creating and configuring <see cref="ChromeDriver"/> instances.
+/// </summary>
+/// <remarks>
+/// This service handles the Chrome-specific setup, including locating the Chrome executable,
+/// configuring <see cref="ChromeOptions"/> with common and Chrome-specific settings,
+/// and instantiating the <see cref="ChromeDriver"/>. It implements <see cref="IBrowserDriverFactoryService"/>
+/// and inherits common Chromium configurations from <see cref="ChromiumDriverFactoryServiceBase"/>.
+/// </remarks>
 public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrowserDriverFactoryService
 {
     public BrowserType Type => BrowserType.Chrome;
+
+    /// <summary>
+    /// Gets the browser type this factory is responsible for, which is always <see cref="BrowserType.Chrome"/>.
+    /// </summary>
+    /// <inheritdoc cref="IBrowserDriverFactoryService.Type" />
+    /// 
+    /// /// <summary>
+    /// Gets the specific <see cref="BrowserType"/> (Chrome) that this factory implementation handles.
+    /// </summary>
+    /// <inheritdoc cref="ChromiumDriverFactoryServiceBase.ConcreteBrowserType" />
     protected override BrowserType ConcreteBrowserType => BrowserType.Chrome;
+
+    /// <summary>
+    /// Gets the minimum supported version for the Google Chrome browser handled by this factory.
+    /// </summary>
+    /// <inheritdoc cref="ChromiumDriverFactoryServiceBase.MinimumSupportedVersion" />
     protected override Version MinimumSupportedVersion { get; } = new("110.0");
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChromeDriverFactoryService"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The factory used to create loggers, passed to the base class.</param>
     public ChromeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(ChromeDriverFactoryService), Type);
     }
 
+    /// <summary>
+    /// Attempts to locate the Google Chrome executable on the current system.
+    /// It checks environment variables and standard installation paths for different operating systems.
+    /// </summary>
+    /// <returns>The full path to the Chrome executable if found; otherwise, an empty string.</returns>
+    /// <remarks>
+    /// The search order is:
+    /// <list type="number">
+    ///   <item><description>Environment variable <c>CHROME_EXECUTABLE_PATH</c>.</description></item>
+    ///   <item><description>Standard installation paths for Windows (Program Files, Program Files (x86)).</description></item>
+    ///   <item><description>Standard installation paths for Linux.</description></item>
+    ///   <item><description>Standard installation path for macOS.</description></item>
+    /// </list>
+    /// Logs information about the search process and the outcome.
+    /// </remarks>
     private string GetChromeExecutablePathInternal()
     {
         ServiceLogger.LogDebug("Searching for Chrome executable...");
@@ -67,6 +106,7 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         return string.Empty;
     }
 
+    /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not ChromeSettings settings)

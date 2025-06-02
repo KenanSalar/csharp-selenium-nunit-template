@@ -1,5 +1,15 @@
 namespace SeleniumTraining.Core.Services.Contracts;
 
+/// <summary>
+/// Defines the contract for a service that provides retry capabilities for executing actions or functions.
+/// Implementations typically use policies like exponential backoff to handle transient failures.
+/// </summary>
+/// <remarks>
+/// This service is essential for improving the robustness of interactions that might
+/// intermittently fail due to transient issues such as network latency, temporary unavailability
+/// of elements, or race conditions in web applications. It often wraps operations that
+/// interact with external systems or UI elements.
+/// </remarks>
 public interface IRetryService
 {
     /// <summary>

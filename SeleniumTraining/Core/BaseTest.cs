@@ -1,36 +1,156 @@
 namespace SeleniumTraining.Core;
 
+/// <summary>
+/// Provides a base class for all Selenium UI tests, encapsulating common setup,
+/// teardown, dependency injection, and test context management logic.
+/// It supports browser type specification for test fixtures and integrates with Allure reporting.
+/// </summary>
+/// <remarks>
+/// This abstract class is designed to be inherited by concrete test fixture classes.
+/// It handles:
+/// <list type="bullet">
+///   <item><description>Dependency injection scope management per test using <see cref="TestHost.Services"/>.</description></item>
+///   <item><description>Resolution of core services like <see cref="ISettingsProviderService"/>, <see cref="ITestWebDriverManager"/>, etc.</description></item>
+///   <item><description>Initialization and cleanup of WebDriver via <see cref="ITestWebDriverManager"/>.</description></item>
+///   <item><description>Reporting setup and finalization via <see cref="ITestReporterService"/>, primarily for Allure.</description></item>
+///   <item><description>Correlation ID generation for tracing.</description></item>
+///   <item><description>Logging setup using <see cref="ILogger"/> specific to the test class.</description></item>
+///   <item><description>Handling of CI environment variables (TARGET_BROWSER_CI) to skip non-matching test fixtures.</description></item>
+///   <item><description>Proper resource disposal via <see cref="IDisposable"/>.</description></item>
+/// </list>
+/// Concrete test classes must provide a <see cref="BrowserType"/> to the constructor.
+/// </remarks>
 [AllureNUnit]
 public abstract class BaseTest : IDisposable
 {
     private bool _disposed;
-    private IServiceScope? _testScope;
+    private IServiceScope? _testScope; // DI scope for the current test
 
+    /// <summary>
+    /// Gets the <see cref="BrowserType"/> for which this test fixture is configured to run.
+    /// This is set via the constructor by derived test classes.
+    /// </summary>
+    /// <value>The configured browser type.</value>
     protected BrowserType BrowserType { get; }
+
+    /// <summary>
+    /// Gets the browser-specific settings loaded for the current <see cref="BrowserType"/>.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The browser settings. Null until <see cref="SetUp"/> completes successfully.</value>
     protected BaseBrowserSettings BrowserSettings { get; private set; } = null!;
 
-    // Dependency Injection
+    /// <summary>
+    /// Gets the <see cref="ILoggerFactory"/> instance used for creating loggers for page objects.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The logger factory for page objects. Null until <see cref="SetUp"/> completes successfully.</value>
     protected ILoggerFactory PageObjectLoggerFactory { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for accessing application and framework settings.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The settings provider service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected ISettingsProviderService SettingsProvider { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for managing directory paths for test artifacts.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The directory manager service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected IDirectoryManagerService DirectoryManager { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for managing the WebDriver lifecycle for the current test.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The WebDriver manager service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected ITestWebDriverManager WebDriverManager { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for initializing and finalizing test reports (e.g., for Allure).
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The test reporter service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected ITestReporterService TestReporter { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for performing visual regression testing.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The visual test service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected IVisualTestService VisualTester { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the service for executing actions with retry policies.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The retry service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected IRetryService RetryService { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the <see cref="ILogger"/> instance specifically for logging messages from the current test class.
+    /// It is initialized in <see cref="SetUp"/> and configured with the test class name.
+    /// </summary>
+    /// <value>The logger for the current test. Null until <see cref="SetUp"/> completes successfully.</value>
     public ILogger TestLogger { get; protected set; } = null!;
 
+    /// <summary>
+    /// Gets the full path to the directory where screenshots for the current test (or test class) will be saved.
+    /// This path is determined and ensured to exist during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The screenshot directory path. Empty until <see cref="SetUp"/> completes successfully.</value>
     protected string CurrentTestScreenshotDirectory { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the name of the current test class. This is typically derived from the type name of the concrete test fixture.
+    /// </summary>
+    /// <value>The name of the test class.</value>
     protected string TestName { get; }
 
+    /// <summary>
+    /// Gets a unique correlation ID generated for the current test execution.
+    /// This ID is used for tracing logs and correlating activities across different services.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The correlation ID. Empty until <see cref="SetUp"/> completes successfully.</value>
     protected string CorrelationId { get; private set; } = string.Empty;
-    private IDisposable? _loggingScope;
 
+    private IDisposable? _loggingScope; // For structured logging scope
+
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseTest"/> class for a specific browser type.
+    /// </summary>
+    /// <param name="browserType">The <see cref="BrowserType"/> on which the tests in this fixture are intended to run.</param>
+    /// <remarks>
+    /// This constructor sets the <see cref="BrowserType"/> and determines the <see cref="TestName"/>
+    /// based on the derived class's type name. Core service resolution and other setup occur in the <see cref="SetUp"/> method.
+    /// </remarks>
     protected BaseTest(BrowserType browserType)
     {
         BrowserType = browserType;
         TestName = GetType().Name;
     }
 
+    /// <summary>
+    /// Performs setup operations common to all tests before each test method execution.
+    /// This includes:
+    /// <list type="bullet">
+    ///   <item><description>Creating a new DI scope and resolving necessary services.</description></item>
+    ///   <item><description>Initializing the <see cref="TestLogger"/> with a logging scope including correlation ID and test context.</description></item>
+    ///   <item><description>Checking CI environment variables (TARGET_BROWSER_CI) and skipping tests if the fixture's <see cref="BrowserType"/> does not match.</description></item>
+    ///   <item><description>Loading browser-specific settings.</description></item>
+    ///   <item><description>Ensuring necessary output directories exist.</</description></item>
+    ///   <item><description>Initializing the test report (e.g., for Allure).</description></item>
+    ///   <item><description>Initializing the WebDriver instance for the configured <see cref="BrowserType"/>.</description></item>
+    /// </list>
+    /// </summary>
+    /// <remarks>
+    /// This method is decorated with <see cref="SetUpAttribute"/> and will be called by NUnit before each test.
+    /// If a test fixture is skipped due to a browser mismatch in CI, <see cref="Assert.Ignore(string)"/> is called.
+    /// </remarks>
     [SetUp]
     public virtual void SetUp()
     {
@@ -126,6 +246,21 @@ public abstract class BaseTest : IDisposable
         TestLogger.LogInformation("BaseTest SetUp completed for {TestClass}.", TestName);
     }
 
+    /// <summary>
+    /// Performs cleanup operations common to all tests after each test method execution.
+    /// This includes:
+    /// <list type="bullet">
+    ///   <item><description>Finalizing the test report (e.g., for Allure), including capturing screenshots on failure if a driver is available.</description></item>
+    ///   <item><description>Disposing the logging scope.</description></item>
+    ///   <item><description>Disposing the test-specific DI scope.</description></item>
+    /// </list>
+    /// This method is skipped if the test was ignored in <see cref="SetUp"/>.
+    /// </summary>
+    /// <remarks>
+    /// This method is decorated with <see cref="TearDownAttribute"/> and will be called by NUnit after each test.
+    /// It retrieves the active WebDriver (if any) to assist in report finalization (e.g., for screenshots).
+    /// Errors during report finalization are logged but typically do not cause the teardown itself to fail.
+    /// </remarks>
     [TearDown]
     public void Cleanup()
     {
@@ -195,12 +330,36 @@ public abstract class BaseTest : IDisposable
         _testScope = null;
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// This is the primary method for resource cleanup and is called by the NUnit framework
+    /// after all tests in the fixture have run (if IDisposable is implemented at fixture level) or by test runner.
+    /// </summary>
+    /// <remarks>
+    /// This implementation follows the standard dispose pattern.
+    /// It calls the protected virtual <see cref="Dispose(bool)"/> method.
+    /// </remarks>
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Releases managed and unmanaged resources used by the <see cref="BaseTest"/>.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed and unmanaged resources);
+    /// false if called from a finalizer (unmanaged resources only, though this class doesn't have a finalizer).</param>
+    /// <remarks>
+    /// If <paramref name="disposing"/> is true, this method ensures that:
+    /// <list type="bullet">
+    ///   <item><description>The WebDriver is quit via <see cref="ITestWebDriverManager.QuitDriver"/>.</description></item>
+    ///   <item><description>All resolved disposable services (<see cref="ITestWebDriverManager"/>, <see cref="ITestReporterService"/>, etc.) are disposed if they implement <see cref="IDisposable"/>.</description></item>
+    ///   <item><description>The logging scope (<see cref="_loggingScope"/>) and DI scope (<see cref="_testScope"/>) are disposed.</description></item>
+    /// </list>
+    /// This method is protected by a flag to ensure it's only executed once.
+    /// Errors during disposal of individual services are logged but do not prevent other services from being disposed.
+    /// </remarks>
     protected virtual void Dispose(bool disposing)
     {
         string currentTestNameForDispose = TestName ?? "UnknownTest_Dispose";
@@ -235,6 +394,12 @@ public abstract class BaseTest : IDisposable
 
             TestLogger.LogDebug("Disposing DirectoryManager instance for {EffectiveTestName}.", currentTestNameForDispose);
             (DirectoryManager as IDisposable)?.Dispose();
+
+            TestLogger.LogDebug("Disposing VisualTester instance for {EffectiveTestName}.", currentTestNameForDispose);
+            (VisualTester as IDisposable)?.Dispose();
+
+            TestLogger.LogDebug("Disposing RetryService instance for {EffectiveTestName}.", currentTestNameForDispose);
+            (RetryService as IDisposable)?.Dispose();
 
             TestLogger.LogInformation("Managed services disposed for {EffectiveTestName}.", currentTestNameForDispose);
         }
