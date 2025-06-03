@@ -2,14 +2,37 @@ using NUnit.Framework.Interfaces;
 
 namespace SeleniumTraining.Core.Services;
 
+/// <summary>
+/// Service responsible for initializing and finalizing test reports,
+/// with a primary focus on integration with the Allure reporting framework.
+/// </summary>
+/// <remarks>
+/// This service implements <see cref="ITestReporterService"/> and handles the setup of Allure test case
+/// details at the beginning of a test and the processing of test outcomes, including
+/// capturing and attaching screenshots on failure, at the end of a test.
+/// It utilizes NUnit's <see cref="TestContext"/> for result information and Selenium's
+/// <see cref="ITakesScreenshot"/> for screen capture.
+/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// </remarks>
 public class TestReporterService : BaseService, ITestReporterService
 {
-    public TestReporterService(ILoggerFactory loggerFactory) 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestReporterService"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> is null.</exception>
+    public TestReporterService(ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestReporterService));
     }
 
+    /// <inheritdoc cref="ITestReporterService.InitializeTestReport(string, string, string)" />
+    /// <remarks>
+    /// This implementation updates the current Allure test case with the provided display name
+    /// and adds the browser name as a parameter to the Allure report.
+    /// Exceptions during Allure interaction are logged.
+    /// </remarks>
     public void InitializeTestReport(string allureDisplayName, string browserName, string correlationId)
     {
         var scopeProperties = new Dictionary<string, object>
@@ -38,6 +61,14 @@ public class TestReporterService : BaseService, ITestReporterService
         }
     }
 
+    /// <inheritdoc cref="ITestReporterService.FinalizeTestReport(TestContext, IWebDriver, BrowserType, string, string)" />
+    /// <remarks>
+    /// This implementation processes the NUnit <see cref="TestContext.Result"/> to determine the test outcome.
+    /// For failed tests, it logs detailed failure information, attempts to save a screenshot using
+    /// the private helper <see cref="SaveScreenshotInternal(IWebDriver, string, string)"/>,
+    /// adds the screenshot as an NUnit test attachment, and attaches it to the Allure report.
+    /// For passed or other outcomes, it logs the status.
+    /// All significant operations and potential errors during finalization are logged.
     public void FinalizeTestReport(
         TestContext testContext,
         IWebDriver? driver,
@@ -129,6 +160,19 @@ public class TestReporterService : BaseService, ITestReporterService
         }
     }
 
+    /// <summary>
+    /// Saves a screenshot from the provided WebDriver instance to the specified file path.
+    /// This is a helper method used internally, typically for capturing evidence on test failures.
+    /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance from which to take the screenshot.
+    /// Must implement <see cref="ITakesScreenshot"/>.</param>
+    /// <param name="filePath">The full path (including filename and extension) where the screenshot will be saved.</param>
+    /// <param name="testNameForLog">The name of the test, used for contextual logging of the screenshot operation.</param>
+    /// <remarks>
+    /// This method first checks if the driver supports <see cref="ITakesScreenshot"/>.
+    /// It ensures the target directory exists before attempting to save the screenshot.
+    /// Any exceptions during the process (directory creation, screenshot capture, file save) are logged.
+    /// </remarks>
     private void SaveScreenshotInternal(IWebDriver driver, string filePath, string testNameForLog)
     {
         if (driver is ITakesScreenshot screenshotDriver)

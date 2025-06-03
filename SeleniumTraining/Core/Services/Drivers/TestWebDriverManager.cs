@@ -1,5 +1,19 @@
 namespace SeleniumTraining.Core.Services.Drivers;
 
+/// <summary>
+/// Manages the lifecycle of a WebDriver instance within the scope of a single test.
+/// It handles initialization, retrieval, and quitting of the driver, using thread-local storage
+/// to ensure test isolation in parallel execution environments.
+/// </summary>
+/// <remarks>
+/// This class implements <see cref="ITestWebDriverManager"/> and acts as an orchestrator,
+/// delegating driver creation to <see cref="IDriverInitializationService"/>,
+/// driver termination to <see cref="IDriverLifecycleService"/>, and thread-safe storage
+/// to <see cref="IThreadLocalDriverStorageService"/>.
+/// It ensures that driver operations are logged and that resources are cleaned up
+/// via its <see cref="IDisposable"/> implementation.
+/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// </remarks>
 public class TestWebDriverManager : BaseService, ITestWebDriverManager
 {
     private readonly IDriverInitializationService _driverInitializer;
@@ -7,6 +21,17 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
     private readonly IThreadLocalDriverStorageService _driverStore;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestWebDriverManager"/> class.
+    /// </summary>
+    /// <param name="driverInitializer">The service responsible for initializing WebDriver instances. Must not be null.</param>
+    /// <param name="driverLifecycleManager">The service responsible for quitting WebDriver instances. Must not be null.</param>
+    /// <param name="driverStore">The service providing thread-local storage for WebDriver instances and context. Must not be null.</param>
+    /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="driverInitializer"/>, <paramref name="driverLifecycleManager"/>,
+    /// <paramref name="driverStore"/>, or <paramref name="loggerFactory"/> is null.
+    /// </exception>
     public TestWebDriverManager(
         IDriverInitializationService driverInitializer,
         IDriverLifecycleService driverLifecycleManager,
@@ -21,8 +46,16 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestWebDriverManager));
     }
 
+    /// <inheritdoc cref="ITestWebDriverManager.IsDriverActive" />
     public bool IsDriverActive => _driverStore.IsDriverInitialized();
 
+    /// <inheritdoc cref="ITestWebDriverManager.InitializeDriver(BrowserType, string, string)" />
+    /// <remarks>
+    /// This implementation checks if a driver is already active for the current thread.
+    /// If so, a warning is logged, and the existing driver context will be overwritten by the new one.
+    /// It then delegates the actual driver creation to the <see cref="IDriverInitializationService"/>
+    /// and stores the created driver and its context using <see cref="IThreadLocalDriverStorageService"/>.
+    /// </remarks>
     public void InitializeDriver(BrowserType browserType, string testName, string correlationId)
     {
         if (_driverStore.IsDriverInitialized())
@@ -36,11 +69,24 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         ServiceLogger.LogInformation("WebDriver initialization orchestrated successfully for test: {TestName}", testName);
     }
 
+    /// <inheritdoc cref="ITestWebDriverManager.GetDriver()" />
+    /// <remarks>
+    /// This implementation retrieves the driver directly from the configured <see cref="IThreadLocalDriverStorageService"/>.
+    /// An <see cref="InvalidOperationException"/> will be thrown by the storage service if no driver is currently set for the thread.
+    /// </remarks>
     public IWebDriver GetDriver()
     {
         return _driverStore.GetDriver();
     }
 
+    /// <inheritdoc cref="ITestWebDriverManager.QuitDriver()" />
+    /// <remarks>
+    /// This implementation first checks if a driver is active using <see cref="IsDriverActive"/>.
+    /// If active, it retrieves the driver and context information from <see cref="IThreadLocalDriverStorageService"/>,
+    /// then delegates the quitting operation to <see cref="IDriverLifecycleService"/>,
+    /// and finally clears the driver context from the thread-local store.
+    /// If no driver is found to be active, a warning is logged.
+    /// </remarks>
     public void QuitDriver()
     {
         if (_driverStore.IsDriverInitialized())
@@ -70,6 +116,17 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         }
     }
 
+    /// <summary>
+    /// Releases managed and unmanaged resources.
+    /// Ensures that any active WebDriver instance managed by this service is quit.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed and unmanaged resources);
+    /// false if called from a finalizer (unmanaged resources only).</param>
+    /// <remarks>
+    /// If <paramref name="disposing"/> is true and a driver is still active, this method
+    /// will attempt to quit the driver using <see cref="QuitDriver"/> to ensure proper cleanup.
+    /// It also disposes the underlying <see cref="IThreadLocalDriverStorageService"/>.
+    /// </remarks>
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
@@ -100,6 +157,10 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         _disposed = true;
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// This implementation ensures that any active WebDriver is quit.
+    /// </summary>
     public void Dispose()
     {
         Dispose(true);

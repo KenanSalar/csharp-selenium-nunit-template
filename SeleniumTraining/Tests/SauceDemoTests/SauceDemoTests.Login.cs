@@ -1,7 +1,36 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
+/// <summary>
+/// This partial class of <see cref="SauceDemoTests"/> contains NUnit test methods
+/// focusing on login scenarios and subsequent actions on the SauceDemo application.
+/// </summary>
+/// <remarks>
+/// Tests in this file verify different login outcomes (successful, locked out user)
+/// and may include post-login actions like product sorting or visual checks.
+/// Each test method is decorated with NUnit and Allure attributes for execution control and reporting.
+/// It inherits test setup and common functionalities from the base <see cref="SauceDemoTests"/> class.
+/// </remarks>
 public partial class SauceDemoTests : BaseTest
 {
+    /// <summary>
+    /// Verifies successful login using standard user credentials via a 'Click' action on the login button.
+    /// After successful login, it navigates to the inventory page and then iterates through all
+    /// available product sorting options, verifying that each sort option can be selected correctly.
+    /// </summary>
+    /// <remarks>
+    /// Test Steps:
+    /// <list type="number">
+    ///   <item><description>Instantiates the LoginPage.</description></item>
+    ///   <item><description>Enters standard user credentials (username and password).</description></item>
+    ///   <item><description>Performs login using the 'Click' mode and expects navigation to InventoryPage.</description></item>
+    ///   <item><description>Asserts that the current page is indeed the InventoryPage.</description></item>
+    ///   <item><description>Iterates through all predefined sort options (<see cref="_inventoryProductsDropdownOptions"/> from the Data partial class).</description></item>
+    ///   <item><description>For each option, calls <see cref="InventoryPage.SortProducts(SortByType, string)"/>.</description></item>
+    ///   <item><description>Verifies that the selected sort option in the dropdown matches the applied option (by text or value).</description></item>
+    /// </list>
+    /// This test is critical for verifying core login and product sorting functionality.
+    /// Performance of login and the sort loop is measured and logged.
+    /// </remarks>
     [Test]
     [Retry(2)]
     [AllureStep("Login with Login Button Click and Sort Products for standard_user")]
@@ -85,6 +114,23 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 
+    /// <summary>
+    /// Verifies that a "locked out" user cannot log in successfully and receives the appropriate error message.
+    /// The login attempt is made using the 'Submit' action (e.g., pressing Enter in the password field).
+    /// </summary>
+    /// <remarks>
+    /// Test Steps:
+    /// <list type="number">
+    ///   <item><description>Instantiates the LoginPage.</description></item>
+    ///   <item><description>Enters credentials for a "locked out" user.</description></item>
+    ///   <item><description>Performs login using the 'Submit' mode and expects to remain on the LoginPage.</description></item>
+    ///   <item><description>Asserts that the current page is still the LoginPage.</description></item>
+    ///   <item><description>Retrieves the error message displayed on the LoginPage.</description></item>
+    ///   <item><description>Asserts that the error message matches the expected message for a locked out user (<see cref="SauceDemoMessages.LockedOutUserError"/>).</description></item>
+    /// </list>
+    /// This test is critical for verifying error handling and security aspects of the login process.
+    /// Performance of the login attempt and error message retrieval is measured.
+    /// </remarks>
     [Test]
     [Retry(2)]
     [AllureStep("Login with Submit for locked_out_user")]
@@ -156,6 +202,26 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 
+    /// <summary>
+    /// Verifies the visual appearance of the inventory page for a "visual_user".
+    /// This test logs in as the visual_user, navigates to the inventory page, and then performs
+    /// visual assertions using <see cref="IVisualTestService.AssertVisualMatch(string, string, BrowserType, IWebElement?, SixLabors.ImageSharp.Rectangle?, double?)"/>.
+    /// It checks both the full page and a specific element (Bolt T-Shirt image).
+    /// </summary>
+    /// <remarks>
+    /// Test Steps:
+    /// <list type="number">
+    ///   <item><description>Logs in as 'visual_user'.</description></item>
+    ///   <item><description>Asserts navigation to InventoryPage.</description></item>
+    ///   <item><description>Pauses briefly (e.g., 1 second) to allow any visual glitches or animations to settle.</description></item>
+    ///   <item><description>Performs a full-page visual assertion against a baseline identified by "InventoryPage_VisualUser_FullPage".</description></item>
+    ///   <item><description>Attempts to locate the "Sauce Labs Bolt T-Shirt" inventory item.</description></item>
+    ///   <item><description>If found and its image is displayed, performs an element-specific visual assertion against a baseline identified by "InventoryPage_VisualUser_BoltTShirtImage".</description></item>
+    ///   <item><description>Logs warnings if the specific item or its image cannot be found or is not displayed, skipping the element-specific check.</description></item>
+    /// </list>
+    /// This test is important for catching unintended UI changes that functional tests might miss.
+    /// It relies on the <see cref="VisualTester"/> service (from <see cref="BaseTest"/>) and pre-existing baseline images.
+    /// </remarks>
     [Test]
     [Retry(2)]
     [AllureStep("Verify Visuals on Inventory Page for visual_user")]

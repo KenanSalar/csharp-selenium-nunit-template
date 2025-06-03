@@ -1,13 +1,48 @@
 namespace SeleniumTraining.Core.Services;
 
+/// <summary>
+/// Manages and provides standardized directory paths for test execution artifacts.
+/// It determines paths for logs, screenshots, and general test outputs, and ensures
+/// these directories exist on the file system.
+/// </summary>
+/// <remarks>
+/// This service implements <see cref="IDirectoryManagerService"/> and calculates paths relative
+/// to the test assembly and project root. It is crucial for organizing test artifacts
+/// in a consistent manner, especially for CI/CD pipelines ([3]) and local debugging.
+/// It inherits from <see cref="BaseService"/> for common logging capabilities.
+/// The logic for determining the project root involves searching upwards from the
+/// test assembly directory for a <c>.csproj</c> file.
+/// </remarks>
 public class DirectoryManagerService : BaseService, IDirectoryManagerService
 {
+    /// <inheritdoc cref="IDirectoryManagerService.TestAssemblyRootDirectory" />
     public string TestAssemblyRootDirectory { get; } = string.Empty; // /bin/Debug/net9.0/
+
+    /// <inheritdoc cref="IDirectoryManagerService.BaseTestOutputDirectory" />
     public string BaseTestOutputDirectory { get; } = string.Empty; // /TestOutput/
+
+    /// <inheritdoc cref="IDirectoryManagerService.BaseScreenshotDirectoryRoot" />
     public string BaseScreenshotDirectoryRoot { get; } = string.Empty; // /TestOutput/Screenshots/
+
+    /// <inheritdoc cref="IDirectoryManagerService.BaseLogDirectoryRoot" />
     public string BaseLogDirectoryRoot { get; } = string.Empty; // TestOutput/Logs/
+
+    /// <inheritdoc cref="IDirectoryManagerService.ProjectRootDirectory" />
     public string ProjectRootDirectory { get; } = string.Empty; // SeleniumTraining/
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DirectoryManagerService"/> class.
+    /// During initialization, it determines the test assembly root, project root,
+    /// and derives other base output directories. It also ensures these base directories exist.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> is null.</exception>
+    /// <remarks>
+    /// The project root directory is determined by traversing up from the test assembly's location
+    /// until a directory containing a <c>.csproj</c> file is found. If not found, it defaults
+    /// to the test assembly root, and a warning is logged.
+    /// After determining all paths, <see cref="EnsureBaseDirectoriesExist"/> is called.
+    /// </remarks>
     public DirectoryManagerService(ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
@@ -26,7 +61,7 @@ public class DirectoryManagerService : BaseService, IDirectoryManagerService
             }
 
             DirectoryInfo? parentDir = Directory.GetParent(currentDirectory);
-            
+
             if (parentDir == null)
             {
                 ProjectRootDirectory = TestAssemblyRootDirectory;
@@ -49,6 +84,13 @@ public class DirectoryManagerService : BaseService, IDirectoryManagerService
         EnsureBaseDirectoriesExist();
     }
 
+    /// <inheritdoc cref="IDirectoryManagerService.EnsureBaseDirectoriesExist()" />
+    /// <remarks>
+    /// This implementation iterates through the <see cref="BaseTestOutputDirectory"/>,
+    /// <see cref="BaseScreenshotDirectoryRoot"/>, and <see cref="BaseLogDirectoryRoot"/>,
+    /// calling a private helper method <see cref="TryCreateDirectory"/> for each to ensure its existence.
+    /// Exceptions during directory creation are logged and re-thrown by the helper method.
+    /// </remarks>
     public void EnsureBaseDirectoriesExist()
     {
         ServiceLogger.LogInformation("Ensuring base output directories exist.");
@@ -66,6 +108,13 @@ public class DirectoryManagerService : BaseService, IDirectoryManagerService
         ServiceLogger.LogInformation("Base output directories ensured (created if they didn't exist).");
     }
 
+    /// <inheritdoc cref="IDirectoryManagerService.GetAndEnsureTestScreenshotDirectory(string)" />
+    /// <remarks>
+    /// This implementation validates that <paramref name="testSpecificFolderName"/> is not null or whitespace.
+    /// It then combines this folder name with <see cref="BaseScreenshotDirectoryRoot"/> to form the full path
+    /// and uses the private helper <see cref="TryCreateDirectory"/> to ensure this specific directory exists.
+    /// Exceptions during directory creation are logged and re-thrown by the helper method.
+    /// </remarks>
     public string GetAndEnsureTestScreenshotDirectory(string testSpecificFolderName)
     {
         if (string.IsNullOrWhiteSpace(testSpecificFolderName))
@@ -86,6 +135,19 @@ public class DirectoryManagerService : BaseService, IDirectoryManagerService
         return specificScreenshotDir;
     }
 
+    /// <summary>
+    /// Attempts to create the specified directory if it does not already exist.
+    /// Logs the outcome of the operation, including any exceptions encountered.
+    /// </summary>
+    /// <param name="path">The absolute path of the directory to create.</param>
+    /// <param name="directoryDescription">A user-friendly description of the directory's purpose, used for logging (e.g., "Base Test Output", "Test-specific screenshot folder 'MyTest'").</param>
+    /// <exception cref="UnauthorizedAccessException">Re-thrown if access is denied during directory creation.</exception>
+    /// <exception cref="IOException">Re-thrown if an I/O error occurs during directory creation.</exception>
+    /// <exception cref="Exception">Re-thrown for any other unexpected errors during directory creation.</exception>
+    /// <remarks>
+    /// This helper method centralizes the directory creation logic and error handling for the service.
+    /// It checks for directory existence before attempting creation to avoid unnecessary operations or exceptions.
+    /// </remarks>
     private void TryCreateDirectory(string path, string directoryDescription)
     {
         ServiceLogger.LogDebug("Attempting to create directory: {DirectoryDescription} at path: {DirectoryPath}", directoryDescription, path);

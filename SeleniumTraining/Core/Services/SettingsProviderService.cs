@@ -1,9 +1,33 @@
 namespace SeleniumTraining.Core.Services;
 
+/// <summary>
+/// Provides access to application settings and configurations by interacting
+/// with the <see cref="IConfiguration"/> system.
+/// </summary>
+/// <remarks>
+/// This service implements <see cref="ISettingsProviderService"/>  and is responsible for
+/// retrieving strongly-typed settings objects from configuration sources (e.g., appsettings.json).
+/// It handles browser-specific settings and generic configuration section retrieval.
+/// An important feature is the automatic override of 'Headless' mode to true when a CI environment
+/// is detected (via the "CI" environment variable), ensuring tests run headlessly in CI/CD pipelines ([3]).
+/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// </remarks>
 public class SettingsProviderService : BaseService, ISettingsProviderService
 {
+    /// <inheritdoc cref="ISettingsProviderService.Configuration" />
     public IConfiguration Configuration { get; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SettingsProviderService"/> class.
+    /// </summary>
+    /// <param name="configuration">The root <see cref="IConfiguration"/> instance, typically injected via DI. Must not be null.</param>
+    /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="configuration"/> or <paramref name="loggerFactory"/> is null.</exception>
+    /// <remarks>
+    /// Upon construction, this service stores the provided <see cref="IConfiguration"/> instance.
+    /// It also logs information about the registered configuration providers if the <paramref name="configuration"/>
+    /// instance is an <see cref="IConfigurationRoot"/>, which can be useful for debugging configuration issues.
+    /// </remarks>
     public SettingsProviderService(IConfiguration configuration, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
@@ -32,7 +56,16 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
         }
     }
 
-    [AllureStep("Retrieving browser settings")]
+    /// <inheritdoc cref="ISettingsProviderService.GetBrowserSettings(BrowserType)" />
+    /// <remarks>
+    /// This implementation maps the <paramref name="browserType"/> to a specific configuration section name
+    /// (e.g., "ChromeBrowserOptions", "FirefoxBrowserOptions"). It then attempts to retrieve and bind
+    /// this section to the corresponding settings class (e.g., <see cref="ChromeSettings"/>, <see cref="FirefoxSettings"/>).
+    /// Crucially, if a CI environment is detected (via the "CI" environment variable being "true"),
+    /// it will override the <c>Headless</c> property of the retrieved settings to <c>true</c>,
+    /// ensuring tests run headlessly in CI/CD pipelines. This behavior is logged.
+    /// </remarks>
+    [AllureStep("Retrieving browser settings for {browserType}")]
     public BaseBrowserSettings GetBrowserSettings(BrowserType browserType)
     {
         string sectionName = browserType switch
@@ -85,6 +118,14 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
         return settings;
     }
 
+    /// <inheritdoc cref="ISettingsProviderService.GetSettings{TClassSite}(string)" />
+    /// <remarks>
+    /// This implementation uses <see cref="IConfiguration.GetSection(string)"/> to retrieve the specified
+    /// configuration section. It then checks if the section exists. If it does, it attempts to bind
+    /// the section to an instance of <typeparamref name="TClassSite"/> using <c>section.Get&lt;TClassSite&gt;()</c>.
+    /// Appropriate exceptions are thrown if the section is not found or if binding fails.
+    /// Detailed logging of the process is performed.
+    /// </remarks>
     [AllureStep("Retrieving settings for section: {sectionName}")]
     public TClassSite GetSettings<TClassSite>(string sectionName) where TClassSite : class
     {

@@ -1,5 +1,18 @@
 namespace SeleniumTraining.Utils.Locators;
 
+/// <summary>
+/// Provides a collection of static helper methods for creating robust Selenium <see cref="By"/> locators.
+/// These methods often target attributes like 'data-test' or 'aria-label', or utilize XPath
+/// functions for text-based searching, aiming for more maintainable and less brittle locators
+/// compared to relying solely on dynamic IDs or complex CSS/XPath structures.
+/// </summary>
+/// <remarks>
+/// This utility class is designed to promote best practices in element location strategies
+/// by encouraging the use of test-specific attributes (like 'data-test') or accessibility attributes ('aria-label').
+/// Such locators are generally more resilient to UI changes that do not alter the core functionality
+/// or accessibility contract of an element.
+/// Using these helpers can lead to more readable and stable automated tests, especially in CI/CD environments.
+/// </remarks>
 public static class SmartLocators
 {
     /// <summary>

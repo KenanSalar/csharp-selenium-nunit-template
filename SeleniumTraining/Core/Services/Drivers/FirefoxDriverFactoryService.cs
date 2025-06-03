@@ -4,16 +4,50 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
+/// <summary>
+/// Factory service specifically for creating and configuring <see cref="FirefoxDriver"/> (GeckoDriver) instances.
+/// </summary>
+/// <remarks>
+/// This service handles the Firefox-specific setup, including invoking WebDriverManager for GeckoDriver setup,
+/// configuring <see cref="FirefoxOptions"/> with common and Firefox-specific settings,
+/// and instantiating the <see cref="FirefoxDriver"/>. It implements <see cref="IBrowserDriverFactoryService"/>
+/// and inherits common factory functionalities from <see cref="DriverFactoryServiceBase"/>.
+/// </remarks>
 public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDriverFactoryService
 {
+    /// <summary>
+    /// Gets the browser type this factory is responsible for, which is always <see cref="BrowserType.Firefox"/>.
+    /// </summary>
+    /// <inheritdoc cref="IBrowserDriverFactoryService.Type" />
     public BrowserType Type => BrowserType.Firefox;
+
+    /// <summary>
+    /// The minimum supported version for the Mozilla Firefox browser handled by this factory.
+    /// </summary>
     private static readonly Version _minimumSupportedVersion = new("110.0");
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FirefoxDriverFactoryService"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The factory used to create loggers, passed to the base class.</param>
     public FirefoxDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(FirefoxDriverFactoryService), Type);
     }
 
+    /// <summary>
+    /// Creates and returns a new <see cref="FirefoxDriver"/> instance configured with the provided settings and options.
+    /// </summary>
+    /// <remarks>
+    /// This method ensures that the provided <paramref name="settingsBase"/> are of type <see cref="FirefoxSettings"/>.
+    /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver.
+    /// It then configures <see cref="FirefoxOptions"/> by applying headless mode, window size (if specified and not in custom args),
+    /// and any custom arguments from settings before instantiating the <see cref="FirefoxDriver"/>.
+    /// Version checks defined in the <see cref="DriverFactoryServiceBase"/> are also performed.
+    /// The <c>LeaveBrowserOpenAfterTest</c> setting is logged as a warning since FirefoxDriver doesn't have a direct equivalent.
+    /// </remarks>
+    /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
+    /// <exception cref="ArgumentException">Thrown if <paramref name="settingsBase"/> is not an instance of <see cref="FirefoxSettings"/>.</exception>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not FirefoxSettings settings)

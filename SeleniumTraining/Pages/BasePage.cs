@@ -1,19 +1,108 @@
 namespace SeleniumTraining.Pages;
 
+/// <summary>
+/// Provides a foundational abstract class for all Page Objects within the Selenium test automation framework.
+/// It encapsulates common functionalities such as WebDriver and WebDriverWait instances, logging,
+/// settings access, retry mechanisms, and standardized page initialization routines including
+/// waiting for page load and ensuring critical element visibility.
+/// </summary>
+/// <remarks>
+/// Derived Page Object classes must implement <see cref="CriticalElementsToEnsureVisible"/>.
+/// The constructor handles the initialization of core services and properties, and then orchestrates
+/// a multi-step page readiness check:
+/// <list type="number">
+///   <item><description>Waiting for the document's readyState to be 'complete' via <see cref="WaitForPageLoad"/>.</description></item>
+///   <item><description>Ensuring all critical elements defined by the derived page are visible via <see cref="EnsureCriticalElementsAreDisplayed"/>.</description></item>
+///   <item><description>Optionally, waiting for additional base readiness conditions defined by the derived page via <see cref="DefinesAdditionalBaseReadinessConditions"/> and <see cref="GetAdditionalBaseReadinessConditions"/> using a composite <see cref="CustomExpectedConditions.AllOf"/> wait.</description></item>
+/// </list>
+/// This robust initialization helps in creating stable and reliable page object interactions.
+/// It supports element highlighting for debugging if configured in <see cref="TestFrameworkSettings"/>.
+/// This base class is designed to be used in conjunction with a DI container that provides the necessary services.
+/// </remarks>
 public abstract class BasePage
 {
+    /// <summary>
+    /// Gets the <see cref="IWebDriver"/> instance associated with this page object.
+    /// Used for all browser interactions.
+    /// </summary>
+    /// <value>The WebDriver instance.</value>
     protected IWebDriver Driver { get; }
+
+    /// <summary>
+    /// Gets the <see cref="WebDriverWait"/> instance configured for this page object,
+    /// used for explicit waits for element conditions.
+    /// </summary>
+    /// <value>The WebDriverWait instance.</value>
     protected WebDriverWait Wait { get; }
+
+    /// <summary>
+    /// Gets the <see cref="ILoggerFactory"/> instance, used primarily for creating loggers
+    /// for components or services instantiated by this page object.
+    /// </summary>
+    /// <value>The logger factory.</value>
     protected ILoggerFactory LoggerFactory { get; }
+
+    /// <summary>
+    /// Gets the <see cref="ILogger"/> instance specific to this page object's concrete type.
+    /// Used for logging messages related to this page's operations and state.
+    /// </summary>
+    /// <value>The logger for this page object.</value>
     protected ILogger PageLogger { get; }
+
+    /// <summary>
+    /// Gets the <see cref="IRetryService"/> instance, used for executing actions
+    /// or functions with retry policies to handle transient failures.
+    /// </summary>
+    /// <value>The retry service.</value>
     protected IRetryService Retry { get; }
 
+    /// <summary>
+    /// Gets an enumerable collection of <see cref="By"/> locators for elements that are considered
+    /// critical for this page to be fully loaded and operational.
+    /// Derived classes must implement this property to define their critical elements.
+    /// </summary>
+    /// <value>An enumerable of critical element locators.</value>
+    /// <remarks>
+    /// The <see cref="EnsureCriticalElementsAreDisplayed"/> method will wait for all elements
+    /// identified by these locators to become visible during page initialization.
+    /// The type is currently <see cref="IEnumerable"/> for flexibility, but often contains <see cref="By"/> locators.
+    /// </remarks>
     protected abstract IEnumerable<By> CriticalElementsToEnsureVisible { get; }
+
+    /// <summary>
+    /// Gets the <see cref="ISettingsProviderService"/> instance, used to access
+    /// application and framework settings.
+    /// </summary>
+    /// <value>The settings provider service.</value>
     protected ISettingsProviderService PageSettingsProvider { get; }
+
+    /// <summary>
+    /// Gets the <see cref="TestFrameworkSettings"/> containing common framework configurations,
+    /// such as element highlighting preferences and default timeouts.
+    /// </summary>
+    /// <value>The test framework settings.</value>
     protected TestFrameworkSettings FrameworkSettings { get; }
 
+    /// <summary>
+    /// Gets the name of this page object class, typically used for logging and reporting.
+    /// It is derived from the concrete page object's type name.
+    /// </summary>
+    /// <value>The name of the page object class.</value>
     protected string PageName { get; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BasePage"/> abstract class.
+    /// Sets up WebDriver, WebDriverWait, logging, settings, retry service, and performs
+    /// initial page load and critical element visibility checks.
+    /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
+    /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
+    /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
+    /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
+    /// <param name="defaultTimeoutSeconds">The default timeout in seconds for the <see cref="WebDriverWait"/> instance. Defaults to 5 seconds.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
+    /// <exception cref="WebDriverTimeoutException">Thrown if <see cref="WaitForPageLoad"/>, <see cref="EnsureCriticalElementsAreDisplayed"/>, or the additional readiness checks time out.</exception>
+    /// <exception cref="Exception">Thrown for other unexpected errors during initialization.</exception>
     protected BasePage(
         IWebDriver driver,
         ILoggerFactory loggerFactory,
@@ -97,6 +186,16 @@ public abstract class BasePage
         }
     }
 
+    /// <summary>
+    /// Waits for the current page's document readyState to be 'complete'.
+    /// This is a fundamental check to ensure the basic HTML structure of the page has loaded.
+    /// </summary>
+    /// <remarks>
+    /// This method uses <see cref="CustomExpectedConditions.DocumentIsReady()"/> with the page's
+    /// <see cref="Wait"/> instance. Exceptions during this process, including timeouts, are logged and re-thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the document does not reach the 'complete' state within the configured timeout.</exception>
+    /// <exception cref="Exception">Thrown for other unexpected errors during the readyState check.</exception>
     [AllureStep("Wait for page load")]
     protected virtual void WaitForPageLoad()
     {
@@ -132,7 +231,18 @@ public abstract class BasePage
         }
     }
 
-    [AllureStep("Ensuring critical page elements are visible for {PageName}")]
+    /// <summary>
+    /// Ensures that all critical elements defined by <see cref="CriticalElementsToEnsureVisible"/>
+    /// for the current page are visible. This method is called during page initialization.
+    /// </summary>
+    /// <remarks>
+    /// It uses the <see cref="WaitExtensions.EnsureElementsAreVisible(WebDriverWait, ILogger, string, IEnumerable)"/>
+    /// extension method to check each locator. If no critical elements are defined, the method returns early.
+    /// Exceptions, including timeouts if any element is not visible within the configured wait period, are logged and re-thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if any critical element is not visible within the timeout.</exception>
+    /// <exception cref="Exception">Thrown for other unexpected errors during the visibility check.</exception>
+    [AllureStep("Ensuring critical page elements are visible.")]
     private void EnsureCriticalElementsAreDisplayed()
     {
         string pageName = GetType().Name;
@@ -167,6 +277,16 @@ public abstract class BasePage
         }
     }
 
+    /// <summary>
+    /// Highlights the specified web element if element highlighting is enabled in the framework settings.
+    /// </summary>
+    /// <param name="element">The <see cref="IWebElement"/> to highlight.</param>
+    /// <returns>The same web element that was passed in, allowing for fluent chaining of operations.</returns>
+    /// <remarks>
+    /// This method utilizes an extension method <c>HighlightElement</c> to perform the visual highlighting.
+    /// The duration of the highlight is configured via <see cref="TestFrameworkSettings.HighlightDurationMs"/>.
+    /// If highlighting is disabled, the method returns the element without modification.
+    /// </remarks>
     protected IWebElement HighlightIfEnabled(IWebElement element)
     {
         if (FrameworkSettings.HighlightElementsOnInteraction)
@@ -175,6 +295,16 @@ public abstract class BasePage
         return element;
     }
 
+    /// <summary>
+    /// Finds an element by the given locator and highlights it if element highlighting is enabled in the framework settings.
+    /// </summary>
+    /// <param name="locator">The <see cref="By"/> locator used to find the web element.</param>
+    /// <returns>The found and potentially highlighted <see cref="IWebElement"/>.</returns>
+    /// <exception cref="NoSuchElementException">Thrown if no element is found using the provided <paramref name="locator"/>.</exception>
+    /// <remarks>
+    /// This method first finds the element using <c>Driver.FindElement(locator)</c> and then calls
+    /// the overloaded <see cref="HighlightIfEnabled(IWebElement)"/> method.
+    /// </remarks>
     protected IWebElement HighlightIfEnabled(By locator)
     {
         IWebElement element = Driver.FindElement(locator);
@@ -186,18 +316,29 @@ public abstract class BasePage
     }
 
     /// <summary>
-    /// Override in derived pages to indicate if they have additional base readiness conditions
-    /// beyond document ready and critical elements.
+    /// Determines if the derived page defines additional base readiness conditions beyond
+    /// document ready state and critical element visibility.
+    /// Derived pages can override this method to return <c>true</c> if they provide conditions
+    /// through <see cref="GetAdditionalBaseReadinessConditions"/>.
     /// </summary>
+    /// <returns><c>false</c> by default; derived pages should override to <c>true</c> if they have additional conditions.</returns>
     protected virtual bool DefinesAdditionalBaseReadinessConditions()
     {
         return false;
     }
 
     /// <summary>
-    /// Override in derived pages to provide a list of additional Func<IWebDriver, bool> conditions
-    /// for the AllOf wait in the BasePage constructor.
+    /// Provides a list of additional custom wait conditions (as <see cref="Func{IWebDriver, Boolean}"/>)
+    /// to be checked during page initialization using a composite <see cref="CustomExpectedConditions.AllOf"/> wait.
+    /// This method is only invoked if <see cref="DefinesAdditionalBaseReadinessConditions"/> returns <c>true</c>.
     /// </summary>
+    /// <returns>An enumerable of functions, each representing a boolean wait condition.
+    /// Returns an empty enumerable by default.</returns>
+    /// <remarks>
+    /// Derived pages should override this method to yield their specific additional readiness conditions.
+    /// Each function should take an <see cref="IWebDriver"/> and return <c>true</c> if the condition is met,
+    /// <c>false</c> otherwise (or if an element is not yet present, which should be handled within the function).
+    /// </remarks>
     protected virtual IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
     {
         yield break;

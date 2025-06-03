@@ -1,9 +1,32 @@
 namespace SeleniumTraining.Core.Services;
 
+/// <summary>
+/// Manages and orchestrates the creation of WebDriver instances by selecting
+/// and utilizing appropriate browser-specific factories.
+/// </summary>
+/// <remarks>
+/// This service implements <see cref="IBrowserFactoryManagerService"/> and acts as a central dispatcher
+/// for WebDriver creation requests. It maintains a collection of registered
+/// <see cref="IBrowserDriverFactoryService"/> instances and delegates the actual driver
+/// instantiation to the factory corresponding to the requested <see cref="BrowserType"/>.
+/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// </remarks>
 public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerService
 {
     private readonly Dictionary<BrowserType, IBrowserDriverFactoryService> _factories;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BrowserFactoryManagerService"/> class.
+    /// </summary>
+    /// <param name="factories">An enumerable collection of <see cref="IBrowserDriverFactoryService"/> instances,
+    /// each responsible for a specific browser type. These will be registered with the manager. Must not be null.</param>
+    /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="factories"/> or <paramref name="loggerFactory"/> is null.</exception>
+    /// <remarks>
+    /// Upon construction, this service indexes the provided factories by their supported <see cref="BrowserType"/>.
+    /// It logs the count of registered factories and details about each one. A warning is logged if no factories are provided,
+    /// as this would prevent any WebDriver creation.
+    /// </remarks>
     public BrowserFactoryManagerService(IEnumerable<IBrowserDriverFactoryService> factories, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
@@ -31,6 +54,14 @@ public class BrowserFactoryManagerService : BaseService, IBrowserFactoryManagerS
         }
     }
 
+    /// <inheritdoc cref="IBrowserFactoryManagerService.UseBrowserDriver(BrowserType, BaseBrowserSettings, DriverOptions)" />
+    /// <remarks>
+    /// This implementation first logs the request details. It then attempts to find a registered
+    /// <see cref="IBrowserDriverFactoryService"/> that matches the requested <paramref name="browserType"/>.
+    /// If a matching factory is found, its <c>CreateDriver</c> method is invoked to instantiate the WebDriver.
+    /// If no factory is registered for the requested <paramref name="browserType"/>, an <see cref="ArgumentException"/> is thrown.
+    /// All significant steps and errors during the process are logged.
+    /// </remarks>
     public IWebDriver UseBrowserDriver(BrowserType browserType, BaseBrowserSettings settings, DriverOptions? options = null)
     {
         ServiceLogger.LogInformation(
