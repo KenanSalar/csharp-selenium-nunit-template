@@ -3,24 +3,28 @@ namespace SeleniumTraining.Pages;
 /// <summary>
 /// Provides a foundational abstract class for all Page Objects within the Selenium test automation framework.
 /// It encapsulates common functionalities such as WebDriver and WebDriverWait instances, logging,
-/// settings access, retry mechanisms, and standardized page initialization routines including
-/// waiting for page load and ensuring critical element visibility.
+/// settings access, retry mechanisms, standardized page initialization routines (including
+/// waiting for page load and ensuring critical element visibility), and an element caching strategy
+/// to improve performance for page-level elements.
 /// </summary>
 /// <remarks>
 /// Derived Page Object classes must implement <see cref="CriticalElementsToEnsureVisible"/>.
 /// The constructor handles the initialization of core services and properties, and then orchestrates
-/// a multi-step page readiness check:
-/// <list type="number">
-///   <item><description>Waiting for the document's readyState to be 'complete' via <see cref="WaitForPageLoad"/>.</description></item>
-///   <item><description>Ensuring all critical elements defined by the derived page are visible via <see cref="EnsureCriticalElementsAreDisplayed"/>.</description></item>
-///   <item><description>Optionally, waiting for additional base readiness conditions defined by the derived page via <see cref="DefinesAdditionalBaseReadinessConditions"/> and <see cref="GetAdditionalBaseReadinessConditions"/> using a composite <see cref="CustomExpectedConditions.AllOf"/> wait.</description></item>
-/// </list>
+/// a multi-step page readiness check.
 /// This robust initialization helps in creating stable and reliable page object interactions.
 /// It supports element highlighting for debugging if configured in <see cref="TestFrameworkSettings"/>.
+/// An instance-based element cache (<see cref="_pageElementCache"/>) is used by <see cref="FindElementOnPage(By)"/>
+/// to reduce redundant DOM lookups for elements directly managed by the page (not within components).
 /// This base class is designed to be used in conjunction with a DI container that provides the necessary services.
 /// </remarks>
 public abstract class BasePage
 {
+    /// <summary>
+    /// Instance-level cache for storing <see cref="IWebElement"/> instances found directly on this page (not within components),
+    /// keyed by their <see cref="By"/> locator. This helps to reduce redundant DOM lookups.
+    /// </summary>
+    private readonly Dictionary<By, IWebElement> _pageElementCache = [];
+
     /// <summary>
     /// Gets the <see cref="IWebDriver"/> instance associated with this page object.
     /// Used for all browser interactions.
@@ -296,18 +300,19 @@ public abstract class BasePage
     }
 
     /// <summary>
-    /// Finds an element by the given locator and highlights it if element highlighting is enabled in the framework settings.
+    /// Finds an element by the given locator using the page-level cache and then highlights it
+    /// if element highlighting is enabled in the framework settings.
     /// </summary>
-    /// <param name="locator">The <see cref="By"/> locator used to find the web element.</param>
+    /// <param name="locator">The <see cref="By"/> locator used to find the web element via <see cref="FindElementOnPage(By)"/>.</param>
     /// <returns>The found and potentially highlighted <see cref="IWebElement"/>.</returns>
-    /// <exception cref="NoSuchElementException">Thrown if no element is found using the provided <paramref name="locator"/>.</exception>
+    /// <exception cref="NoSuchElementException">Thrown by <see cref="FindElementOnPage(By)"/> if no element is found using the provided <paramref name="locator"/>.</exception>
     /// <remarks>
-    /// This method first finds the element using <c>Driver.FindElement(locator)</c> and then calls
-    /// the overloaded <see cref="HighlightIfEnabled(IWebElement)"/> method.
+    /// This method first finds the element using <see cref="FindElementOnPage(By)"/> which incorporates caching,
+    /// and then calls the overloaded <see cref="HighlightIfEnabled(IWebElement)"/> method.
     /// </remarks>
     protected IWebElement HighlightIfEnabled(By locator)
     {
-        IWebElement element = Driver.FindElement(locator);
+        IWebElement element = FindElementOnPage(locator);
 
         if (FrameworkSettings.HighlightElementsOnInteraction)
             _ = element.HighlightElement(Driver, PageLogger, FrameworkSettings.HighlightDurationMs);
@@ -342,5 +347,63 @@ public abstract class BasePage
     protected virtual IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
     {
         yield break;
+    }
+
+    /// <summary>
+    /// Finds an element on the page using the page-level cache (<see cref="_pageElementCache"/>).
+    /// If the element is found in the cache and is not stale, it is returned directly.
+    /// Otherwise, it is located using <see cref="IWebDriver.FindElement(By)"/>, added to the cache, and then returned.
+    /// </summary>
+    /// <param name="locator">The <see cref="By"/> locator strategy to find the element.</param>
+    /// <returns>The located <see cref="IWebElement"/>.</returns>
+    /// <exception cref="NoSuchElementException">Thrown if the element is not found by the driver after a cache miss or if a cached element was stale and re-fetch failed.</exception>
+    /// <remarks>
+    /// This method provides a centralized way to find page-level elements with caching and stale-check capabilities.
+    /// Stale element checks are performed on cached elements before they are returned.
+    /// Search and caching operations are logged.
+    /// </remarks>
+    protected IWebElement FindElementOnPage(By locator)
+    {
+        PageLogger.LogTrace("Page {PageName} attempting to find element: {Locator}", PageName, locator);
+
+        if (_pageElementCache.TryGetValue(locator, out IWebElement? cachedElement))
+        {
+            try
+            {
+                _ = cachedElement.Enabled; // Stale check
+                PageLogger.LogTrace("Returning element for locator '{Locator}' from page cache on {PageName}.", locator, PageName);
+                return cachedElement;
+            }
+            catch (StaleElementReferenceException)
+            {
+                PageLogger.LogDebug("Cached element for locator '{Locator}' on page {PageName} was stale. Removing from cache.", locator, PageName);
+                _ = _pageElementCache.Remove(locator);
+            }
+            catch (Exception ex)
+            {
+                PageLogger.LogWarning(ex, "Unexpected error checking staleness of cached element for locator '{Locator}' on page {PageName}. Will re-fetch.", locator, PageName);
+                _ = _pageElementCache.Remove(locator);
+            }
+        }
+
+        PageLogger.LogTrace("Element for locator '{Locator}' not in page cache or was stale on {PageName}. Finding new element via Driver.", locator, PageName);
+
+        IWebElement newElement = Driver.FindElement(locator);
+        _pageElementCache[locator] = newElement;
+
+        PageLogger.LogDebug("Found and cached new element for locator '{Locator}' on page {PageName}.", locator, PageName);
+
+        return newElement;
+    }
+
+    /// <summary>
+    /// Clears the internal page-level element cache (<see cref="_pageElementCache"/>) for this page instance.
+    /// This should be invoked if a page action causes a full page reload or a significant DOM alteration
+    /// that is not handled by component-level caches or by the instantiation of a new page object.
+    /// </summary>
+    protected void ClearPageElementCache()
+    {
+        PageLogger.LogDebug("Clearing page-level element cache for {PageName}.", PageName);
+        _pageElementCache.Clear();
     }
 }
