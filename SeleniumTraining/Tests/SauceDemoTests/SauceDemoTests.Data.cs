@@ -27,8 +27,7 @@ public partial class SauceDemoTests : BaseTest
     ///   <item><description>Sort by Value: "az", "za", "lohi", "hilo"</description></item>
     /// </list>
     /// </remarks>
-    private readonly List<KeyValuePair<SortByType, string>> _inventoryProductsDropdownOptions =
-    [
+    private readonly List<KeyValuePair<SortByType, string>> _inventoryProductsDropdownOptions = [
         new(SortByType.Text, "Name (A to Z)"),
         new(SortByType.Text, "Name (Z to A)"),
         new(SortByType.Text, "Price (low to high)"),

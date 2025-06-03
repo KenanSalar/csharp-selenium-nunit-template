@@ -6,7 +6,8 @@ namespace SeleniumTraining.Core.Services.Contracts;
 /// </summary>
 /// <remarks>
 /// This service encapsulates the logic for setting up report metadata at the beginning
-/// of a test and capturing relevant information (like screenshots on failure) at the end.
+/// of a test and capturing relevant information (like test outcomes and attaching
+/// pre-captured artifacts like screenshots on failure) at the end.
 /// It helps in generating comprehensive and informative test execution reports.
 /// </remarks>
 public interface ITestReporterService
@@ -33,16 +34,18 @@ public interface ITestReporterService
     /// </summary>
     /// <param name="testContext">The NUnit <see cref="TestContext"/> for the current test, providing access to test results and metadata.</param>
     /// <param name="driver">The <see cref="IWebDriver"/> instance used in the test. Can be null if the driver failed to initialize or was already quit.
-    /// Used for taking screenshots on failure.</param>
+    /// This is passed to facilitate potential interactions if still needed, though primary screenshot capture is now delegated.</param>
     /// <param name="browserType">The <see cref="BrowserType"/> on which the test was executed. Used for report categorization.</param>
-    /// <param name="screenshotDirectory">The directory where screenshots (e.g., on failure) should be saved.
-    /// This path is then typically used for attaching screenshots to the report.</param>
+    /// <param name="screenshotDirectory">The directory where screenshots (e.g., on failure, captured by another service) are located or should be organized.
+    /// This path is then typically used for retrieving screenshots for attachment to the report.</param>
     /// <param name="correlationId">The unique correlation ID for the test execution, used to link report entries with logs.</param>
     /// <remarks>
     /// This method is responsible for actions like:
     /// <list type="bullet">
     ///   <item><description>Determining the test status (pass/fail/skipped).</description></item>
-    ///   <item><description>Taking and attaching screenshots if the test failed (if a driver instance is available).</description></item>
+    ///   <item><description>If the test failed and a WebDriver instance is available, it coordinates with an <see cref="IScreenshotService"/> (or similar)
+    ///   to capture and save a screenshot. The path to this screenshot is then used for attachments.</description></item>
+    ///   <item><description>Attaching screenshots (if captured) to NUnit and Allure reports.</description></item>
     ///   <item><description>Adding any final environment details or test outcome information to the report.</description></item>
     /// </list>
     /// </remarks>

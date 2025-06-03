@@ -5,25 +5,30 @@ namespace SeleniumTraining.Core.Services;
 /// <summary>
 /// Service responsible for initializing and finalizing test reports,
 /// with a primary focus on integration with the Allure reporting framework.
+/// This service delegates screenshot capture to an <see cref="IScreenshotService"/>.
 /// </summary>
 /// <remarks>
 /// This service implements <see cref="ITestReporterService"/> and handles the setup of Allure test case
-/// details at the beginning of a test and the processing of test outcomes, including
-/// capturing and attaching screenshots on failure, at the end of a test.
-/// It utilizes NUnit's <see cref="TestContext"/> for result information and Selenium's
-/// <see cref="ITakesScreenshot"/> for screen capture.
+/// details at the beginning of a test. At the end of a test, it processes the test outcome,
+/// logs failure information, and coordinates with the <see cref="IScreenshotService"/> to obtain
+/// a screenshot on failure, which is then attached to NUnit and Allure reports.
+/// It utilizes NUnit's <see cref="TestContext"/> for result information.
 /// This class inherits from <see cref="BaseService"/> for common logging capabilities.
 /// </remarks>
 public class TestReporterService : BaseService, ITestReporterService
 {
+    private readonly IScreenshotService _screenshotService;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TestReporterService"/> class.
     /// </summary>
     /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> is null.</exception>
-    public TestReporterService(ILoggerFactory loggerFactory)
+    /// <param name="screenshotService">The service responsible for capturing and saving screenshots. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> or <paramref name="screenshotService"/> is null.</exception>
+    public TestReporterService(ILoggerFactory loggerFactory, IScreenshotService screenshotService)
         : base(loggerFactory)
     {
+        _screenshotService = screenshotService ?? throw new ArgumentNullException(nameof(screenshotService));
         ServiceLogger.LogInformation("{ServiceName} initialized.", nameof(TestReporterService));
     }
 
@@ -31,7 +36,7 @@ public class TestReporterService : BaseService, ITestReporterService
     /// <remarks>
     /// This implementation updates the current Allure test case with the provided display name
     /// and adds the browser name as a parameter to the Allure report.
-    /// Exceptions during Allure interaction are logged.
+    /// Exceptions during Allure interaction are caught and logged.
     /// </remarks>
     public void InitializeTestReport(string allureDisplayName, string browserName, string correlationId)
     {
@@ -64,11 +69,16 @@ public class TestReporterService : BaseService, ITestReporterService
     /// <inheritdoc cref="ITestReporterService.FinalizeTestReport(TestContext, IWebDriver, BrowserType, string, string)" />
     /// <remarks>
     /// This implementation processes the NUnit <see cref="TestContext.Result"/> to determine the test outcome.
-    /// For failed tests, it logs detailed failure information, attempts to save a screenshot using
-    /// the private helper <see cref="SaveScreenshotInternal(IWebDriver, string, string)"/>,
-    /// adds the screenshot as an NUnit test attachment, and attaches it to the Allure report.
+    /// For failed tests where a <paramref name="driver"/> instance is available, it:
+    /// <list type="bullet">
+    ///   <item><description>Logs detailed failure information.</description></item>
+    ///   <item><description>Constructs a unique file name for the screenshot.</description></item>
+    ///   <item><description>Invokes the injected <see cref="IScreenshotService"/> to capture and save the screenshot to the provided <paramref name="screenshotDirectory"/>.</description></item>
+    ///   <item><description>If screenshot capture is successful, attaches the screenshot file to NUnit test results and the Allure report.</description></item>
+    /// </list>
     /// For passed or other outcomes, it logs the status.
     /// All significant operations and potential errors during finalization are logged.
+    /// </remarks>
     public void FinalizeTestReport(
         TestContext testContext,
         IWebDriver? driver,
@@ -107,25 +117,29 @@ public class TestReporterService : BaseService, ITestReporterService
 
                     if (driver != null)
                     {
-                        string screenshotFileName = $"{testName}_{browserType}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
-                        string screenshotFilePath = Path.Combine(screenshotDirectory, screenshotFileName);
+                        string screenshotFileNameWithoutExtension = $"{testName}_{browserType}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
 
                         ServiceLogger.LogDebug(
-                            "Attempting to save screenshot for failed test {TestFullName} to {ScreenshotFilePath}",
+                            "Requesting screenshot capture for failed test {TestFullName}. Directory: {ScreenshotDir}, Base FileName: {ScreenshotBaseName}",
                             testName,
-                            screenshotFilePath
+                            screenshotDirectory,
+                            screenshotFileNameWithoutExtension
                         );
-                        SaveScreenshotInternal(driver, screenshotFilePath, testName);
 
-                        // Attach to NUnit test result
-                        TestContext.AddTestAttachment(screenshotFilePath, "Screenshot on failure");
-                        ServiceLogger.LogDebug("Screenshot {ScreenshotFilePath} added as NUnit test attachment.", screenshotFilePath);
+                        string? screenshotFilePath = _screenshotService.CaptureAndSaveScreenshot(driver, screenshotDirectory, screenshotFileNameWithoutExtension);
 
-                        // Attach to Allure report
-                        if (File.Exists(screenshotFilePath))
+                        if (!string.IsNullOrEmpty(screenshotFilePath))
                         {
-                            AllureApi.AddAttachment(screenshotFileName, "image/png", screenshotFilePath);
-                            ServiceLogger.LogInformation("Screenshot saved to {ScreenshotFilePath} for {TestName}", screenshotFilePath, testName);
+                            TestContext.AddTestAttachment(screenshotFilePath, "Screenshot on failure");
+                            ServiceLogger.LogDebug("Screenshot {ScreenshotFilePath} added as NUnit test attachment.", screenshotFilePath);
+
+                            string allureAttachmentName = Path.GetFileName(screenshotFilePath);
+                            AllureApi.AddAttachment(allureAttachmentName, "image/png", screenshotFilePath);
+                            ServiceLogger.LogInformation("Screenshot attached to Allure as {AllureAttachmentName} from {ScreenshotFilePath} for {TestName}", allureAttachmentName, screenshotFilePath, testName);
+                        }
+                        else
+                        {
+                            ServiceLogger.LogWarning("Screenshot capture or save failed for test {TestName}. ScreenshotService did not return a file path.", testName);
                         }
                     }
                     else
@@ -135,7 +149,7 @@ public class TestReporterService : BaseService, ITestReporterService
                 }
                 else if (testOutcome.Status == TestStatus.Passed)
                 {
-                    ServiceLogger.LogWarning(
+                    ServiceLogger.LogInformation(
                         "Test {TestName} on {BrowserType} completed with outcome: {OutcomeStatus} ({OutcomeLabel}). Message: {ResultMessage}",
                         testName,
                         browserType.ToString(),
@@ -157,55 +171,6 @@ public class TestReporterService : BaseService, ITestReporterService
             {
                 ServiceLogger.LogInformation("Report finalization process complete for test {TestFullName}.", testName);
             }
-        }
-    }
-
-    /// <summary>
-    /// Saves a screenshot from the provided WebDriver instance to the specified file path.
-    /// This is a helper method used internally, typically for capturing evidence on test failures.
-    /// </summary>
-    /// <param name="driver">The <see cref="IWebDriver"/> instance from which to take the screenshot.
-    /// Must implement <see cref="ITakesScreenshot"/>.</param>
-    /// <param name="filePath">The full path (including filename and extension) where the screenshot will be saved.</param>
-    /// <param name="testNameForLog">The name of the test, used for contextual logging of the screenshot operation.</param>
-    /// <remarks>
-    /// This method first checks if the driver supports <see cref="ITakesScreenshot"/>.
-    /// It ensures the target directory exists before attempting to save the screenshot.
-    /// Any exceptions during the process (directory creation, screenshot capture, file save) are logged.
-    /// </remarks>
-    private void SaveScreenshotInternal(IWebDriver driver, string filePath, string testNameForLog)
-    {
-        if (driver is ITakesScreenshot screenshotDriver)
-        {
-            try
-            {
-                ServiceLogger.LogDebug("Taking screenshot for test {TestNameForLog}, target path: {FilePath}", testNameForLog, filePath);
-                Screenshot screenshot = screenshotDriver.GetScreenshot();
-
-                string? directory = Path.GetDirectoryName(filePath);
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    _ = Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-                }
-                else
-                {
-                    ServiceLogger.LogWarning(
-                        "Could not determine directory for screenshot path {FilePath} for test {TestNameForLog}. Screenshot may fail.",
-                        filePath,
-                        testNameForLog
-                    );
-                }
-                screenshot.SaveAsFile(filePath);
-                ServiceLogger.LogInformation("Screenshot successfully saved to {FilePath} for test {TestNameForLog}", filePath, testNameForLog);
-            }
-            catch (Exception ex)
-            {
-                ServiceLogger.LogError(ex, "Failed to save screenshot for test {TestName} to {FilePath}.", testNameForLog, filePath);
-            }
-        }
-        else
-        {
-            ServiceLogger.LogWarning("WebDriver instance does not support ITakesScreenshot for test {TestName}.", testNameForLog);
         }
     }
 }
