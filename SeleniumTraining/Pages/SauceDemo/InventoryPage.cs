@@ -2,10 +2,39 @@ using System.Collections.ObjectModel;
 
 namespace SeleniumTraining.Pages.SauceDemo;
 
+/// <summary>
+/// Represents the Inventory Page of the saucedemo.com application, displaying product listings.
+/// This page object provides functionalities for interacting with inventory items,
+/// sorting products, and verifying page state.
+/// </summary>
+/// <remarks>
+/// This page object inherits from <see cref="BasePage"/> ([user_input_previous_message_with_filename_BasePage.cs]) to utilize common page functionalities.
+/// It defines critical elements specific to the inventory page and uses custom expected conditions
+/// for robust synchronization, particularly after sort operations and during initial page load verification
+/// via <see cref="WaitForPageToBeFullyReady(int)"/>.
+/// It also overrides methods from <see cref="BasePage"/> to define additional page readiness conditions.
+/// </remarks>
 public class InventoryPage : BasePage
 {
+    /// <summary>
+    /// Gets the collection of locators for critical elements that must be visible
+    /// for the Inventory Page to be considered properly loaded.
+    /// These include the inventory container, sort dropdown, and shopping cart link.
+    /// </summary>
+    /// <inheritdoc cref="BasePage.CriticalElementsToEnsureVisible" />
     protected override IEnumerable<By> CriticalElementsToEnsureVisible => InventoryPageMap.InventoryPageElements;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InventoryPage"/> class.
+    /// It calls the base constructor and then invokes <see cref="WaitForPageToBeFullyReady(int)"/>
+    /// to ensure the inventory page specific elements are loaded and ready.
+    /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Passed to base.</param>
+    /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Passed to base.</param>
+    /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Passed to base.</param>
+    /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Passed to base.</param>
+    /// <exception cref="WebDriverTimeoutException">Thrown by base constructor or <see cref="WaitForPageToBeFullyReady(int)"/> if page elements do not load within the timeout.</exception>
+    /// <exception cref="ArgumentNullException">Thrown by the base constructor if any of the required service parameters are null.</exception>
     public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
@@ -13,6 +42,21 @@ public class InventoryPage : BasePage
         WaitForPageToBeFullyReady();
     }
 
+    /// <summary>
+    /// Sorts the products displayed on the inventory page based on the specified selector type and sort option.
+    /// After performing the sort action, it waits for the product list to re-render and stabilize
+    /// using the custom expected condition <see cref="CustomExpectedConditions.ListIsRenderedAndFirstItemIsReady"/>.
+    /// </summary>
+    /// <param name="selectorType">The <see cref="SortByType"/> criteria (e.g., Text, Value) used to select the sort option in the dropdown.</param>
+    /// <param name="sortOption">The specific sort option to select (e.g., "Name (A to Z)", "lohi" for price low to high).</param>
+    /// <returns>The current instance of the <see cref="InventoryPage"/>, allowing for fluent method chaining.</returns>
+    /// <remarks>
+    /// This method measures the performance of the sort operation. It utilizes extension methods
+    /// like <c>WaitForElement</c> and <c>SelectDropDown</c> for interacting with the sort dropdown.
+    /// Error handling is in place for timeouts or other exceptions during the sort process.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the sort dropdown is not found, or if the list does not re-render as expected after sorting.</exception>
+    /// <exception cref="Exception">Re-throws other unexpected exceptions that occur during the sorting process.</exception>
     [AllureStep("Sort products by {selectorType} using option '{sortOption}'")]
     public InventoryPage SortProducts(SortByType selectorType, string sortOption)
     {
@@ -100,6 +144,11 @@ public class InventoryPage : BasePage
         return this;
     }
 
+    /// <summary>
+    /// Retrieves the visible text of the currently selected option in the product sort dropdown.
+    /// </summary>
+    /// <returns>The text of the selected sort option.</returns>
+    /// <exception cref="Exception">Re-throws exceptions if the sort dropdown or selected option cannot be found or interacted with.</exception>
     [AllureStep("Get selected sort option text")]
     public string GetSelectedSortText()
     {
@@ -124,6 +173,11 @@ public class InventoryPage : BasePage
         }
     }
 
+    /// <summary>
+    /// Retrieves the 'value' attribute of the currently selected option in the product sort dropdown.
+    /// </summary>
+    /// <returns>The 'value' attribute of the selected sort option, or an empty string if the attribute is not present or the option is not found.</returns>
+    /// <exception cref="Exception">Re-throws exceptions if the sort dropdown or selected option cannot be found or interacted with.</exception>
     [AllureStep("Get selected sort option value")]
     public string GetSelectedSortValue()
     {
@@ -148,6 +202,20 @@ public class InventoryPage : BasePage
         }
     }
 
+    /// <summary>
+    /// Retrieves all inventory items currently displayed on the page as a collection of <see cref="InventoryItemComponent"/> objects.
+    /// It waits for at least a minimum number of items to be present before processing.
+    /// </summary>
+    /// <param name="minExpectedItems">The minimum number of inventory items expected to be present and rendered. Defaults to 1.</param>
+    /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="InventoryItemComponent"/> representing the products.</returns>
+    /// <remarks>
+    /// This method measures its performance. It uses the custom expected condition
+    /// <see cref="CustomExpectedConditions.ElementCountToBeGreaterThanOrEqual"/> to wait for items.
+    /// Each found web element representing an item is then wrapped in an <see cref="InventoryItemComponent"/>
+    /// for easier interaction. Logs detailed information about the process, including outer HTML snippets for tracing.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the minimum number of expected items are not found within the timeout.</exception>
+    /// <exception cref="Exception">Re-throws other unexpected exceptions during item retrieval or component creation.</exception>
     [AllureStep("Get all inventory items on the page")]
     public IEnumerable<InventoryItemComponent> GetInventoryItems(int minExpectedItems = 1)
     {
@@ -240,6 +308,24 @@ public class InventoryPage : BasePage
         return components;
     }
 
+    /// <summary>
+    /// Waits for the Inventory Page to be fully loaded and ready for interaction.
+    /// This method uses a composite wait (<see cref="CustomExpectedConditions.AllOf"/>)
+    /// to ensure several key elements are present and visible:
+    /// <list type="bullet">
+    ///   <item><description>The main inventory container (<see cref="InventoryPageMap.InventoryContainer"/>).</description></item>
+    ///   <item><description>The shopping cart link (<see cref="InventoryPageMap.ShoppingCartLink"/>).</description></item>
+    ///   <item><description>At least a minimum number of inventory items (<see cref="InventoryPageMap.InventoryItem"/>),
+    ///   all of which must also be displayed.</description></item>
+    /// </list>
+    /// </summary>
+    /// <param name="expectedMinItemCount">The minimum number of inventory items expected to be fully rendered. Defaults to 6.</param>
+    /// <remarks>
+    /// This method is called during the <see cref="InventoryPage"/> constructor to ensure page stability
+    /// before any further interactions are attempted. It logs the process and re-throws a
+    /// <see cref="WebDriverTimeoutException"/> if not all conditions are met within the configured wait time.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the page does not meet all readiness conditions within the timeout.</exception>
     [AllureStep("Wait for inventory page to be fully loaded and ready")]
     public void WaitForPageToBeFullyReady(int expectedMinItemCount = 6)
     {
@@ -291,11 +377,25 @@ public class InventoryPage : BasePage
         }
     }
 
+    /// <summary>
+    /// Indicates whether this page defines additional base readiness conditions beyond
+    /// what <see cref="BasePage"/> handles by default (document ready and critical elements).
+    /// For InventoryPage, this is true as it checks for sort dropdown clickability.
+    /// </summary>
+    /// <returns><c>true</c> for InventoryPage.</returns>
+    /// <inheritdoc cref="BasePage.DefinesAdditionalBaseReadinessConditions()" />
     protected override bool DefinesAdditionalBaseReadinessConditions()
     {
         return true;
     }
 
+    /// <summary>
+    /// Provides additional custom wait conditions specific to the Inventory Page that are
+    /// checked during the base page initialization sequence if <see cref="DefinesAdditionalBaseReadinessConditions"/> is true.
+    /// This implementation specifically checks if the sort dropdown is clickable.
+    /// </summary>
+    /// <returns>An enumerable containing a function that checks if the sort dropdown is displayed and enabled.</returns>
+    /// <inheritdoc cref="BasePage.GetAdditionalBaseReadinessConditions()" />
     protected override IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
     {
         yield return driver =>
