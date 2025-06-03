@@ -6,7 +6,7 @@ namespace SeleniumTraining.Pages.SauceDemo;
 /// performing login actions, and retrieving error messages.
 /// </summary>
 /// <remarks>
-/// This page object inherits from <see cref="BasePage"/> ([2]) to gain common page functionalities.
+/// This page object inherits from <see cref="BasePage"/> to gain common page functionalities.
 /// It defines critical elements specific to the login page and implements actions
 /// like entering username/password and submitting the login form.
 /// Login actions can be performed either by submitting the form (e.g., hitting Enter)

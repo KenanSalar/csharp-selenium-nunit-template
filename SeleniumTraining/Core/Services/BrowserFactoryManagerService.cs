@@ -5,7 +5,7 @@ namespace SeleniumTraining.Core.Services;
 /// and utilizing appropriate browser-specific factories.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="IBrowserFactoryManagerService"/> ([2]) and acts as a central dispatcher
+/// This service implements <see cref="IBrowserFactoryManagerService"/> and acts as a central dispatcher
 /// for WebDriver creation requests. It maintains a collection of registered
 /// <see cref="IBrowserDriverFactoryService"/> instances and delegates the actual driver
 /// instantiation to the factory corresponding to the requested <see cref="BrowserType"/>.

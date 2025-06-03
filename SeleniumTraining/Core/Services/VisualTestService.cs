@@ -12,7 +12,7 @@ namespace SeleniumTraining.Core.Services;
 /// against approved baseline images.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="IVisualTestService"/> ([2]) and encapsulates the entire visual testing workflow:
+/// This service implements <see cref="IVisualTestService"/> and encapsulates the entire visual testing workflow:
 /// <list type="bullet">
 ///   <item><description>Screenshot capture (full page, element, or region).</description></item>
 ///   <item><description>Path management for baseline, actual, and difference images using <see cref="IDirectoryManagerService"/>.</description></item>

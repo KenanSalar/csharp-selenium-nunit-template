@@ -7,7 +7,7 @@ namespace SeleniumTraining.Core.Services;
 /// with a primary focus on integration with the Allure reporting framework.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="ITestReporterService"/> ([2]) and handles the setup of Allure test case
+/// This service implements <see cref="ITestReporterService"/> and handles the setup of Allure test case
 /// details at the beginning of a test and the processing of test outcomes, including
 /// capturing and attaching screenshots on failure, at the end of a test.
 /// It utilizes NUnit's <see cref="TestContext"/> for result information and Selenium's

@@ -5,7 +5,7 @@ namespace SeleniumTraining.Core.Services;
 /// with the <see cref="IConfiguration"/> system.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="ISettingsProviderService"/> ([2]) and is responsible for
+/// This service implements <see cref="ISettingsProviderService"/>  and is responsible for
 /// retrieving strongly-typed settings objects from configuration sources (e.g., appsettings.json).
 /// It handles browser-specific settings and generic configuration section retrieval.
 /// An important feature is the automatic override of 'Headless' mode to true when a CI environment

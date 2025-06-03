@@ -8,7 +8,7 @@ namespace SeleniumTraining.Core.Services;
 /// It handles a predefined set of common Selenium exceptions and uses an exponential backoff strategy.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="IRetryService"/> ([2]) and centralizes the logic for retrying operations
+/// This service implements <see cref="IRetryService"/> and centralizes the logic for retrying operations
 /// that might be prone to transient failures. It uses helper methods to build Polly policies
 /// based on a configurable list of default Selenium exceptions.
 /// Logging of retry attempts and outcomes is performed using the provided or internal logger.

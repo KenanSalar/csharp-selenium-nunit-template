@@ -6,7 +6,7 @@ namespace SeleniumTraining.Core.Services;
 /// these directories exist on the file system.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="IDirectoryManagerService"/> ([2]) and calculates paths relative
+/// This service implements <see cref="IDirectoryManagerService"/> and calculates paths relative
 /// to the test assembly and project root. It is crucial for organizing test artifacts
 /// in a consistent manner, especially for CI/CD pipelines ([3]) and local debugging.
 /// It inherits from <see cref="BaseService"/> for common logging capabilities.
