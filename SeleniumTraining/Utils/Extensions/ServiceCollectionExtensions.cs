@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
             .AddTransient<IDriverLifecycleService, DriverLifecycleService>()
             .AddScoped<ITestWebDriverManager, TestWebDriverManager>()
             .AddTransient<ITestReporterService, TestReporterService>()
+            .AddTransient<IScreenshotService, ScreenshotService>()
             .AddScoped<IVisualTestService, VisualTestService>()
             .AddSingleton<IRetryService, RetryService>();
 
