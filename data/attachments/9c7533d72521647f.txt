@@ -1,2 +1,0 @@
-Operation: LoginAndNavigate_LoginPage_Submit
-Duration: 5101 ms (5.101 s)

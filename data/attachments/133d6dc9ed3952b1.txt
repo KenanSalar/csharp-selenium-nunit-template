@@ -1,4 +1,0 @@
-Operation: TestStep_UserLogin_Standard
-Duration: 5612 ms (5.613 s)
-Expected Max: 5000 ms
-Status: FAIL (Exceeded Threshold)
