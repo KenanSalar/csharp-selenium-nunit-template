@@ -104,6 +104,31 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
                 }
             }
         }
+
+        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count > 0)
+        {
+            ServiceLogger.LogDebug(
+                "Applying {PrefCount} user profile preferences for {BrowserType}.",
+                settings.UserProfilePreferences.Count,
+                ConcreteBrowserType
+            );
+
+            foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
+            {
+                try
+                {
+                    chromeOptions.AddUserProfilePreference(pref.Key, pref.Value);
+                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+
+                    ServiceLogger.LogTrace("Applied user profile preference for {BrowserType}: '{PrefKey}' = '{PrefValue}'", ConcreteBrowserType, pref.Key, pref.Value);
+                }
+                catch (Exception ex)
+                {
+                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}' for {BrowserType}.", pref.Key, pref.Value, ConcreteBrowserType);
+                }
+            }
+        }
+
         return chromeOptions;
     }
 
