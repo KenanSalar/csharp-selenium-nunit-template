@@ -346,6 +346,125 @@ public partial class SauceDemoTests : BaseTest
     }
 
     /// <summary>
+    /// Verifies that the "error_user" encounters issues when trying to add items to the cart
+    /// on the inventory page, specifically that the button state does not update correctly.
+    /// </summary>
+    /// <remarks>
+    /// Test Steps:
+    /// <list type="number">
+    ///   <item><description>Instantiates the LoginPage.</description></item>
+    ///   <item><description>Enters credentials for the "error_user".</description></item>
+    ///   <item><description>Performs login using 'Click' mode and expects navigation to InventoryPage. This step's duration is measured.</description></item>
+    ///   <item><description>Asserts that the current page is indeed the InventoryPage.</description></item>
+    ///   <item><description>Retrieves the first available inventory item.</description></item>
+    ///   <item><description>Records the initial text of the item's action button (e.g., "Add to cart").</description></item>
+    ///   <item><description>Attempts to click the item's action button. This step's duration is measured.</description></item>
+    ///   <item><description>Asserts that the action button's text *has not* changed from its initial state,
+    ///   indicating the "add to cart" action failed to update the UI correctly for this error user.</description></item>
+    /// </list>
+    /// Performance and resource usage of login and the cart interaction attempt are measured.
+    /// </remarks>
+    [Test]
+    [Retry(1)] // Error states are usually consistent for this user type.
+    [AllureStep("Login as error_user and Verify Add To Cart Button State")]
+    [AllureSeverity(SeverityLevel.normal)] // This verifies an expected error behavior.
+    [AllureDescription("Verifies that for the error_user, the 'Add to cart' button state does not correctly update after an attempted click.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void ShouldNotUpdateCartButtonStateForErrorUser()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting test: {TestName} for error_user", currentTestName);
+
+        BasePage resultPage;
+        const LoginMode loginMode = LoginMode.Click;
+        string initialActionButtonText = "Add to cart";
+        string itemNameForTest;
+
+
+        var loginOperationProps = new Dictionary<string, object>
+        {
+            { "Username", _sauceDemoSettings.LoginUsernameErrorUser },
+            { "LoginAction", loginMode.ToString() }
+        };
+
+        var loginTimer = new PerformanceTimer(
+            "TestStep_UserLogin_ErrorUser",
+            TestLogger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            loginOperationProps,
+            ResourceMonitor
+        );
+        bool loginStepSuccess = false;
+
+        TestLogger.LogInformation(
+            "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
+            _sauceDemoSettings.LoginUsernameErrorUser,
+            loginMode
+        );
+
+        try
+        {
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            resultPage = loginPage
+                .EnterUsername(_sauceDemoSettings.LoginUsernameErrorUser)
+                .EnterPassword(_sauceDemoSettings.LoginPassword)
+                .LoginAndExpectNavigation(loginMode);
+            loginStepSuccess = resultPage is InventoryPage;
+        }
+        finally
+        {
+            loginTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: loginStepSuccess ? 7000 : null);
+            loginTimer.Dispose();
+        }
+
+        InventoryPage inventoryPage = resultPage.ShouldBeOfType<InventoryPage>("Login as error_user should be successful and navigate to the Inventory Page.");
+        TestLogger.LogInformation("Login successful as error_user, currently on InventoryPage.");
+
+        var cartInteractionTimer = new PerformanceTimer(
+            "TestStep_VerifyCartButtonBehavior_ErrorUser",
+            TestLogger,
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            resourceMonitor: ResourceMonitor
+        );
+
+        bool buttonStateVerified = false;
+
+        try
+        {
+            TestLogger.LogInformation("Attempting to interact with the first inventory item's cart button for error_user.");
+            InventoryItemComponent? firstItem = inventoryPage.GetInventoryItems(minExpectedItems: 1).FirstOrDefault();
+            _ = firstItem.ShouldNotBeNull("At least one inventory item should be available to test.");
+
+            itemNameForTest = firstItem.ItemName;
+            TestLogger.LogInformation("Selected item for test: {ItemName}", itemNameForTest);
+
+            string buttonTextBeforeClick = firstItem.GetActionButtonText();
+            TestLogger.LogDebug("Action button text for '{ItemName}' before click: '{ButtonText}'", itemNameForTest, buttonTextBeforeClick);
+            buttonTextBeforeClick.ShouldBe(initialActionButtonText, $"The initial button text for '{itemNameForTest}' was expected to be '{initialActionButtonText}'.");
+
+            firstItem.ClickActionButton();
+            TestLogger.LogInformation("Clicked action button for item: {ItemName}", itemNameForTest);
+
+            Thread.Sleep(250);
+
+            string buttonTextAfterClick = firstItem.GetActionButtonText();
+            TestLogger.LogDebug("Action button text for '{ItemName}' after click: '{ButtonText}'", itemNameForTest, buttonTextAfterClick);
+
+            buttonTextAfterClick.ShouldBe(buttonTextBeforeClick, $"For error_user, the action button text for '{itemNameForTest}' was expected to remain '{buttonTextBeforeClick}' after clicking, but it changed to '{buttonTextAfterClick}'.");
+
+            TestLogger.LogInformation("Successfully verified that the action button text for '{ItemName}' did not change as expected for error_user.", itemNameForTest);
+            buttonStateVerified = true;
+        }
+        finally
+        {
+            cartInteractionTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: buttonStateVerified ? 5000 : null);
+            cartInteractionTimer.Dispose();
+        }
+
+        TestLogger.LogInformation("Finished test: {TestName} for error_user. Verified expected button error behavior.", currentTestName);
+    }
+
+    /// <summary>
     /// Verifies the visual appearance of the inventory page for a "visual_user".
     /// This test logs in as the visual_user, navigates to the inventory page, and then performs
     /// visual assertions using <see cref="IVisualTestService.AssertVisualMatch(string, string, BrowserType, IWebElement?, SixLabors.ImageSharp.Rectangle?, double?)"/>.
