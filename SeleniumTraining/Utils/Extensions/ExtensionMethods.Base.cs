@@ -1,11 +1,34 @@
-using System.CodeDom;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.ObjectModel;
 using System.Reflection;
 
 namespace SeleniumTraining.Utils.Extensions;
 
+/// <summary>
+/// Provides a collection of static extension methods to enhance common Selenium WebDriver operations,
+/// Enum manipulations, and potentially other utility functions.
+/// </summary>
+/// <remarks>
+/// This partial class centralizes reusable helper functionalities, such as waiting for page titles,
+/// finding elements with explicit waits, ensuring element visibility, and retrieving display names from enums.
+/// These extensions aim to simplify test script development, improve readability, and promote consistent
+/// interaction patterns with web elements and framework components.
+/// Many methods include Allure step integration for better reporting in CI/CD environments.
+/// </remarks>
 public static partial class ExtensionMethods
 {
+    /// <summary>
+    /// Waits for the web page's title to match the specified expected title within the WebDriverWait's timeout period.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance associated with the page.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging the operation's progress and outcome.</param>
+    /// <param name="pageName">A descriptive name of the page being checked, used for logging.</param>
+    /// <param name="expectedTitle">The exact string the page title is expected to be.</param>
+    /// <remarks>
+    /// Logs the attempt, success, or failure (including timeout or mismatch).
+    /// If the title does not match within the timeout, a <see cref="WebDriverTimeoutException"/> is thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the page title does not match <paramref name="expectedTitle"/> within the timeout.</exception>
     [AllureStep("Wait for page title to be {expectedTitle}")]
     public static void WaitForPageTitle(this WebDriverWait wait, IWebDriver driver, ILogger logger, string pageName, string expectedTitle)
     {
@@ -53,6 +76,19 @@ public static partial class ExtensionMethods
         }
     }
 
+    /// <summary>
+    /// Waits for an element to exist in the DOM and returns it.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="pageName">A descriptive name of the page where the element is expected, used for logging.</param>
+    /// <param name="locator">The <see cref="By"/> locator used to find the element.</param>
+    /// <returns>The located <see cref="IWebElement"/> once it exists.</returns>
+    /// <remarks>
+    /// This method uses <see cref="ExpectedConditions.ElementExists(By)"/>.
+    /// If the element does not exist within the timeout, a <see cref="WebDriverTimeoutException"/> is thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the element specified by <paramref name="locator"/> does not exist in the DOM within the timeout.</exception>
     [AllureStep("Wait and find element: {locator}")]
     public static IWebElement WaitForElement(this WebDriverWait wait, ILogger logger, string pageName, By locator)
     {
@@ -87,6 +123,18 @@ public static partial class ExtensionMethods
         }
     }
 
+    /// <summary>
+    /// Gets the display name of an enum value, typically from its <see cref="DisplayAttribute"/>.
+    /// If the attribute or its Name property is not present, the enum value's string representation is returned.
+    /// </summary>
+    /// <param name="enumValue">The <see cref="Enum"/> value for which to retrieve the display name.</param>
+    /// <returns>The display name specified by the <see cref="DisplayAttribute.Name"/> property,
+    /// or the result of <c>enumValue.ToString()</c> if the attribute or name is not found.</returns>
+    /// <remarks>
+    /// This method uses reflection to access the <see cref="DisplayAttribute"/>.
+    /// It is useful for presenting user-friendly names for enum values in logs, reports, or UI.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="enumValue"/> is null.</exception>
     [AllureStep("Get display name for enum: {enumValue}")]
     public static string GetDisplayName(this Enum enumValue)
     {
@@ -105,6 +153,22 @@ public static partial class ExtensionMethods
         return enumValue.ToString();
     }
 
+    /// <summary>
+    /// Ensures that all elements specified by the given locators are visible on the page.
+    /// It iterates through each locator and waits for the corresponding element to become visible.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="pageName">A descriptive name of the page where elements are being checked, used for logging.</param>
+    /// <param name="locators">An <see cref="IEnumerable"/> of <see cref="By"/> locators for the critical elements to check.</param>
+    /// <remarks>
+    /// If <paramref name="locators"/> is null or empty, the method returns without action.
+    /// If any element is not visible within the <see cref="WebDriverWait"/>'s timeout,
+    /// a <see cref="WebDriverTimeoutException"/> is thrown for that specific element.
+    /// This method is typically used to verify that a page or component has loaded correctly by checking its essential elements.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if any element specified by a locator in <paramref name="locators"/> is not visible within the timeout.</exception>
+    /// <exception cref="Exception">Re-throws other unexpected exceptions encountered during visibility checks.</exception>
     [AllureStep("Ensuring {pageName} critical elements are visible")]
     public static void EnsureElementsAreVisible(this WebDriverWait wait, ILogger logger, string pageName, IEnumerable<By> locators)
     {
@@ -179,6 +243,21 @@ public static partial class ExtensionMethods
         );
     }
 
+    /// <summary>
+    /// Ensures that a single element specified by the given locator is visible on the page.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="pageName">A descriptive name of the page where the element is being checked, used for logging.</param>
+    /// <param name="locator">The <see cref="By"/> locator for the element to check. Must not be null.</param>
+    /// <remarks>
+    /// If the <paramref name="locator"/> is null, an <see cref="ArgumentNullException"/> is thrown.
+    /// If the element is not visible within the <see cref="WebDriverWait"/>'s timeout,
+    /// a <see cref="WebDriverTimeoutException"/> is thrown.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="locator"/> is null.</exception>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the element specified by <paramref name="locator"/> is not visible within the timeout.</exception>
+    /// <exception cref="Exception">Re-throws other unexpected exceptions encountered during the visibility check.</exception>
     [AllureStep("Ensuring {pageName} critical element is visible")]
     public static void EnsureElementIsVisible(this WebDriverWait wait, ILogger logger, string pageName, By locator)
     {
@@ -223,6 +302,80 @@ public static partial class ExtensionMethods
                 pageName,
                 locator.ToString()
             );
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Waits for all elements matching the given locator to be present in the DOM and returns them.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="pageName">A descriptive name of the page where the elements are expected, used for logging.</param>
+    /// <param name="locator">The <see cref="By"/> locator used to find the elements.</param>
+    /// <returns>An <see cref="IEnumerable{IWebElement}"/> containing all found elements. Returns an empty collection if no elements are found or if a timeout occurs while waiting for presence.</returns>
+    /// <remarks>
+    /// This method uses <see cref="ExpectedConditions.PresenceOfAllElementsLocatedBy(By)"/>.
+    /// If a timeout occurs while waiting for elements to be present, a warning is logged, and an empty collection is returned
+    /// (it does not throw <see cref="WebDriverTimeoutException"/> directly from this method in that case, differing from single element waits).
+    /// Other unexpected exceptions during the process are re-thrown.
+    /// </remarks>
+    /// <exception cref="Exception">Re-throws unexpected exceptions encountered, other than <see cref="WebDriverTimeoutException"/> which is handled by returning an empty list.</exception>
+    [AllureStep("Wait and find all elements: {locator}")]
+    public static IEnumerable<IWebElement> WaitForElements(this WebDriverWait wait, ILogger logger, string pageName, By locator)
+    {
+        logger.LogDebug(
+            "Waiting for all elements to be present on {PageName}. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s",
+            pageName,
+            locator.ToString(),
+            wait.Timeout.TotalSeconds
+        );
+
+        try
+        {
+            ReadOnlyCollection<IWebElement> elements = wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(locator));
+
+            if (elements != null && elements.Count != 0)
+            {
+                logger.LogInformation(
+                    "{Count} element(s) found successfully on {PageName}. Locator: {ElementLocator}",
+                    elements.Count,
+                    pageName,
+                    locator.ToString()
+                );
+                return elements;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "No elements found on {PageName} for locator {ElementLocator} after wait, though no timeout occurred.",
+                    pageName,
+                    locator.ToString()
+                );
+                return [];
+            }
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Timeout waiting for elements to be present on {PageName}. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s. Returning empty collection.",
+                pageName,
+                locator.ToString(),
+                wait.Timeout.TotalSeconds
+            );
+
+            return [];
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An unexpected error occurred while waiting for elements on {PageName}. Locator: {ElementLocator}.",
+                pageName,
+                locator.ToString()
+            );
+
             throw;
         }
     }

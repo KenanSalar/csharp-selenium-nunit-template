@@ -4,46 +4,80 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
-public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDriverFactoryService // Inherit from DriverFactoryServiceBase
+/// <summary>
+/// Factory service specifically for creating and configuring <see cref="FirefoxDriver"/> (GeckoDriver) instances.
+/// </summary>
+/// <remarks>
+/// This service handles the Firefox-specific setup, including invoking WebDriverManager for GeckoDriver setup,
+/// configuring <see cref="FirefoxOptions"/> with common and Firefox-specific settings,
+/// and instantiating the <see cref="FirefoxDriver"/>. It implements <see cref="IBrowserDriverFactoryService"/>
+/// and inherits common factory functionalities from <see cref="DriverFactoryServiceBase"/>.
+/// </remarks>
+public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDriverFactoryService
 {
+    /// <summary>
+    /// Gets the browser type this factory is responsible for, which is always <see cref="BrowserType.Firefox"/>.
+    /// </summary>
+    /// <inheritdoc cref="IBrowserDriverFactoryService.Type" />
     public BrowserType Type => BrowserType.Firefox;
+
+    /// <summary>
+    /// The minimum supported version for the Mozilla Firefox browser handled by this factory.
+    /// </summary>
     private static readonly Version _minimumSupportedVersion = new("110.0");
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FirefoxDriverFactoryService"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The factory used to create loggers, passed to the base class.</param>
     public FirefoxDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
-        Logger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(FirefoxDriverFactoryService), Type);
+        ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(FirefoxDriverFactoryService), Type);
     }
 
+    /// <summary>
+    /// Creates and returns a new <see cref="FirefoxDriver"/> instance configured with the provided settings and options.
+    /// </summary>
+    /// <remarks>
+    /// This method ensures that the provided <paramref name="settingsBase"/> are of type <see cref="FirefoxSettings"/>.
+    /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver.
+    /// It then configures <see cref="FirefoxOptions"/> by applying headless mode, window size (if specified and not in custom args),
+    /// and any custom arguments from settings before instantiating the <see cref="FirefoxDriver"/>.
+    /// Version checks defined in the <see cref="DriverFactoryServiceBase"/> are also performed.
+    /// The <c>LeaveBrowserOpenAfterTest</c> setting is logged as a warning since FirefoxDriver doesn't have a direct equivalent.
+    /// </remarks>
+    /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
+    /// <exception cref="ArgumentException">Thrown if <paramref name="settingsBase"/> is not an instance of <see cref="FirefoxSettings"/>.</exception>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not FirefoxSettings settings)
         {
             var ex = new ArgumentException($"Invalid settings type provided. Expected {nameof(FirefoxSettings)}, got {settingsBase.GetType().Name}.", nameof(settingsBase));
-            Logger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(FirefoxDriverFactoryService));
+            ServiceLogger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(FirefoxDriverFactoryService));
             throw ex;
         }
 
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "Creating FirefoxDriver (GeckoDriver). Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if applicable).",
             settings.Headless,
             settings.WindowWidth ?? -1,
             settings.WindowHeight ?? -1
         );
 
-        Logger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
+        ServiceLogger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
         try
         {
             _ = new DriverManager().SetUpDriver(new FirefoxConfig());
-            Logger.LogInformation("WebDriverManager successfully completed GeckoDriver setup (FirefoxConfig).");
+            ServiceLogger.LogInformation("WebDriverManager successfully completed GeckoDriver setup (FirefoxConfig).");
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "WebDriverManager failed to set up GeckoDriver (FirefoxConfig).");
+            ServiceLogger.LogError(ex, "WebDriverManager failed to set up GeckoDriver (FirefoxConfig).");
             throw;
         }
 
         FirefoxOptions firefoxOptions = options as FirefoxOptions ?? new FirefoxOptions();
-        Logger.LogDebug("Initialized FirefoxOptions. Base options type: {OptionsBaseType}",
+        ServiceLogger.LogDebug("Initialized FirefoxOptions. Base options type: {OptionsBaseType}",
             firefoxOptions.GetType().BaseType?.Name ?? firefoxOptions.GetType().Name);
 
         var appliedOptionsForLog = new List<string>();
@@ -55,12 +89,17 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
                 : "-headless";
             firefoxOptions.AddArgument(headlessArg);
             appliedOptionsForLog.Add(headlessArg);
-            Logger.LogDebug("Applied headless argument for {BrowserType}: '{HeadlessArgument}'", Type, headlessArg);
+            ServiceLogger.LogDebug("Applied headless argument for {BrowserType}: '{HeadlessArgument}'", Type, headlessArg);
         }
 
         if (settings.WindowWidth.HasValue && settings.WindowHeight.HasValue)
         {
-            bool sizeAlreadyInCustomArgs = settings.FirefoxArguments?.Any(arg => arg.StartsWith("--width=", StringComparison.Ordinal) || arg.StartsWith("--height=", StringComparison.Ordinal)) ?? false;
+            bool sizeAlreadyInCustomArgs = settings.FirefoxArguments?.Any(arg =>
+                arg.StartsWith("--width=",
+                StringComparison.Ordinal) || arg.StartsWith("--height=",
+                StringComparison.Ordinal)
+            ) ?? false;
+
             if (!sizeAlreadyInCustomArgs)
             {
                 string widthArg = $"--width={settings.WindowWidth.Value}";
@@ -68,43 +107,43 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
                 firefoxOptions.AddArgument(widthArg);
                 firefoxOptions.AddArgument(heightArg);
                 appliedOptionsForLog.AddRange([widthArg, heightArg]);
-                Logger.LogDebug("Applied direct window size arguments: {WidthArg}, {HeightArg}", widthArg, heightArg);
+                ServiceLogger.LogDebug("Applied direct window size arguments: {WidthArg}, {HeightArg}", widthArg, heightArg);
             }
             else
             {
-                 Logger.LogDebug("Window size arguments (--width/--height) found in custom FirefoxArguments. Skipping direct application.");
+                ServiceLogger.LogDebug("Window size arguments (--width/--height) found in custom FirefoxArguments. Skipping direct application.");
             }
         }
 
         if (settings.FirefoxArguments != null && settings.FirefoxArguments.Count != 0)
         {
-            Logger.LogDebug("Applying {ArgCount} Firefox arguments from configuration settings.", settings.FirefoxArguments.Count);
+            ServiceLogger.LogDebug("Applying {ArgCount} Firefox arguments from configuration settings.", settings.FirefoxArguments.Count);
             foreach (string arg in settings.FirefoxArguments)
             {
                 if (!string.IsNullOrWhiteSpace(arg))
                 {
                     firefoxOptions.AddArgument(arg);
                     appliedOptionsForLog.Add(arg);
-                    Logger.LogTrace("Applied Firefox argument from settings: '{FirefoxArgument}'", arg);
+                    ServiceLogger.LogTrace("Applied Firefox argument from settings: '{FirefoxArgument}'", arg);
                 }
             }
         }
 
         if (settings.LeaveBrowserOpenAfterTest)
         {
-            Logger.LogWarning("LeaveBrowserOpenAfterTest=true is set, but FirefoxDriver does not have a direct 'LeaveBrowserRunning' equivalent. Manual teardown control would be needed.");
+            ServiceLogger.LogWarning("LeaveBrowserOpenAfterTest=true is set, but FirefoxDriver does not have a direct 'LeaveBrowserRunning' equivalent. Manual teardown control would be needed.");
         }
 
-        Logger.LogInformation(
+        ServiceLogger.LogInformation(
             "FirefoxOptions configured. Effective arguments: [{EffectiveArgs}]",
             string.Join(", ", appliedOptionsForLog.Distinct()));
 
-        Logger.LogDebug("Attempting to instantiate new FirefoxDriver with configured options.");
+        ServiceLogger.LogDebug("Attempting to instantiate new FirefoxDriver with configured options.");
         FirefoxDriver driver;
         try
         {
             driver = new FirefoxDriver(firefoxOptions);
-            Logger.LogInformation("FirefoxDriver instance created successfully. Driver hash: {DriverHashCode}", driver.GetHashCode());
+            ServiceLogger.LogInformation("FirefoxDriver instance created successfully. Driver hash: {DriverHashCode}", driver.GetHashCode());
 
             PerformVersionCheck(driver, Type.ToString(), _minimumSupportedVersion); // From DriverFactoryServiceBase
             return driver;

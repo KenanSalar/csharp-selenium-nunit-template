@@ -478,6 +478,9 @@ dotnet_diagnostic.IDE0045.severity = suggestion
 # Example: Make IDE0305 (Simplify collection initialization) a suggestion
 dotnet_diagnostic.IDE0305.severity = suggestion
 
+# Convert 'if' statement to conditional expression or coalesce expression
+dotnet_diagnostic.IDE0046.severity = suggestion
+
 # Severity changes from Default
 
 dotnet_analyzer_diagnostic.severity = error
