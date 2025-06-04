@@ -346,40 +346,46 @@ public partial class SauceDemoTests : BaseTest
     }
 
     /// <summary>
-    /// Verifies that the "error_user" encounters issues when trying to add items to the cart
-    /// on the inventory page, specifically that the button state does not update correctly.
+    /// Verifies that the "error_user" encounters browser-specific issues when interacting with the cart
+    /// functionality on the inventory page.
     /// </summary>
     /// <remarks>
-    /// Test Steps:
-    /// <list type="number">
-    ///   <item><description>Instantiates the LoginPage.</description></item>
-    ///   <item><description>Enters credentials for the "error_user".</description></item>
-    ///   <item><description>Performs login using 'Click' mode and expects navigation to InventoryPage. This step's duration is measured.</description></item>
-    ///   <item><description>Asserts that the current page is indeed the InventoryPage.</description></item>
-    ///   <item><description>Retrieves the first available inventory item.</description></item>
-    ///   <item><description>Records the initial text of the item's action button (e.g., "Add to cart").</description></item>
-    ///   <item><description>Attempts to click the item's action button. This step's duration is measured.</description></item>
-    ///   <item><description>Asserts that the action button's text *has not* changed from its initial state,
-    ///   indicating the "add to cart" action failed to update the UI correctly for this error user.</description></item>
+    /// This test checks for distinct error behaviors depending on the browser:
+    /// <list type="bullet">
+    ///   <item>
+    ///     <term>For Chrome (and potentially other similar browsers):</term>
+    ///     <description>
+    ///       1. Logs in as "error_user".
+    ///       2. Attempts to add an item to the cart.
+    ///       3. Asserts that the item's "Add to cart" button text *does not* change, indicating the add action failed at the UI level.
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <term>For Firefox:</term>
+    ///     <description>
+    ///       1. Logs in as "error_user".
+    ///       2. Adds an item to the cart (button text *is expected* to change to "Remove").
+    ///       3. Attempts to remove the item from the cart by clicking the "Remove" button.
+    ///       4. Asserts that the item's button text *does not* change back from "Remove", indicating the remove action failed at the UI level.
+    ///     </description>
+    ///   </item>
     /// </list>
-    /// Performance and resource usage of login and the cart interaction attempt are measured.
+    /// Performance and resource usage of login and cart interactions are measured.
     /// </remarks>
     [Test]
-    [Retry(1)] // Error states are usually consistent for this user type.
-    [AllureStep("Login as error_user and Verify Add To Cart Button State")]
-    [AllureSeverity(SeverityLevel.normal)] // This verifies an expected error behavior.
-    [AllureDescription("Verifies that for the error_user, the 'Add to cart' button state does not correctly update after an attempted click.")]
+    [Retry(1)]
+    [AllureStep("Login as error_user and Verify Browser-Specific Cart Error Behaviors")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies that the error_user encounters specific, expected cart interaction failures that may differ by browser.")]
     [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
-    public void ShouldNotUpdateCartButtonStateForErrorUser()
+    public void ShouldExhibitExpectedCartErrorsForErrorUser() // Renamed method
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
-        TestLogger.LogInformation("Starting test: {TestName} for error_user", currentTestName);
+        TestLogger.LogInformation("Starting test: {TestName} for error_user (browser-specific cart errors)", currentTestName);
 
         BasePage resultPage;
         const LoginMode loginMode = LoginMode.Click;
-        string initialActionButtonText = "Add to cart";
         string itemNameForTest;
-
 
         var loginOperationProps = new Dictionary<string, object>
         {
@@ -421,47 +427,84 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Login successful as error_user, currently on InventoryPage.");
 
         var cartInteractionTimer = new PerformanceTimer(
-            "TestStep_VerifyCartButtonBehavior_ErrorUser",
+            "TestStep_VerifyCartBehavior_ErrorUser",
             TestLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
-            resourceMonitor: ResourceMonitor
+            new Dictionary<string, object> { { "Browser", BrowserType.ToString() } },
+            ResourceMonitor
         );
 
-        bool buttonStateVerified = false;
+        bool cartInteractionsVerified = false;
 
         try
         {
-            TestLogger.LogInformation("Attempting to interact with the first inventory item's cart button for error_user.");
+            TestLogger.LogInformation("Attempting to interact with the first inventory item's cart button for error_user on {Browser}.", BrowserType);
             InventoryItemComponent? firstItem = inventoryPage.GetInventoryItems(minExpectedItems: 1).FirstOrDefault();
             _ = firstItem.ShouldNotBeNull("At least one inventory item should be available to test.");
 
             itemNameForTest = firstItem.ItemName;
-            TestLogger.LogInformation("Selected item for test: {ItemName}", itemNameForTest);
+            TestLogger.LogInformation("Selected item for cart interaction test: {ItemName}", itemNameForTest);
 
-            string buttonTextBeforeClick = firstItem.GetActionButtonText();
-            TestLogger.LogDebug("Action button text for '{ItemName}' before click: '{ButtonText}'", itemNameForTest, buttonTextBeforeClick);
-            buttonTextBeforeClick.ShouldBe(initialActionButtonText, $"The initial button text for '{itemNameForTest}' was expected to be '{initialActionButtonText}'.");
+            string buttonTextBeforeAdd = firstItem.GetActionButtonText();
+            TestLogger.LogDebug("Action button text for '{ItemName}' before first click: '{ButtonText}'", itemNameForTest, buttonTextBeforeAdd);
+            buttonTextBeforeAdd.ShouldBe("Add to cart", $"The initial button text for '{itemNameForTest}' was expected to be 'Add to cart'.");
 
             firstItem.ClickActionButton();
-            TestLogger.LogInformation("Clicked action button for item: {ItemName}", itemNameForTest);
+            TestLogger.LogInformation("Performed first click on action button for item: {ItemName}", itemNameForTest);
+            Thread.Sleep(300);
 
-            Thread.Sleep(250);
+            string buttonTextAfterFirstClick = firstItem.GetActionButtonText();
+            TestLogger.LogDebug("Action button text for '{ItemName}' after first click: '{ButtonText}'", itemNameForTest, buttonTextAfterFirstClick);
 
-            string buttonTextAfterClick = firstItem.GetActionButtonText();
-            TestLogger.LogDebug("Action button text for '{ItemName}' after click: '{ButtonText}'", itemNameForTest, buttonTextAfterClick);
+            if (BrowserType == BrowserType.Chrome)
+            {
+                TestLogger.LogInformation("Chrome specific check: Verifying 'Add to cart' fails for error_user (button text should not change).");
+                buttonTextAfterFirstClick.ShouldBe(
+                    buttonTextBeforeAdd, $"For error_user on Chrome, button text for '{itemNameForTest}' should " +
+                    "remain '{buttonTextBeforeAdd}' after first click, but was '{buttonTextAfterFirstClick}'."
+                );
+                TestLogger.LogInformation("Verified for Chrome: Button text remained 'Add to cart' as expected for error_user.");
+            }
+            else if (BrowserType == BrowserType.Firefox)
+            {
+                TestLogger.LogInformation("Firefox specific check: Verifying 'Add to cart' appears to succeed, then 'Remove' fails for error_user.");
+                buttonTextAfterFirstClick.ShouldBe(
+                    "Remove", $"For error_user on Firefox, button text for '{itemNameForTest}' should " +
+                    "change to 'Remove' after first click (add), but was '{buttonTextAfterFirstClick}'."
+                );
+                TestLogger.LogInformation("Verified for Firefox: Button text changed to 'Remove' after add attempt.");
 
-            buttonTextAfterClick.ShouldBe(buttonTextBeforeClick, $"For error_user, the action button text for '{itemNameForTest}' was expected to remain '{buttonTextBeforeClick}' after clicking, but it changed to '{buttonTextAfterClick}'.");
+                TestLogger.LogInformation("Attempting second click (to 'Remove') for item: {ItemName} on Firefox", itemNameForTest);
+                firstItem.ClickActionButton();
+                TestLogger.LogInformation("Performed second click on action button for item: {ItemName} on Firefox", itemNameForTest);
+                Thread.Sleep(300);
 
-            TestLogger.LogInformation("Successfully verified that the action button text for '{ItemName}' did not change as expected for error_user.", itemNameForTest);
-            buttonStateVerified = true;
+                string buttonTextAfterRemoveAttempt = firstItem.GetActionButtonText();
+                TestLogger.LogDebug("Action button text for '{ItemName}' after remove attempt on Firefox: '{ButtonText}'", itemNameForTest, buttonTextAfterRemoveAttempt);
+                buttonTextAfterRemoveAttempt.ShouldBe(
+                    "Remove", $"For error_user on Firefox, button text for '{itemNameForTest}' should " +
+                    "remain 'Remove' after attempting to remove, but was '{buttonTextAfterRemoveAttempt}'."
+                );
+                TestLogger.LogInformation("Verified for Firefox: Button text remained 'Remove' after remove attempt, as expected for error_user.");
+            }
+            else
+            {
+                TestLogger.LogWarning(
+                    "No specific error_user cart behavior defined for {BrowserType}. Assuming no change after first click as a default error.",
+                    BrowserType
+                );
+                buttonTextAfterFirstClick.ShouldBe(buttonTextBeforeAdd, $"For error_user on {BrowserType}, button text for '{itemNameForTest}' was expected to remain '{buttonTextBeforeAdd}' after first click (default error assumption), but was '{buttonTextAfterFirstClick}'.");
+            }
+
+            cartInteractionsVerified = true;
         }
         finally
         {
-            cartInteractionTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: buttonStateVerified ? 5000 : null);
+            cartInteractionTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: cartInteractionsVerified ? 6000 : null);
             cartInteractionTimer.Dispose();
         }
 
-        TestLogger.LogInformation("Finished test: {TestName} for error_user. Verified expected button error behavior.", currentTestName);
+        TestLogger.LogInformation("Finished test: {TestName} for error_user. Verified expected browser-specific cart error behavior.", currentTestName);
     }
 
     /// <summary>
