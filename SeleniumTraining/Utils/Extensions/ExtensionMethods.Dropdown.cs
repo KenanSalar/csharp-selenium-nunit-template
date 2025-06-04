@@ -2,15 +2,6 @@ using OpenQA.Selenium;
 
 namespace SeleniumTraining.Utils.Extensions;
 
-/// <summary>
-/// Provides extension methods for <see cref="IWebElement"/> specifically for interacting
-/// with HTML dropdown (select) elements.
-/// </summary>
-/// <remarks>
-/// This partial class centralizes common operations performed on dropdowns,
-/// such as selecting options by text or value, handling multi-selects, and retrieving selected options.
-/// These extensions aim to make test scripts more readable and maintainable.
-/// </remarks>
 public static partial class ExtensionMethods
 {
     /// <summary>
