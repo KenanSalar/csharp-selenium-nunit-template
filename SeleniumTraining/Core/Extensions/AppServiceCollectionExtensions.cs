@@ -50,7 +50,6 @@ public static class AppServiceCollectionExtensions
     ///     </list>
     ///   </item>
     /// </list>
-    /// Ensure all necessary concrete types and their interfaces are correctly referenced.
     /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> or <paramref name="configuration"/> is null (though <paramref name="services"/> as 'this' parameter won't be null).</exception>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
