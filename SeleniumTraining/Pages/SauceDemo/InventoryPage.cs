@@ -87,6 +87,7 @@ public class InventoryPage : BasePage
             );
 
             IWebElement sortContainer = Wait.WaitForElement(PageLogger, PageName, InventoryPageMap.SortDropdown);
+            sortContainer.Click();
             sortContainer.SelectDropDown(selectorType, sortOption, Wait, Driver, PageLogger, FrameworkSettings);
 
             string sortOptionDisplay = selectorType.GetDisplayName();

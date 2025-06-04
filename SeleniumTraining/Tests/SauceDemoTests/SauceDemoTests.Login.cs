@@ -37,7 +37,7 @@ public partial class SauceDemoTests : BaseTest
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies user login with the standard_user, using the Click action and then sorts products by all available options.")]
     [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
-    public void ShouldLoginSuccessfullyWithStandardUser()
+    public void ShouldLoginSuccessfullyWithStandardUserAndSortProducts()
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
         TestLogger.LogInformation("Starting test: {TestName}", currentTestName);
@@ -104,7 +104,7 @@ public partial class SauceDemoTests : BaseTest
             foreach (KeyValuePair<SortByType, string> option in _inventoryProductsDropdownOptions)
             {
                 inventoryPage = inventoryPage.SortProducts(option.Key, option.Value);
-
+                
                 if (option.Key == SortByType.Text)
                     inventoryPage.GetSelectedSortText().ShouldBe(option.Value);
                 else if (option.Key == SortByType.Value)
