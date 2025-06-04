@@ -10,9 +10,10 @@ namespace SeleniumTraining.Core;
 /// It handles:
 /// <list type="bullet">
 ///   <item><description>Dependency injection scope management per test using <see cref="TestHost.Services"/>.</description></item>
-///   <item><description>Resolution of core services like <see cref="ISettingsProviderService"/>, <see cref="ITestWebDriverManager"/>, etc.</description></item>
+///   <item><description>Resolution of core services like <see cref="ISettingsProviderService"/>, <see cref="ITestWebDriverManager"/>, <see cref="IResourceMonitorService"/>, etc.</description></item>
 ///   <item><description>Initialization and cleanup of WebDriver via <see cref="ITestWebDriverManager"/>.</description></item>
 ///   <item><description>Reporting setup and finalization via <see cref="ITestReporterService"/>, primarily for Allure.</description></item>
+///   <item><description>Resource monitoring via <see cref="IResourceMonitorService"/>, often integrated with <see cref="PerformanceTimer"/>.</description></item>
 ///   <item><description>Correlation ID generation for tracing.</description></item>
 ///   <item><description>Logging setup using <see cref="ILogger"/> specific to the test class.</description></item>
 ///   <item><description>Handling of CI environment variables (TARGET_BROWSER_CI) to skip non-matching test fixtures.</description></item>
@@ -117,6 +118,13 @@ public abstract class BaseTest : IDisposable
     /// <value>The correlation ID. Empty until <see cref="SetUp"/> completes successfully.</value>
     protected string CorrelationId { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the service for monitoring process resource usage, such as memory.
+    /// Initialized during <see cref="SetUp"/>.
+    /// </summary>
+    /// <value>The resource monitor service. Null until <see cref="SetUp"/> completes successfully.</value>
+    protected IResourceMonitorService ResourceMonitor { get; private set; } = null!;
+
     private IDisposable? _loggingScope; // For structured logging scope
 
 
@@ -138,11 +146,11 @@ public abstract class BaseTest : IDisposable
     /// Performs setup operations common to all tests before each test method execution.
     /// This includes:
     /// <list type="bullet">
-    ///   <item><description>Creating a new DI scope and resolving necessary services.</description></item>
+    ///   <item><description>Creating a new DI scope and resolving necessary services (including <see cref="IResourceMonitorService"/>).</description></item>
     ///   <item><description>Initializing the <see cref="TestLogger"/> with a logging scope including correlation ID and test context.</description></item>
     ///   <item><description>Checking CI environment variables (TARGET_BROWSER_CI) and skipping tests if the fixture's <see cref="BrowserType"/> does not match.</description></item>
     ///   <item><description>Loading browser-specific settings.</description></item>
-    ///   <item><description>Ensuring necessary output directories exist.</</description></item>
+    ///   <item><description>Ensuring necessary output directories exist.</description></item>
     ///   <item><description>Initializing the test report (e.g., for Allure).</description></item>
     ///   <item><description>Initializing the WebDriver instance for the configured <see cref="BrowserType"/>.</description></item>
     /// </list>
@@ -157,10 +165,16 @@ public abstract class BaseTest : IDisposable
         _testScope = TestHost.Services.CreateScope();
         IServiceProvider scopedServiceProvider = _testScope.ServiceProvider;
 
-        ILoggerFactory loggerFactoryForBase = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
-        TestLogger = loggerFactoryForBase.CreateLogger(TestName);
-
+        PageObjectLoggerFactory = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
         RetryService = scopedServiceProvider.GetRequiredService<IRetryService>()!;
+        ResourceMonitor = scopedServiceProvider.GetRequiredService<IResourceMonitorService>()!;
+        SettingsProvider = scopedServiceProvider.GetRequiredService<ISettingsProviderService>()!;
+        DirectoryManager = scopedServiceProvider.GetRequiredService<IDirectoryManagerService>()!;
+        WebDriverManager = scopedServiceProvider.GetRequiredService<ITestWebDriverManager>()!;
+        TestReporter = scopedServiceProvider.GetRequiredService<ITestReporterService>()!;
+        VisualTester = scopedServiceProvider.GetRequiredService<IVisualTestService>()!;
+
+        TestLogger = PageObjectLoggerFactory.CreateLogger(TestName);
 
         string? targetBrowserCiEnv = Environment.GetEnvironmentVariable("TARGET_BROWSER_CI");
         TestLogger.LogInformation("CI Environment Variable TARGET_BROWSER_CI: '{TargetBrowserCiEnv}'", targetBrowserCiEnv ?? "Not Set");
@@ -198,13 +212,6 @@ public abstract class BaseTest : IDisposable
         {
             TestLogger.LogInformation("TARGET_BROWSER_CI environment variable not set (likely a local run). Running test as per fixture: {FixtureBrowserType}", BrowserType);
         }
-
-        SettingsProvider = scopedServiceProvider.GetRequiredService<ISettingsProviderService>()!;
-        DirectoryManager = scopedServiceProvider.GetRequiredService<IDirectoryManagerService>()!;
-        PageObjectLoggerFactory = scopedServiceProvider.GetRequiredService<ILoggerFactory>()!;
-        WebDriverManager = scopedServiceProvider.GetRequiredService<ITestWebDriverManager>()!;
-        TestReporter = scopedServiceProvider.GetRequiredService<ITestReporterService>()!;
-        VisualTester = scopedServiceProvider.GetRequiredService<IVisualTestService>()!;
 
         CorrelationId = Guid.NewGuid().ToString("N")[..12];
         string testLogFileKey = TestName;
@@ -254,17 +261,19 @@ public abstract class BaseTest : IDisposable
     ///   <item><description>Disposing the logging scope.</description></item>
     ///   <item><description>Disposing the test-specific DI scope.</description></item>
     /// </list>
-    /// This method is skipped if the test was ignored in <see cref="SetUp"/>.
+    /// This method is skipped if the test was ignored in <see cref="SetUpAttribute"/> due to CI browser mismatch.
     /// </summary>
     /// <remarks>
     /// This method is decorated with <see cref="TearDownAttribute"/> and will be called by NUnit after each test.
     /// It retrieves the active WebDriver (if any) to assist in report finalization (e.g., for screenshots).
     /// Errors during report finalization are logged but typically do not cause the teardown itself to fail.
+    /// The NUnit <see cref="TestContext"/> is used to determine the outcome of the test.
     /// </remarks>
     [TearDown]
     public void Cleanup()
     {
         if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Skipped &&
+            TestContext.CurrentContext.Result.Message != null &&
             TestContext.CurrentContext.Result.Message.Contains("Skipping test fixture:"))
         {
             TestLogger.LogInformation("BaseTest Cleanup (NUnit TearDown) skipped due to Assert.Ignore in SetUp for test: {TestFullName}", TestContext.CurrentContext.Test.FullName);
@@ -331,13 +340,15 @@ public abstract class BaseTest : IDisposable
     }
 
     /// <summary>
-    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources,
+    /// conforming to the <see cref="IDisposable"/> interface.
     /// This is the primary method for resource cleanup and is called by the NUnit framework
-    /// after all tests in the fixture have run (if IDisposable is implemented at fixture level) or by test runner.
+    /// or test runner at the end of the fixture's lifecycle.
     /// </summary>
     /// <remarks>
     /// This implementation follows the standard dispose pattern.
-    /// It calls the protected virtual <see cref="Dispose(bool)"/> method.
+    /// It calls the protected virtual <see cref="Dispose(bool)"/> method
+    /// and suppresses finalization.
     /// </remarks>
     public void Dispose()
     {
@@ -353,8 +364,8 @@ public abstract class BaseTest : IDisposable
     /// <remarks>
     /// If <paramref name="disposing"/> is true, this method ensures that:
     /// <list type="bullet">
-    ///   <item><description>The WebDriver is quit via <see cref="ITestWebDriverManager.QuitDriver"/>.</description></item>
-    ///   <item><description>All resolved disposable services (<see cref="ITestWebDriverManager"/>, <see cref="ITestReporterService"/>, etc.) are disposed if they implement <see cref="IDisposable"/>.</description></item>
+    ///   <item><description>The WebDriver is quit via <see cref="ITestWebDriverManager.QuitDriver()"/>.</description></item>
+    ///   <item><description>All resolved disposable services (like <see cref="ITestWebDriverManager"/>, <see cref="ITestReporterService"/>, <see cref="IResourceMonitorService"/> etc.) are disposed if they implement <see cref="IDisposable"/>.</description></item>
     ///   <item><description>The logging scope (<see cref="_loggingScope"/>) and DI scope (<see cref="_testScope"/>) are disposed.</description></item>
     /// </list>
     /// This method is protected by a flag to ensure it's only executed once.

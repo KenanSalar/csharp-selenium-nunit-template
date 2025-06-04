@@ -13,6 +13,8 @@ global using SeleniumTraining.Pages.SauceDemo.Components;
 global using SeleniumTraining.Pages.SauceDemo.ElementMap;
 global using SeleniumTraining.Core;
 global using SeleniumTraining.Core.Exceptions;
+global using SeleniumTraining.Core.Extensions;
+global using SeleniumTraining.Core.Models;
 global using SeleniumTraining.Core.Services;
 global using SeleniumTraining.Core.Services.Drivers;
 global using SeleniumTraining.Core.Services.Drivers.Contracts;

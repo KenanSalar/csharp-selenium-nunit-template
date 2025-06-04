@@ -1,6 +1,6 @@
 using Serilog;
 
-namespace SeleniumTraining.Utils.Extensions;
+namespace SeleniumTraining.Core.Extensions;
 
 /// <summary>
 /// Provides extension methods for <see cref="IServiceCollection"/> to centralize
@@ -16,7 +16,7 @@ namespace SeleniumTraining.Utils.Extensions;
 /// This structured approach is beneficial for maintaining a clean and testable application,
 /// especially in CI/CD environments where consistent setup is key.
 /// </remarks>
-public static class ServiceCollectionExtensions
+public static class AppServiceCollectionExtensions
 {
     /// <summary>
     /// Registers core application services and logging with the specified <see cref="IServiceCollection"/>.
@@ -59,11 +59,9 @@ public static class ServiceCollectionExtensions
             .AddLogging(loggingBuilder =>
                 loggingBuilder.ClearProviders()
                 .AddSerilog(dispose: true)
-            );
-
-        _ = services.AddApplicationOptions(configuration);
-
-        services = services.AddSingleton<ISettingsProviderService, SettingsProviderService>()
+            )
+            .AddApplicationOptions(configuration)
+            .AddSingleton<ISettingsProviderService, SettingsProviderService>()
             .AddSingleton<IDirectoryManagerService, DirectoryManagerService>()
             .AddSingleton<IBrowserFactoryManagerService, BrowserFactoryManagerService>()
             .AddSingleton<IBrowserDriverFactoryService, ChromeDriverFactoryService>()
@@ -75,6 +73,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITestWebDriverManager, TestWebDriverManager>()
             .AddTransient<ITestReporterService, TestReporterService>()
             .AddTransient<IScreenshotService, ScreenshotService>()
+            .AddTransient<IResourceMonitorService, ResourceMonitorService>()
             .AddScoped<IVisualTestService, VisualTestService>()
             .AddSingleton<IRetryService, RetryService>();
 

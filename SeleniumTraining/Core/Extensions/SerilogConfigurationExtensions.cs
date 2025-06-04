@@ -2,7 +2,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 
-namespace SeleniumTraining.Utils.Extensions;
+namespace SeleniumTraining.Core.Extensions;
 
 /// <summary>
 /// Provides extension methods for configuring Serilog logging for the application.
