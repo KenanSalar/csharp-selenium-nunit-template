@@ -3,139 +3,98 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 public partial class SauceDemoTests : BaseTest
 {
     /// <summary>
-    /// Verifies the behavior of the inventory page when logged in as the "problem_user".
-    /// This user typically displays the same incorrect image for all products.
+    /// Verifies that a "locked out" user cannot log in successfully and receives the appropriate error message.
+    /// The login attempt is made using the 'Submit' action (e.g., pressing Enter in the password field).
     /// </summary>
     /// <remarks>
     /// Test Steps:
     /// <list type="number">
     ///   <item><description>Instantiates the LoginPage.</description></item>
-    ///   <item><description>Enters credentials for the "problem_user".</description></item>
-    ///   <item><description>Performs login using 'Click' mode and expects navigation to InventoryPage.</description></item>
-    ///   <item><description>Asserts that the current page is indeed the InventoryPage.</description></item>
-    ///   <item><description>Retrieves all inventory items.</description></item>
-    ///   <item><description>Asserts that there is more than one item displayed (to make the image check meaningful).</description></item>
-    ///   <item><description>Gets the 'src' attribute of each product image.</description></item>
-    ///   <item><description>Asserts that all product images have the same 'src' attribute, indicating they are all the same image.</description></item>
+    ///   <item><description>Enters credentials for a "locked out" user.</description></item>
+    ///   <item><description>Performs login using the 'Submit' mode and expects to remain on the LoginPage.</description></item>
+    ///   <item><description>Asserts that the current page is still the LoginPage.</description></item>
+    ///   <item><description>Retrieves the error message displayed on the LoginPage.</description></item>
+    ///   <item><description>Asserts that the error message matches the expected message for a locked out user (<see cref="SauceDemoMessages.LockedOutUserError"/>).</description></item>
     /// </list>
-    /// Performance and resource usage of login and the image verification are measured.
+    /// This test is critical for verifying error handling and security aspects of the login process.
+    /// Performance and resource usage (memory) of the login attempt and error message retrieval are measured.
     /// </remarks>
     [Test]
     [Retry(2)]
-    [AllureStep("Login and Verify Product Images for problem_user")]
-    [AllureSeverity(SeverityLevel.normal)]
-    [AllureDescription("Verifies that when logged in as problem_user, all product images on the inventory page are identical.")]
+    [AllureStep("Login with Submit for locked_out_user")]
+    [AllureSeverity(SeverityLevel.critical)]
+    [AllureDescription("Verifies user login with the locked_out_user, using the Submit action.")]
     [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
-    public void ShouldDisplaySameImageForAllProductsForProblemUser()
+    public void ShouldNotLoginSuccessfullyWithLockedOutUser()
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
-        TestLogger.LogInformation("Starting test: {TestName} for problem_user", currentTestName);
+        TestLogger.LogInformation("Starting test: {TestName}", currentTestName);
 
-        BasePage resultPage;
-        const LoginMode loginMode = LoginMode.Click;
+        const LoginMode loginMode = LoginMode.Submit;
 
-        var loginOperationProps = new Dictionary<string, object>
+        var loginAttemptProps = new Dictionary<string, object>
         {
-            { "Username", _sauceDemoSettings.LoginUsernameProblemUser },
-            { "LoginAction", loginMode.ToString() }
+            { "Username", _sauceDemoSettings.LoginUsernameStandardUser },
+            { "LoginAction", LoginMode.Click.ToString() }
         };
 
-        var loginTimer = new PerformanceTimer(
-            "TestStep_UserLogin_ProblemUser",
+        var loginAttemptTimer = new PerformanceTimer(
+            "TestStep_UserLogin_Standard",
             TestLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
-            loginOperationProps,
+            loginAttemptProps,
             ResourceMonitor
         );
-        bool loginStepSuccess = false;
 
-        TestLogger.LogInformation(
-            "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
-            _sauceDemoSettings.LoginUsernameProblemUser,
-            loginMode
-        );
+        bool loginAttemptSuccessAsExpected = false;
 
+        BasePage resultPage;
         try
         {
+            TestLogger.LogDebug("Instantiating LoginPage.");
             LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+
             resultPage = loginPage
-                .EnterUsername(_sauceDemoSettings.LoginUsernameProblemUser)
+                .EnterUsername(_sauceDemoSettings.LoginUsernameLockedOutUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(loginMode);
-                
-            loginStepSuccess = resultPage is InventoryPage;
+
+            loginAttemptSuccessAsExpected = resultPage is LoginPage;
         }
         finally
         {
-            loginTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: loginStepSuccess ? 7000 : null);
-            loginTimer.Dispose();
+            loginAttemptTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: loginAttemptSuccessAsExpected ? 5000 : null);
+            loginAttemptTimer.Dispose();
         }
 
-        InventoryPage inventoryPage = resultPage.ShouldBeOfType<InventoryPage>("Login as problem_user should be successful and navigate to the Inventory Page.");
-        TestLogger.LogInformation("Login successful as problem_user, currently on InventoryPage.");
+        TestLogger.LogInformation(
+            "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
+            _sauceDemoSettings.LoginUsernameLockedOutUser,
+            loginMode
+        );
 
-        var imageVerificationTimer = new PerformanceTimer(
-            "TestStep_VerifyProductImages_ProblemUser",
+        LoginPage loginPageInstance = resultPage.ShouldBeOfType<LoginPage>("User should have remained on the Login Page.");
+
+        var errorMsgTimer = new PerformanceTimer(
+            "TestStep_GetLoginErrorMessage_LockedOut",
             TestLogger,
             resourceMonitor: ResourceMonitor
         );
 
-        var productImageSources = new List<string>();
+        string actualErrorMessage;
         try
         {
-            TestLogger.LogInformation("Retrieving inventory items to check product images.");
-            IEnumerable<InventoryItemComponent> items = inventoryPage.GetInventoryItems();
-
-            items.Count().ShouldBeGreaterThan(1, "There should be multiple items to compare images.");
-
-            foreach (InventoryItemComponent item in items)
-            {
-                try
-                {
-                    IWebElement itemImageElement = item.ItemImage; // Access the property
-                    if (itemImageElement != null && itemImageElement.Displayed)
-                    {
-                        string? imgSrc = itemImageElement.GetAttribute("src");
-                        if (!string.IsNullOrEmpty(imgSrc))
-                        {
-                            productImageSources.Add(imgSrc);
-                            TestLogger.LogDebug("Item '{ItemName}' image src: {ImageSrc}", item.ItemName, imgSrc);
-                        }
-                        else
-                        {
-                            TestLogger.LogWarning("Item '{ItemName}' image src attribute is null or empty.", item.ItemName);
-                        }
-                    }
-                    else
-                    {
-                        TestLogger.LogWarning("Item '{ItemName}' image element is not displayed or null.", item.ItemName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    TestLogger.LogError(ex, "Error getting image source for item: {ItemName}", item.ItemName);
-                }
-            }
-
-            productImageSources.Count.ShouldBe(items.Count(), "Should have retrieved an image source for each item.");
-
-            if (productImageSources.Count != 0)
-            {
-                int distinctImageSourcesCount = productImageSources.Distinct().Count();
-                distinctImageSourcesCount.ShouldBe(1, $"Expected all product images to be the same for problem_user, but found {distinctImageSourcesCount} distinct image sources. Sources: [{string.Join(", ", productImageSources.Distinct())}]");
-                TestLogger.LogInformation("Verified that all {ImageCount} product images have the same source: {ImageSrc_Example}", productImageSources.Count, productImageSources.First());
-            }
-            else
-            {
-                Assert.Fail("No product image sources were collected, cannot verify problem_user image issue.");
-            }
+            actualErrorMessage = loginPageInstance.GetErrorMessage();
         }
         finally
         {
-            imageVerificationTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
-            imageVerificationTimer.Dispose();
+            errorMsgTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 1000);
+            errorMsgTimer.Dispose();
         }
 
-        TestLogger.LogInformation("Finished test: {TestName} for problem_user", currentTestName);
+        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, $"Error message should be: {SauceDemoMessages.LockedOutUserError} but was: {actualErrorMessage}");
+
+        TestLogger.LogInformation("Login not successful, currently on LoginPage.");
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 }
