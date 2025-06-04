@@ -1,4 +1,4 @@
-namespace SeleniumTraining.Utils.Extensions;
+namespace SeleniumTraining.Core.Extensions;
 
 /// <summary>
 /// Provides extension methods for <see cref="IConfigurationBuilder"/> to standardize
@@ -11,7 +11,7 @@ namespace SeleniumTraining.Utils.Extensions;
 /// This is particularly useful for managing configurations in different environments,
 /// such as development, staging, and production, including CI/CD environments.
 /// </remarks>
-public static class ConfigurationBuilderExtensions
+public static class AppConfigurationBuilderExtensions
 {
     /// <summary>
     /// Builds the application configuration by adding standard configuration sources

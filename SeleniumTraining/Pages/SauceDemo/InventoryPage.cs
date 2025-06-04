@@ -8,11 +8,13 @@ namespace SeleniumTraining.Pages.SauceDemo;
 /// sorting products, and verifying page state.
 /// </summary>
 /// <remarks>
-/// This page object inherits from <see cref="BasePage"/> ([user_input_previous_message_with_filename_BasePage.cs]) to utilize common page functionalities.
+/// This page object inherits from <see cref="BasePage"/> to utilize common page functionalities,
+/// including page-level element caching via <see cref="BasePage.FindElementOnPage(By)"/>.
 /// It defines critical elements specific to the inventory page and uses custom expected conditions
 /// for robust synchronization, particularly after sort operations and during initial page load verification
 /// via <see cref="WaitForPageToBeFullyReady(int)"/>.
-/// It also overrides methods from <see cref="BasePage"/> to define additional page readiness conditions.
+/// It also overrides methods from <see cref="BasePage"/> to define additional page readiness conditions,
+/// interactions with which may benefit from the underlying page cache.
 /// </remarks>
 public class InventoryPage : BasePage
 {
@@ -311,7 +313,8 @@ public class InventoryPage : BasePage
     /// <summary>
     /// Waits for the Inventory Page to be fully loaded and ready for interaction.
     /// This method uses a composite wait (<see cref="CustomExpectedConditions.AllOf"/>)
-    /// to ensure several key elements are present and visible:
+    /// to ensure several key elements are present and visible. Elements are located
+    /// using the page-level caching mechanism <see cref="BasePage.FindElementOnPage(By)"/>.
     /// <list type="bullet">
     ///   <item><description>The main inventory container (<see cref="InventoryPageMap.InventoryContainer"/>).</description></item>
     ///   <item><description>The shopping cart link (<see cref="InventoryPageMap.ShoppingCartLink"/>).</description></item>
@@ -324,6 +327,9 @@ public class InventoryPage : BasePage
     /// This method is called during the <see cref="InventoryPage"/> constructor to ensure page stability
     /// before any further interactions are attempted. It logs the process and re-throws a
     /// <see cref="WebDriverTimeoutException"/> if not all conditions are met within the configured wait time.
+    /// The usage of <c>FindElementOnPage</c> within the conditions means that once an element is confirmed
+    /// present and visible by a sub-condition, subsequent checks for it (if any within the same AllOf or later)
+    /// may benefit from the cache.
     /// </remarks>
     /// <exception cref="WebDriverTimeoutException">Thrown if the page does not meet all readiness conditions within the timeout.</exception>
     [AllureStep("Wait for inventory page to be fully loaded and ready")]
@@ -335,14 +341,26 @@ public class InventoryPage : BasePage
             bool isPageReady = Wait.Until(CustomExpectedConditions.AllOf(
                 driver =>
                 {
-                    try { return driver.FindElement(InventoryPageMap.InventoryContainer).Displayed; }
-                    catch { return false; }
+                    try
+                    {
+                        return FindElementOnPage(InventoryPageMap.InventoryContainer).Displayed;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
                 },
 
                 driver =>
                 {
-                    try { return driver.FindElement(InventoryPageMap.ShoppingCartLink).Displayed; }
-                    catch { return false; }
+                    try
+                    {
+                        return FindElementOnPage(InventoryPageMap.ShoppingCartLink).Displayed;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
                 },
 
                 driver =>
@@ -392,7 +410,8 @@ public class InventoryPage : BasePage
     /// <summary>
     /// Provides additional custom wait conditions specific to the Inventory Page that are
     /// checked during the base page initialization sequence if <see cref="DefinesAdditionalBaseReadinessConditions"/> is true.
-    /// This implementation specifically checks if the sort dropdown is clickable.
+    /// This implementation specifically checks if the sort dropdown is clickable, using the
+    /// page-level caching mechanism <see cref="BasePage.FindElementOnPage(By)"/> to locate the dropdown.
     /// </summary>
     /// <returns>An enumerable containing a function that checks if the sort dropdown is displayed and enabled.</returns>
     /// <inheritdoc cref="BasePage.GetAdditionalBaseReadinessConditions()" />
@@ -402,7 +421,7 @@ public class InventoryPage : BasePage
         {
             try
             {
-                IWebElement sortDropdown = driver.FindElement(InventoryPageMap.SortDropdown);
+                IWebElement sortDropdown = FindElementOnPage(InventoryPageMap.SortDropdown);
                 bool clickable = sortDropdown.Displayed && sortDropdown.Enabled;
                 PageLogger.LogTrace("AdditionalBaseCondition (InventoryPage) - SortDropdown Clickable: {IsClickable}", clickable);
                 return clickable;
