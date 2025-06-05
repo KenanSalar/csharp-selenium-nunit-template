@@ -11,7 +11,7 @@ namespace SeleniumTraining.Utils.Locators;
 /// by encouraging the use of test-specific attributes (like 'data-test') or accessibility attributes ('aria-label').
 /// Such locators are generally more resilient to UI changes that do not alter the core functionality
 /// or accessibility contract of an element.
-/// Using these helpers can lead to more readable and stable automated tests, especially in CI/CD environments.
+/// Using these helpers can lead to more readable and stable automated tests.
 /// </remarks>
 public static class SmartLocators
 {
@@ -48,14 +48,37 @@ public static class SmartLocators
     }
 
     /// <summary>
-    /// Creates a By object to find an element containing specific text (case-sensitive).
+    /// Creates a <see cref="By"/> object to find an element whose normalized text content contains the specified text (case-sensitive).
     /// </summary>
-    /// <param name="text">The partial text content to match.</param>
+    /// <param name="text">The partial text content to match. The <c>normalize-space()</c> XPath function is used on the element's text before checking for containment.</param>
     /// <param name="tagName">Optional. The tag name of the element. Defaults to "*" (any element).</param>
-    /// <returns>A By object for XPath.</returns>
+    /// <returns>A <see cref="By"/> object using an XPath selector.</returns>
+    /// <remarks>
+    /// Useful for elements where only part of the text is static or relevant.
+    /// The XPath generated is <c>//tagName[contains(normalize-space(.), 'text')]</c>.
+    /// </remarks>
     public static By TextContains(string text, string tagName = "*")
     {
         return By.XPath($"//{tagName}[contains(normalize-space(.), '{text}')]");
+    }
+
+    /// <summary>
+    /// Creates a <see cref="By"/> object to find an element of a specific tag that contains a given class
+    /// and has an exact text match (case-sensitive).
+    /// </summary>
+    /// <param name="text">The exact text content the element should have.</param>
+    /// <param name="classNameContains">A class name that the element's class attribute must contain.</param>
+    /// <param name="tagName">Optional. The tag name of the element (e.g., "button"). Defaults to "*" (any element).</param>
+    /// <returns>A <see cref="By"/> object using an XPath selector.</returns>
+    /// <remarks>
+    /// This locator is useful for elements like buttons where matching text and a class provides specificity.
+    /// The XPath generated is <c>.//tagName[contains(@class, 'classNameContains') and text()='text']</c>.
+    /// The <c>.//</c> makes the search relative to the context node if used with <c>FindElement</c> on an existing element.
+    /// Note: This uses an exact text match via <c>text()='{text}'</c> rather than normalizing space for this specific overload.
+    /// </remarks>
+    public static By TextContains(string text, string classNameContains, string tagName = "*")
+    {
+        return By.XPath($".//{tagName}[contains(@class, '{classNameContains}') and text()='{text}']");
     }
 }
 

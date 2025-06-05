@@ -434,4 +434,51 @@ public class InventoryPage : BasePage
             }
         };
     }
+
+    /// <summary>
+    /// Gets the current number of items displayed in the shopping cart badge.
+    /// </summary>
+    /// <returns>The number of items in the cart, or 0 if the badge is not displayed or empty.</returns>
+    [AllureStep("Get shopping cart badge count")]
+    public int GetShoppingCartBadgeCount()
+    {
+        PageLogger.LogDebug("Attempting to get shopping cart badge count.");
+        try
+        {
+            IWebElement badge = FindElementOnPage(InventoryPageMap.ShoppingCartBadge);
+            if (badge.Displayed)
+            {
+                string countText = badge.Text;
+                if (int.TryParse(countText, out int count))
+                {
+                    PageLogger.LogInformation("Shopping cart badge count: {Count}", count);
+
+                    return count;
+                }
+                PageLogger.LogWarning("Could not parse cart badge text '{BadgeText}' to an integer.", countText);
+            }
+            else
+            {
+                PageLogger.LogInformation("Shopping cart badge is not displayed, assuming 0 items.");
+            }
+        }
+        catch (NoSuchElementException)
+        {
+            PageLogger.LogInformation("Shopping cart badge element not found, assuming 0 items.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Error getting shopping cart badge count.");
+        }
+
+        return 0;
+    }
+
+    [AllureStep("Navigate to Shopping Cart")]
+    public ShoppingCartPage ClickShoppingCartLink()
+    {
+        PageLogger.LogInformation("Clicking shopping cart link.");
+        FindElementOnPage(InventoryPageMap.ShoppingCartLink).Click();
+        return new ShoppingCartPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
+    }
 }

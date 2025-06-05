@@ -47,6 +47,13 @@ public static class InventoryPageMap
     public static By ShoppingCartLink => SmartLocators.DataTest("shopping-cart-link");
 
     /// <summary>
+    /// Gets the locator for the shopping cart badge, which displays the number of items in the cart.
+    /// This badge is typically a child element of the <see cref="ShoppingCartLink"/>.
+    /// </summary>
+    /// <value>A <see cref="By"/> object for the shopping cart badge.</value>
+    public static By ShoppingCartBadge => By.CssSelector(".shopping_cart_link .shopping_cart_badge");
+
+    /// <summary>
     /// Gets the locator for the name of the first inventory item displayed in the list.
     /// This is a more complex CSS selector targeting specific 'data-test' attributes within the list structure.
     /// </summary>
