@@ -99,8 +99,7 @@ public class ShoppingCartPage : BasePage
         HighlightIfEnabled(ShoppingCartPageMap.CheckoutButton).Click();
         PageLogger.LogWarning("Checkout page object not yet implemented. Returning BasePage.");
 
-        throw new NotImplementedException("CheckoutStepOnePage page object is not yet implemented. This method should return an instance of it.");
-        // return new CheckoutStepOnePage(Driver, LoggerFactory, PageSettingsProvider, Retry); 
+        return new CheckoutStepOnePage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 
     /// <summary>
