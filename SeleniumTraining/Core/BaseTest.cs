@@ -205,7 +205,6 @@ public abstract class BaseTest : IDisposable
                     targetBrowserCiEnv,
                     BrowserType
                 );
-
             }
         }
         else

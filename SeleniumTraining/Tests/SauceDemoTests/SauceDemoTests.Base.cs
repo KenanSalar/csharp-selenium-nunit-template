@@ -40,8 +40,8 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 /// The underlying <see cref="BaseTest"/> class provides shared infrastructure such as WebDriver management,
 /// DI service resolution, logging, and performance/resource monitoring capabilities.
 /// </remarks>
-[TestFixture(BrowserType.Chrome), Category("Chrome")]
 // [TestFixture(BrowserType.Brave), Category("Brave")]
+[TestFixture(BrowserType.Chrome), Category("Chrome")]
 [TestFixture(BrowserType.Firefox), Category("Firefox")]
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 [AllureSuite("SauceDemo Login and Inventory Tests")]

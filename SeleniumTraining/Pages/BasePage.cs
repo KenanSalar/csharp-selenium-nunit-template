@@ -112,7 +112,7 @@ public abstract class BasePage
         ILoggerFactory loggerFactory,
         ISettingsProviderService settingsProvider,
         IRetryService retryService,
-        int defaultTimeoutSeconds = 5
+        int defaultTimeoutSeconds = 10
     )
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));

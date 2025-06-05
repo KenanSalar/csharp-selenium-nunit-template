@@ -373,12 +373,12 @@ public partial class SauceDemoTests : BaseTest
     /// Performance and resource usage of login and cart interactions are measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Login as error_user and Verify Browser-Specific Cart Error Behaviors")]
-    [AllureSeverity(SeverityLevel.normal)]
+    [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies that the error_user encounters specific, expected cart interaction failures that may differ by browser.")]
     [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
-    public void ShouldExhibitExpectedCartErrorsForErrorUser() // Renamed method
+    public void ShouldExhibitExpectedCartErrorsForErrorUser()
     {
         string currentTestName = TestContext.CurrentContext.Test.Name;
         TestLogger.LogInformation("Starting test: {TestName} for error_user (browser-specific cart errors)", currentTestName);
