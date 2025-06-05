@@ -5,7 +5,7 @@ namespace SeleniumTraining.Pages.SauceDemo.Components;
 /// This component provides access to the item's image, name, description, price, and action button (e.g., "Add to cart").
 /// </summary>
 /// <remarks>
-/// This component inherits from <see cref="BasePageComponent"/> ([user_input_previous_message_with_filename_BasePageComponent.cs]) to gain common component functionalities,
+/// This component inherits from <see cref="BasePageComponent"/> to gain common component functionalities,
 /// such as a scoped <see cref="BasePageComponent.RootElement"/>, WebDriver access, logging, and retry capabilities.
 /// It uses locators defined in <see cref="InventoryItemComponentMap"/> to find its sub-elements.
 /// Actions like clicking the "Add to cart" or "Remove" button are performed via the <see cref="ClickActionButton"/> method,
@@ -117,9 +117,11 @@ public class InventoryItemComponent : BasePageComponent
     /// from the <see cref="BasePageComponent.Retry"/> service. Element highlighting is applied to the button
     /// before clicking if enabled in framework settings.
     /// The operation is logged with the button text and item name.
+    /// After clicking, the component's internal element cache is cleared via <see cref="BasePageComponent.ClearComponentElementCache()"/>
+    /// as the button's state (e.g., text) is expected to change.
     /// </remarks>
     /// <exception cref="ElementClickInterceptedException">May be thrown by the retry mechanism if the click is consistently intercepted.</exception>
-    /// <exception cref="NoSuchElementException">May be thrown by the retry mechanism if the button is not found after retries.</exception>
+    /// <exception cref="NoSuchElementException">May be thrown by the retry mechanism if the button is not found after retries, or by <see cref="ItemName"/> if the item name cannot be found for logging.</exception>
     /// <exception cref="AggregateException">Thrown by Polly if all retry attempts fail, containing the exceptions from all attempts.</exception>
     [AllureStep("Click item action button")]
     public void ClickActionButton()
@@ -135,6 +137,8 @@ public class InventoryItemComponent : BasePageComponent
                 ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
                 button.Click();
                 ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
+
+                ClearComponentElementCache();
             },
             maxRetryAttempts: 2,
             initialDelay: TimeSpan.FromMilliseconds(500),
@@ -150,9 +154,26 @@ public class InventoryItemComponent : BasePageComponent
     public string GetActionButtonText()
     {
         ComponentLogger.LogTrace("Attempting to find ActionButton element to get text, using locator: {Locator}", InventoryItemComponentMap.ActionButton);
-        string text = FindElement(InventoryItemComponentMap.ActionButton).Text;
+        string text = ActionButtonElement.Text;
         ComponentLogger.LogDebug("Retrieved ActionButton text: {Text}", text);
         return text;
     }
 
+    /// <summary>
+    /// Gets the <see cref="IWebElement"/> representing the action button for this inventory item
+    /// (e.g., "Add to cart" or "Remove" button).
+    /// </summary>
+    /// <value>The action button web element.</value>
+    /// <exception cref="NoSuchElementException">Thrown if the action button element cannot be found within this component.</exception>
+    public IWebElement ActionButtonElement
+    {
+        get
+        {
+            ComponentLogger.LogTrace(
+                "Attempting to find ActionButtonElement using locator: {Locator}",
+                InventoryItemComponentMap.ActionButton
+            );
+            return FindElement(InventoryItemComponentMap.ActionButton);
+        }
+    }
 }
