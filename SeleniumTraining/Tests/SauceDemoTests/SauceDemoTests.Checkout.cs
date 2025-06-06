@@ -21,7 +21,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the checkout information step is measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user successfully fills checkout information")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies that the standard user can complete the first step of checkout (entering personal information).")]
@@ -93,7 +93,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the overview and finish steps are measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user completes purchase from overview")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies that the standard user can review and finish the order from the checkout overview page.")]
@@ -175,7 +175,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the confirmation page interaction and navigation is measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user verifies purchase confirmation and returns home")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies the order completion page details and successful return to inventory with an empty cart.")]

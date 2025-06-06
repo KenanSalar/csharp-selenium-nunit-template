@@ -108,11 +108,17 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
                 settings.UserProfilePreferences.Count
             );
 
-            chromeOptions.AddUserProfilePreference("prefs", settings.UserProfilePreferences);
-
             foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
             {
-                appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+                try
+                {
+                    chromeOptions.AddUserProfilePreference(pref.Key, pref.Value);
+                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+                }
+                catch (Exception ex)
+                {
+                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
+                }
             }
         }
 

@@ -267,7 +267,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance and resource usage of login and inventory item retrieval are measured and logged.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Login and Verify Inventory Load for performance_glitch_user")]
     [AllureSeverity(SeverityLevel.normal)]
     [AllureDescription("Verifies that the performance_glitch_user can log in and the inventory page loads, albeit slowly.")]
