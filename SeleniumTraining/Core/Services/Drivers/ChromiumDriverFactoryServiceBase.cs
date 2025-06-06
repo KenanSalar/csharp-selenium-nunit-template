@@ -89,43 +89,30 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
 
         if (settings.ChromeArguments != null && settings.ChromeArguments.Count != 0)
         {
-            ServiceLogger.LogDebug(
-                "Applying {ArgCount} custom Chrome arguments from configuration settings for {BrowserType}.",
-                settings.ChromeArguments.Count,
-                ConcreteBrowserType
-            );
             foreach (string arg in settings.ChromeArguments)
             {
                 if (!string.IsNullOrWhiteSpace(arg))
                 {
                     chromeOptions.AddArgument(arg);
                     appliedOptionsForLog.Add(arg);
-                    ServiceLogger.LogTrace("Applied Chrome argument from settings for {BrowserType}: '{ChromeArgument}'", ConcreteBrowserType, arg);
                 }
             }
+
+            ServiceLogger.LogDebug("Applying {ArgCount} custom Chrome arguments from settings.", settings.ChromeArguments.Count);
         }
 
-        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count > 0)
+        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
         {
             ServiceLogger.LogDebug(
-                "Applying {PrefCount} user profile preferences for {BrowserType}.",
-                settings.UserProfilePreferences.Count,
-                ConcreteBrowserType
+                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
+                settings.UserProfilePreferences.Count
             );
+
+            chromeOptions.AddUserProfilePreference("prefs", settings.UserProfilePreferences);
 
             foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
             {
-                try
-                {
-                    chromeOptions.AddUserProfilePreference(pref.Key, pref.Value);
-                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
-
-                    ServiceLogger.LogTrace("Applied user profile preference for {BrowserType}: '{PrefKey}' = '{PrefValue}'", ConcreteBrowserType, pref.Key, pref.Value);
-                }
-                catch (Exception ex)
-                {
-                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}' for {BrowserType}.", pref.Key, pref.Value, ConcreteBrowserType);
-                }
+                appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
             }
         }
 

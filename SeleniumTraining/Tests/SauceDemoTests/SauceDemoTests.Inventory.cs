@@ -435,6 +435,7 @@ public partial class SauceDemoTests : BaseTest
         );
 
         bool cartInteractionsVerified = false;
+        IWebDriver driver = WebDriverManager.GetDriver();
 
         try
         {
@@ -451,7 +452,25 @@ public partial class SauceDemoTests : BaseTest
 
             firstItem.ClickActionButton();
             TestLogger.LogInformation("Performed first click on action button for item: {ItemName}", itemNameForTest);
-            Thread.Sleep(300);
+
+            var shortWait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
+            try
+            {
+                if (BrowserType == BrowserType.Firefox && buttonTextBeforeAdd == "Add to cart")
+                {
+                    _ = shortWait.Until(d => firstItem.ActionButtonElement.Text == "Remove");
+                    TestLogger.LogDebug("Button text changed to 'Remove' as expected for Firefox 'add to cart' action.");
+                }
+                else
+                {
+                    _ = shortWait.Until(ExpectedConditions.ElementToBeClickable(firstItem.ActionButtonElement));
+                    TestLogger.LogDebug("Action button became clickable after first interaction.");
+                }
+            }
+            catch (WebDriverTimeoutException)
+            {
+                TestLogger.LogWarning("UI did not reach the expected state (text change or clickable) within timeout after first click for item '{ItemName}'. Proceeding with assertion.", itemNameForTest);
+            }
 
             string buttonTextAfterFirstClick = firstItem.GetActionButtonText();
             TestLogger.LogDebug("Action button text for '{ItemName}' after first click: '{ButtonText}'", itemNameForTest, buttonTextAfterFirstClick);
@@ -477,7 +496,16 @@ public partial class SauceDemoTests : BaseTest
                 TestLogger.LogInformation("Attempting second click (to 'Remove') for item: {ItemName} on Firefox", itemNameForTest);
                 firstItem.ClickActionButton();
                 TestLogger.LogInformation("Performed second click on action button for item: {ItemName} on Firefox", itemNameForTest);
-                Thread.Sleep(300);
+
+                try
+                {
+                    _ = shortWait.Until(ExpectedConditions.ElementToBeClickable(firstItem.ActionButtonElement));
+                    TestLogger.LogDebug("Action button became clickable after 'remove' attempt.");
+                }
+                catch (WebDriverTimeoutException)
+                {
+                    TestLogger.LogWarning("UI did not become clickable within timeout after 'remove' attempt for item '{ItemName}'. Proceeding with assertion.", itemNameForTest);
+                }
 
                 string buttonTextAfterRemoveAttempt = firstItem.GetActionButtonText();
                 TestLogger.LogDebug("Action button text for '{ItemName}' after remove attempt on Firefox: '{ButtonText}'", itemNameForTest, buttonTextAfterRemoveAttempt);
@@ -520,7 +548,7 @@ public partial class SauceDemoTests : BaseTest
     ///   <item><description>Starts a performance timer for the entire test method, including resource monitoring.</description></item>
     ///   <item><description>Logs in as 'visual_user'.</description></item>
     ///   <item><description>Asserts navigation to InventoryPage.</description></item>
-    ///   <item><description>Pauses briefly (e.g., 1 second) to allow any visual glitches or animations to settle.</description></item>
+    ///   <item><description>Pauses with explicit wait to allow any visual glitches or animations to settle.</description></item>
     ///   <item><description>Performs a full-page visual assertion against a baseline identified by "InventoryPage_VisualUser_FullPage".</description></item>
     ///   <item><description>Attempts to locate the "Sauce Labs Bolt T-Shirt" inventory item.</description></item>
     ///   <item><description>If found and its image is displayed, performs an element-specific visual assertion against a baseline identified by "InventoryPage_VisualUser_BoltTShirtImage".</description></item>
@@ -549,7 +577,9 @@ public partial class SauceDemoTests : BaseTest
             new Dictionary<string, object> { { "UserType", "visual_user" } },
             ResourceMonitor
         );
+
         bool testStepsSuccessful = false;
+        IWebDriver driver = WebDriverManager.GetDriver();
 
         try
         {
@@ -571,13 +601,14 @@ public partial class SauceDemoTests : BaseTest
 
             try
             {
-                TestLogger.LogTrace("Pausing briefly to allow visual_user glitches to manifest (500ms) for {TestName}.", currentTestName);
-                Thread.Sleep(500);
+                TestLogger.LogTrace("Ensuring page is visually stable by checking for InventoryContainer visibility (max 1s wait) for {TestName}.", currentTestName);
+                var shortWait = new WebDriverWait(driver, TimeSpan.FromSeconds(1));
+                _ = shortWait.Until(ExpectedConditions.ElementIsVisible(InventoryPageMap.InventoryContainer));
+                TestLogger.LogDebug("Page confirmed stable (InventoryContainer visible) after short wait for {TestName}.", currentTestName);
             }
-            catch (ThreadInterruptedException tie)
+            catch (WebDriverTimeoutException)
             {
-                TestLogger.LogWarning(tie, "Thread.Sleep was interrupted during visual test setup for {TestName}.", currentTestName);
-                Thread.CurrentThread.Interrupt();
+                TestLogger.LogWarning("Short wait for visual stability (InventoryContainer visibility) timed out for {TestName}. Visuals might capture an intermediate state.", currentTestName);
             }
 
             string fullPageBaselineId = "InventoryPage_VisualUser_FullPage";

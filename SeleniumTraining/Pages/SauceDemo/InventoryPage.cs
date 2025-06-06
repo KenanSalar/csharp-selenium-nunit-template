@@ -479,6 +479,7 @@ public class InventoryPage : BasePage
     {
         PageLogger.LogInformation("Clicking shopping cart link.");
         FindElementOnPage(InventoryPageMap.ShoppingCartLink).Click();
+        
         return new ShoppingCartPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }

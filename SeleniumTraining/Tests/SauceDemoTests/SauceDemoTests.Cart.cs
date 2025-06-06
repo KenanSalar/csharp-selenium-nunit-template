@@ -34,6 +34,7 @@ public partial class SauceDemoTests : BaseTest
         var itemsToAdd = new List<string> { "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
         var itemsToRemove = new List<string> { "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
         string itemToRemain = "Sauce Labs Backpack";
+        IWebDriver driver = WebDriverManager.GetDriver();
 
         // --- Login Step ---
         var loginTimer = new PerformanceTimer("TestStep_Login_StandardUser_ForCartTest", TestLogger, resourceMonitor: ResourceMonitor);
@@ -51,6 +52,8 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             var allInventoryItems = inventoryPage.GetInventoryItems().ToList();
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
             foreach (string itemName in itemsToAdd)
             {
                 InventoryItemComponent? itemComponent = allInventoryItems.FirstOrDefault(i => i.ItemName == itemName);
@@ -59,8 +62,8 @@ public partial class SauceDemoTests : BaseTest
                 itemComponent.GetActionButtonText().ShouldBe("Add to cart", $"Button for '{itemName}' should initially be 'Add to cart'.");
                 itemComponent.ClickActionButton();
 
-                IWebElement buttonElement = itemComponent.ActionButtonElement; // Use the new public property
-                var wait = new WebDriverWait(WebDriverManager.GetDriver(), TimeSpan.FromSeconds(5)); // Get driver via WebDriverManager
+                IWebElement buttonElement = itemComponent.ActionButtonElement;
+
                 string expectedButtonText = "Remove";
                 try
                 {
@@ -118,11 +121,23 @@ public partial class SauceDemoTests : BaseTest
         var removeItemsTimer = new PerformanceTimer("TestStep_RemoveItemsFromCart", TestLogger, resourceMonitor: ResourceMonitor);
         try
         {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
             foreach (string itemName in itemsToRemove)
             {
                 _ = shoppingCartPage.RemoveItemByName(itemName);
                 TestLogger.LogInformation("Removed '{ItemName}' from cart.", itemName);
-                Thread.Sleep(200);
+
+                try
+                {
+                    _ = wait.Until(d => !shoppingCartPage.GetCartItems().Any(i => i.ItemName == itemName));
+                    TestLogger.LogInformation("Verified item '{ItemName}' is no longer visible in the cart.", itemName);
+                }
+                catch (WebDriverTimeoutException)
+                {
+                    TestLogger.LogError("Item '{ItemName}' was still visible in the cart after the remove timeout.", itemName);
+                    // Let the test continue and likely fail on the final count assertion, which is more descriptive.
+                }
             }
 
             var remainingCartItems = shoppingCartPage.GetCartItems().ToList();

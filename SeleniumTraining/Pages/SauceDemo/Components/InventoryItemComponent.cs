@@ -129,13 +129,21 @@ public class InventoryItemComponent : BasePageComponent
         Retry.ExecuteWithRetry(() =>
             {
                 ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
-                IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
+                IWebElement button = ActionButtonElement;
                 string buttonText = button.Text;
 
                 _ = HighlightIfEnabled(button);
 
-                ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
-                button.Click();
+                ComponentLogger.LogInformation("Attempting to click action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
+                try
+                {
+                    button.Click();
+                }
+                catch (ElementClickInterceptedException ex)
+                {
+                    ComponentLogger.LogWarning(ex, "Standard click was intercepted for item '{ItemName}'. Attempting fallback with JavaScript click.", ItemName);
+                    _ = ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].click();", button);
+                }
                 ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
 
                 ClearComponentElementCache();

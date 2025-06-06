@@ -41,13 +41,9 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
     /// <remarks>
     /// This method ensures that the provided <paramref name="settingsBase"/> are of type <see cref="FirefoxSettings"/>.
     /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver.
-    /// It then configures <see cref="FirefoxOptions"/> by applying headless mode, window size (if specified and not in custom args),
-    /// and any custom arguments from settings before instantiating the <see cref="FirefoxDriver"/>.
-    /// Version checks defined in the <see cref="DriverFactoryServiceBase"/> are also performed.
-    /// The <c>LeaveBrowserOpenAfterTest</c> setting is logged as a warning since FirefoxDriver doesn't have a direct equivalent.
+    /// It then configures <see cref="FirefoxOptions"/> by applying headless mode, window size,
+    /// custom arguments, and profile preferences from settings before instantiating the <see cref="FirefoxDriver"/>.
     /// </remarks>
-    /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
-    /// <exception cref="ArgumentException">Thrown if <paramref name="settingsBase"/> is not an instance of <see cref="FirefoxSettings"/>.</exception>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not FirefoxSettings settings)
@@ -117,14 +113,42 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         if (settings.FirefoxArguments != null && settings.FirefoxArguments.Count != 0)
         {
-            ServiceLogger.LogDebug("Applying {ArgCount} Firefox arguments from configuration settings.", settings.FirefoxArguments.Count);
+            ServiceLogger.LogDebug("Applying {ArgCount} Firefox arguments from settings.", settings.FirefoxArguments.Count);
             foreach (string arg in settings.FirefoxArguments)
             {
                 if (!string.IsNullOrWhiteSpace(arg))
                 {
                     firefoxOptions.AddArgument(arg);
                     appliedOptionsForLog.Add(arg);
-                    ServiceLogger.LogTrace("Applied Firefox argument from settings: '{FirefoxArgument}'", arg);
+                }
+            }
+        }
+
+        if (settings.FirefoxProfilePreferences != null && settings.FirefoxProfilePreferences.Count != 0)
+        {
+            ServiceLogger.LogDebug("Applying {PrefCount} Firefox profile preferences.", settings.FirefoxProfilePreferences.Count);
+            foreach (KeyValuePair<string, object> pref in settings.FirefoxProfilePreferences)
+            {
+                try
+                {
+                    if (pref.Value is bool boolValue)
+                    {
+                        firefoxOptions.SetPreference(pref.Key, boolValue);
+                    }
+                    else if (pref.Value is int intValue)
+                    {
+                        firefoxOptions.SetPreference(pref.Key, intValue);
+                    }
+                    else
+                    {
+                        string stringValue = pref.Value?.ToString() ?? string.Empty;
+                        firefoxOptions.SetPreference(pref.Key, stringValue);
+                    }
+                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+                }
+                catch (Exception ex)
+                {
+                    ServiceLogger.LogError(ex, "Failed to apply Firefox preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
                 }
             }
         }

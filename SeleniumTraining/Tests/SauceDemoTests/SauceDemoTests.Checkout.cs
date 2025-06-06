@@ -46,7 +46,7 @@ public partial class SauceDemoTests : BaseTest
 
         InventoryItemComponent? item = inventoryPage.GetInventoryItems().FirstOrDefault(i => i.ItemName == itemToAddToCart);
         _ = item.ShouldNotBeNull($"Item '{itemToAddToCart}' must be present to add to cart.");
-        item.ClickActionButton(); // Add to cart
+        item.ClickActionButton();
         TestLogger.LogInformation("Item '{ItemName}' added to cart for checkout.", itemToAddToCart);
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 10000);
 
