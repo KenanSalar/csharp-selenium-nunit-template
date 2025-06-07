@@ -131,20 +131,29 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
             {
                 try
                 {
-                    if (pref.Value is bool boolValue)
+                    string key = pref.Key;
+                    string? stringValue = pref.Value?.ToString();
+
+                    if (stringValue is null)
                     {
-                        firefoxOptions.SetPreference(pref.Key, boolValue);
+                        ServiceLogger.LogWarning("Skipping Firefox profile preference '{PrefKey}' because its value is null.", key);
+                        continue;
                     }
-                    else if (pref.Value is int intValue)
+
+                    if (bool.TryParse(stringValue, out bool boolResult))
                     {
-                        firefoxOptions.SetPreference(pref.Key, intValue);
+                        firefoxOptions.SetPreference(key, boolResult);
+                    }
+                    else if (int.TryParse(stringValue, out int intResult))
+                    {
+                        firefoxOptions.SetPreference(key, intResult);
                     }
                     else
                     {
-                        string stringValue = pref.Value?.ToString() ?? string.Empty;
-                        firefoxOptions.SetPreference(pref.Key, stringValue);
+                        firefoxOptions.SetPreference(key, stringValue);
                     }
-                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+
+                    appliedOptionsForLog.Add($"pref:{key}={stringValue}");
                 }
                 catch (Exception ex)
                 {

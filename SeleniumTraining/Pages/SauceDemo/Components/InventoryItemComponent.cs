@@ -126,32 +126,45 @@ public class InventoryItemComponent : BasePageComponent
     [AllureStep("Click item action button")]
     public void ClickActionButton()
     {
-        Retry.ExecuteWithRetry(() =>
-            {
-                ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
-                IWebElement button = ActionButtonElement;
-                string buttonText = button.Text;
+        string initialButtonText = GetActionButtonText();
+        ComponentLogger.LogInformation("Attempting to click action button with initial text '{ButtonText}' for item '{ItemName}'.", initialButtonText, ItemName);
 
-                _ = HighlightIfEnabled(button);
-
-                ComponentLogger.LogInformation("Attempting to click action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
-                try
+        try
+        {
+            Retry.ExecuteWithRetry(() =>
                 {
-                    button.Click();
-                }
-                catch (ElementClickInterceptedException ex)
-                {
-                    ComponentLogger.LogWarning(ex, "Standard click was intercepted for item '{ItemName}'. Attempting fallback with JavaScript click.", ItemName);
-                    _ = ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].click();", button);
-                }
-                ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
+                    IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
 
-                ClearComponentElementCache();
-            },
-            maxRetryAttempts: 2,
-            initialDelay: TimeSpan.FromMilliseconds(500),
-            actionLogger: ComponentLogger
-        );
+                    // Calls the reliable standard click method first.
+                    button.ClickStandard(Wait, ComponentLogger);
+
+                    // Fallback 
+                    if (GetActionButtonText() == initialButtonText)
+                    {
+                        ComponentLogger.LogWarning("Standard click did not change button text for item '{ItemName}'. Retrying with JavaScript click.", ItemName);
+                        button.ClickRobustly(Driver, Wait, ComponentLogger);
+                    }
+
+                    if (GetActionButtonText() == initialButtonText)
+                    {
+                        throw new InvalidOperationException($"Button text did not change from '{initialButtonText}' after both standard and JavaScript clicks.");
+                    }
+                },
+                maxRetryAttempts: 3,
+                initialDelay: TimeSpan.FromMilliseconds(200),
+                actionLogger: ComponentLogger
+            );
+
+            string finalButtonText = GetActionButtonText();
+            ComponentLogger.LogInformation("Successfully clicked action button for item '{ItemName}'. Text changed from '{InitialText}' to '{FinalText}'.", ItemName, initialButtonText, finalButtonText);
+
+            ClearComponentElementCache();
+        }
+        catch (Exception ex)
+        {
+            ComponentLogger.LogError(ex, "Failed to click action button for item '{ItemName}' after all retries.", ItemName);
+            throw;
+        }
     }
 
     /// <summary>

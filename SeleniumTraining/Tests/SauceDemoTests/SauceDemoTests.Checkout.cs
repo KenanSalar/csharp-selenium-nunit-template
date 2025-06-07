@@ -53,6 +53,7 @@ public partial class SauceDemoTests : BaseTest
         // --- Navigate to Cart and Proceed to Checkout ---
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink()
             .ShouldBeOfType<ShoppingCartPage>();
+
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
         TestLogger.LogInformation("Navigated to Checkout Step One page.");
 
@@ -61,8 +62,17 @@ public partial class SauceDemoTests : BaseTest
         CheckoutStepTwoPage checkoutStepTwoPage;
         try
         {
-            checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+            checkoutStepTwoPage = checkoutStepOnePage
+                .EnterFirstName(firstName)
+                .EnterLastName(lastName)
+                .EnterPostalCode(postalCode)
+                .ClickContinue();
+
             _ = checkoutStepTwoPage.ShouldNotBeNull("Proceeding from checkout step one should lead to step two.");
+
+            CheckoutCompletePage checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
+            _ = checkoutCompletePage.ShouldNotBeNull("Checkout should lead to checkout complete page.");
+
             TestLogger.LogInformation("Checkout information filled and continued. Expected to be on Overview page.");
         }
         finally
@@ -125,7 +135,13 @@ public partial class SauceDemoTests : BaseTest
 
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+
+        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
+            .EnterFirstName(firstName)
+            .EnterLastName(lastName)
+            .EnterPostalCode(postalCode)
+            .ClickContinue();
+
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 15000);
         TestLogger.LogInformation("Setup complete, on Checkout Overview page.");
 
@@ -202,8 +218,15 @@ public partial class SauceDemoTests : BaseTest
 
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+
+        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
+            .EnterFirstName(firstName)
+            .EnterLastName(lastName)
+            .EnterPostalCode(postalCode)
+            .ClickContinue();
+
         CheckoutCompletePage checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
+
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 20000);
         TestLogger.LogInformation("Setup complete, on Checkout Complete page.");
 

@@ -477,9 +477,25 @@ public class InventoryPage : BasePage
     [AllureStep("Navigate to Shopping Cart")]
     public ShoppingCartPage ClickShoppingCartLink()
     {
-        PageLogger.LogInformation("Clicking shopping cart link.");
-        FindElementOnPage(InventoryPageMap.ShoppingCartLink).Click();
-        
+        PageLogger.LogInformation("Attempting to click shopping cart link.");
+        try
+        {
+            IWebElement cartLink = FindElementOnPage(InventoryPageMap.ShoppingCartLink);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cartLink));
+
+            _ = HighlightIfEnabled(cartLink);
+
+            cartLink.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked shopping cart link using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the shopping cart link. The test will likely fail on the next page validation.");
+            throw;
+        }
+
         return new ShoppingCartPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }

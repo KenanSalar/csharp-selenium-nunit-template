@@ -112,8 +112,34 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
             {
                 try
                 {
-                    chromeOptions.AddUserProfilePreference(pref.Key, pref.Value);
-                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+                    string key = pref.Key;
+                    // Defensively convert the value to a string to handle any binding quirks.
+                    string? stringValue = pref.Value?.ToString();
+
+                    if (stringValue is null)
+                    {
+                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
+                        continue;
+                    }
+
+                    object finalValue;
+
+                    if (bool.TryParse(stringValue, out bool boolResult))
+                    {
+                        finalValue = boolResult;
+                    }
+                    else if (int.TryParse(stringValue, out int intResult))
+                    {
+                        finalValue = intResult;
+                    }
+                    else
+                    {
+                        // If it's not a boolean or integer, treat it as a string.
+                        finalValue = stringValue;
+                    }
+
+                    chromeOptions.AddUserProfilePreference(key, finalValue);
+                    appliedOptionsForLog.Add($"pref:{key}={finalValue} (Type: {finalValue.GetType().Name})");
                 }
                 catch (Exception ex)
                 {
