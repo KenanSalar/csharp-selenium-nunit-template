@@ -1,0 +1,8 @@
+Operation: TestStep_UserLogin_Standard
+Duration: 689 ms (0.690 s)
+Expected Max: 7000 ms
+Status: PASS
+Start Memory: WorkingSet: 227.08 MB, PrivateMemory: 559.03 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 227.20 MB, PrivateMemory: 559.03 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.12 MB
+Delta PrivateMemory: 0.00 MB
