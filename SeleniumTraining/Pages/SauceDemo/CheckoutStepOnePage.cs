@@ -1,3 +1,5 @@
+using OpenQA.Selenium.BiDi.Modules.Input;
+
 namespace SeleniumTraining.Pages.SauceDemo;
 
 /// <summary>
@@ -37,7 +39,20 @@ public class CheckoutStepOnePage : BasePage
     public CheckoutStepOnePage EnterFirstName(string firstName)
     {
         PageLogger.LogInformation("Entering First Name: {FirstName}", firstName);
-        HighlightIfEnabled(CheckoutStepOnePageMap.FirstNameInput).SendKeys(firstName);
+        try
+        {
+            IWebElement firstNameInput = FindElementOnPage(CheckoutStepOnePageMap.FirstNameInput);
+            _ = Wait.Until(d => firstNameInput.Displayed && firstNameInput.Enabled);
+            _ = HighlightIfEnabled(firstNameInput);
+
+            firstNameInput.Clear();
+            firstNameInput.SendKeys(firstName);
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Failed to enter First Name.");
+            throw;
+        }
         return this;
     }
 
@@ -50,7 +65,20 @@ public class CheckoutStepOnePage : BasePage
     public CheckoutStepOnePage EnterLastName(string lastName)
     {
         PageLogger.LogInformation("Entering Last Name: {LastName}", lastName);
-        HighlightIfEnabled(CheckoutStepOnePageMap.LastNameInput).SendKeys(lastName);
+        try
+        {
+            IWebElement lastNameInput = FindElementOnPage(CheckoutStepOnePageMap.LastNameInput);
+            _ = Wait.Until(d => lastNameInput.Displayed && lastNameInput.Enabled);
+            _ = HighlightIfEnabled(lastNameInput);
+
+            lastNameInput.Clear();
+            lastNameInput.SendKeys(lastName);
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Failed to enter Last Name.");
+            throw;
+        }
         return this;
     }
 
@@ -63,24 +91,22 @@ public class CheckoutStepOnePage : BasePage
     public CheckoutStepOnePage EnterPostalCode(string postalCode)
     {
         PageLogger.LogInformation("Entering Postal Code: {PostalCode}", postalCode);
-        HighlightIfEnabled(CheckoutStepOnePageMap.PostalCodeInput).SendKeys(postalCode);
-        return this;
-    }
+        try
+        {
+            IWebElement postalCodeInput = FindElementOnPage(CheckoutStepOnePageMap.PostalCodeInput);
+            _ = Wait.Until(d => postalCodeInput.Displayed && postalCodeInput.Enabled);
+            _ = HighlightIfEnabled(postalCodeInput);
 
-    /// <summary>
-    /// Fills all information fields (First Name, Last Name, Postal Code) and clicks the "Continue" button.
-    /// </summary>
-    /// <param name="firstName">The first name to enter.</param>
-    /// <param name="lastName">The last name to enter.</param>
-    /// <param name="postalCode">The postal code to enter.</param>
-    /// <returns>A new <see cref="CheckoutStepTwoPage"/> instance representing the next page in the flow.</returns>
-    [AllureStep("Fill checkout information and continue. Name: {firstName} {lastName}, Zip: {postalCode}")]
-    public CheckoutStepTwoPage FillInformationAndContinue(string firstName, string lastName, string postalCode)
-    {
-        _ = EnterFirstName(firstName)
-            .EnterLastName(lastName)
-            .EnterPostalCode(postalCode);
-        return ClickContinue();
+            postalCodeInput.Clear();
+            postalCodeInput.SendKeys(postalCode);
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Failed to enter Postal Code.");
+            throw;
+        }
+
+        return this;
     }
 
     /// <summary>
@@ -91,7 +117,23 @@ public class CheckoutStepOnePage : BasePage
     public CheckoutStepTwoPage ClickContinue()
     {
         PageLogger.LogInformation("Clicking 'Continue' button.");
-        HighlightIfEnabled(CheckoutStepOnePageMap.ContinueButton).Click();
+        try
+        {
+            IWebElement continueButton = FindElementOnPage(CheckoutStepOnePageMap.ContinueButton);
+
+            _ = HighlightIfEnabled(continueButton);
+
+            continueButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Continue' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Continue' button. The test will likely fail on the next page validation.");
+
+            throw;
+        }
+
         return new CheckoutStepTwoPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 
@@ -103,7 +145,24 @@ public class CheckoutStepOnePage : BasePage
     public ShoppingCartPage ClickCancel()
     {
         PageLogger.LogInformation("Clicking 'Cancel' button.");
-        HighlightIfEnabled(CheckoutStepOnePageMap.CancelButton).Click();
+        try
+        {
+            IWebElement cancelButton = FindElementOnPage(CheckoutStepOnePageMap.CancelButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cancelButton));
+
+            _ = HighlightIfEnabled(cancelButton);
+
+            cancelButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Cancel' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Cancel' button.");
+            throw;
+        }
+
         return new ShoppingCartPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }

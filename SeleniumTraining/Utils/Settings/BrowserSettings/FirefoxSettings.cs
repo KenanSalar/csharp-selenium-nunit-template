@@ -46,4 +46,16 @@ public class FirefoxSettings : BaseBrowserSettings
     /// Arguments should be provided in the format expected by Firefox or GeckoDriver.
     /// </remarks>
     public List<string> FirefoxArguments { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets a dictionary of profile preferences to apply to the Firefox browser session.
+    /// Keys are preference names (e.g., "signon.rememberSignons"), and values are the preference values.
+    /// </summary>
+    /// <value>A dictionary of Firefox profile preferences. Defaults to an empty dictionary.</value>
+    /// <remarks>
+    /// This allows for fine-grained control over browser features, such as disabling the password manager,
+    /// web notifications, or setting download behaviors.
+    /// Example: {"signon.rememberSignons": false}
+    /// </remarks>
+    public Dictionary<string, object> FirefoxProfilePreferences { get; set; } = [];
 }

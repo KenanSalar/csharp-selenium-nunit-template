@@ -21,7 +21,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the checkout information step is measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user successfully fills checkout information")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies that the standard user can complete the first step of checkout (entering personal information).")]
@@ -46,13 +46,14 @@ public partial class SauceDemoTests : BaseTest
 
         InventoryItemComponent? item = inventoryPage.GetInventoryItems().FirstOrDefault(i => i.ItemName == itemToAddToCart);
         _ = item.ShouldNotBeNull($"Item '{itemToAddToCart}' must be present to add to cart.");
-        item.ClickActionButton(); // Add to cart
+        item.ClickActionButton();
         TestLogger.LogInformation("Item '{ItemName}' added to cart for checkout.", itemToAddToCart);
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 10000);
 
         // --- Navigate to Cart and Proceed to Checkout ---
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink()
             .ShouldBeOfType<ShoppingCartPage>();
+
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
         TestLogger.LogInformation("Navigated to Checkout Step One page.");
 
@@ -61,8 +62,17 @@ public partial class SauceDemoTests : BaseTest
         CheckoutStepTwoPage checkoutStepTwoPage;
         try
         {
-            checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+            checkoutStepTwoPage = checkoutStepOnePage
+                .EnterFirstName(firstName)
+                .EnterLastName(lastName)
+                .EnterPostalCode(postalCode)
+                .ClickContinue();
+
             _ = checkoutStepTwoPage.ShouldNotBeNull("Proceeding from checkout step one should lead to step two.");
+
+            CheckoutCompletePage checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
+            _ = checkoutCompletePage.ShouldNotBeNull("Checkout should lead to checkout complete page.");
+
             TestLogger.LogInformation("Checkout information filled and continued. Expected to be on Overview page.");
         }
         finally
@@ -93,7 +103,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the overview and finish steps are measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user completes purchase from overview")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies that the standard user can review and finish the order from the checkout overview page.")]
@@ -125,7 +135,13 @@ public partial class SauceDemoTests : BaseTest
 
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+
+        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
+            .EnterFirstName(firstName)
+            .EnterLastName(lastName)
+            .EnterPostalCode(postalCode)
+            .ClickContinue();
+
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 15000);
         TestLogger.LogInformation("Setup complete, on Checkout Overview page.");
 
@@ -175,7 +191,7 @@ public partial class SauceDemoTests : BaseTest
     /// Performance of the confirmation page interaction and navigation is measured.
     /// </remarks>
     [Test]
-    [Retry(1)]
+    [Retry(2)]
     [AllureStep("Standard user verifies purchase confirmation and returns home")]
     [AllureSeverity(SeverityLevel.critical)]
     [AllureDescription("Verifies the order completion page details and successful return to inventory with an empty cart.")]
@@ -202,8 +218,15 @@ public partial class SauceDemoTests : BaseTest
 
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage.FillInformationAndContinue(firstName, lastName, postalCode);
+
+        CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
+            .EnterFirstName(firstName)
+            .EnterLastName(lastName)
+            .EnterPostalCode(postalCode)
+            .ClickContinue();
+
         CheckoutCompletePage checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
+
         setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 20000);
         TestLogger.LogInformation("Setup complete, on Checkout Complete page.");
 

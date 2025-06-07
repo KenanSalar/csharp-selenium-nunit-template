@@ -55,6 +55,6 @@ public class ChromiumBasedSettings : BaseBrowserSettings
     /// <remarks>
     /// This allows for fine-grained control over browser features, such as disabling the password manager.
     /// Example: {"profile.password_manager_enabled": false, "credentials_enable_service": false }
-    /// </remarks>
+    /// /// </remarks>
     public Dictionary<string, object> UserProfilePreferences { get; set; } = [];
 }
