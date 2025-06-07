@@ -1,15 +1,5 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
-/// <summary>
-/// This partial class of <see cref="SauceDemoTests"/> contains test data
-/// specifically related to the SauceDemo application, such as expected values
-/// for UI elements or data-driven test cases.
-/// </summary>
-/// <remarks>
-/// This part focuses on providing data like the expected options for the inventory product sort dropdown.
-/// Centralizing such test data here helps in maintaining consistency and makes tests easier to update
-/// if the application's data changes. This data is used by tests that verify the sorting functionality.
-/// </remarks>
 public partial class SauceDemoTests : BaseTest
 {
     /// <summary>

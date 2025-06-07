@@ -4,15 +4,44 @@ using System.Reflection;
 namespace SeleniumTraining.Utils.Extensions;
 
 /// <summary>
-/// Provides a collection of static extension methods to enhance common Selenium WebDriver operations,
-/// Enum manipulations, and potentially other utility functions.
+/// Provides a collection of static extension methods designed to enhance and simplify common operations
+/// for various types used within the Selenium test automation framework.
+/// This includes extensions for Selenium WebDriver types (like <see cref="IWebDriver"/>, <see cref="IWebElement"/>, <see cref="WebDriverWait"/>, <see cref="By"/>),
+/// .NET base types (like <see cref="Enum"/>), and other framework-specific utilities.
 /// </summary>
 /// <remarks>
-/// This partial class centralizes reusable helper functionalities, such as waiting for page titles,
-/// finding elements with explicit waits, ensuring element visibility, and retrieving display names from enums.
-/// These extensions aim to simplify test script development, improve readability, and promote consistent
-/// interaction patterns with web elements and framework components.
-/// Many methods include Allure step integration for better reporting in CI/CD environments.
+/// This class is implemented as a <see langword="partial"/> class, allowing its extension methods
+/// to be organized into separate files based on the type they extend or the functionality they provide.
+/// This modular approach improves readability and maintainability of the utility code.
+/// Current parts include:
+/// <list type="bullet">
+///   <item>
+///     <term>ExtensionMethods.Base.cs:</term>
+///     <description>Contains fundamental extensions for Selenium WebDriver and WebDriverWait, such as waiting for page titles,
+///     finding elements with explicit waits, ensuring element visibility, and helper methods for Enum display names.</description>
+///   </item>
+///   <item>
+///     <term>ExtensionMethods.Dropdown.cs:</term>
+///     <description>Provides specialized extensions for interacting with HTML dropdown (select) elements,
+///     including selecting options by text or value and handling multi-selects.</description>
+///   </item>
+///   <item>
+///     <term>ExtensionMethods.Login.cs:</term>
+///     <description>Offers focused extensions for common login-related actions, such as entering text into
+///     username and password input fields identified by <see cref="By"/> locators.</description>
+///   </item>
+///   <item>
+///     <term>WebElementHighlightingExtensions.cs (Conceptually related though in its own file):</term>
+///     <description>Provides extensions for visually highlighting web elements during test execution for debugging.</description>
+///   </item>
+///   <item>
+///     <term>WebDriverExtensions.cs (Conceptually related though in its own file):</term>
+///     <description>Offers extensions for safer WebDriver operations, like <c>QuitSafely</c>.</description>
+///   </item>
+/// </list>
+/// These extensions aim to make test scripts more fluent, reduce boilerplate code, and promote consistent
+/// interaction patterns with web elements and framework components. Many methods also integrate with Allure reporting
+/// by using the <see cref="AllureStepAttribute"/> to provide clearer steps in test execution reports.
 /// </remarks>
 public static partial class ExtensionMethods
 {
@@ -116,6 +145,49 @@ public static partial class ExtensionMethods
                 ex,
                 "Timeout waiting for element to exist on {PageName}. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s.",
                 pageName,
+                locator.ToString(),
+                wait.Timeout.TotalSeconds
+            );
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Waits for an element to exist in the DOM and returns it.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="locator">The <see cref="By"/> locator used to find the element.</param>
+    /// <returns>The located <see cref="IWebElement"/> once it exists.</returns>
+    /// <remarks>
+    /// This method uses <see cref="ExpectedConditions.ElementExists(By)"/>.
+    /// If the element does not exist within the timeout, a <see cref="WebDriverTimeoutException"/> is thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the element specified by <paramref name="locator"/> does not exist in the DOM within the timeout.</exception>
+    [AllureStep("Wait and find element: {locator}")]
+    public static IWebElement WaitForElement(this WebDriverWait wait, ILogger logger, By locator)
+    {
+        logger.LogDebug(
+            "Waiting for element to exist. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s",
+            locator.ToString(),
+            wait.Timeout.TotalSeconds
+        );
+
+        try
+        {
+            IWebElement element = wait.Until(ExpectedConditions.ElementExists(locator));
+            logger.LogInformation(
+                "Element found successfully. Locator: {ElementLocator}",
+                locator.ToString()
+            );
+
+            return element;
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            logger.LogError(
+                ex,
+                "Timeout waiting for element to exist. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s.",
                 locator.ToString(),
                 wait.Timeout.TotalSeconds
             );

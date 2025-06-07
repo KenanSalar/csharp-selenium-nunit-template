@@ -46,4 +46,15 @@ public class ChromiumBasedSettings : BaseBrowserSettings
     /// Arguments should be provided in the format expected by the browser executable.
     /// </remarks>
     public List<string> ChromeArguments { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets a dictionary of user profile preferences to apply to the browser session.
+    /// Keys are preference names (e.g., "credentials_enable_service"), and values are the preference values.
+    /// </summary>
+    /// <value>A dictionary of user profile preferences. Defaults to an empty dictionary.</value>
+    /// <remarks>
+    /// This allows for fine-grained control over browser features, such as disabling the password manager.
+    /// Example: {"profile.password_manager_enabled": false, "credentials_enable_service": false }
+    /// /// </remarks>
+    public Dictionary<string, object> UserProfilePreferences { get; set; } = [];
 }

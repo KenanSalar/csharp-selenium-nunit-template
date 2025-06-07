@@ -1,26 +1,47 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
 /// <summary>
-/// Provides a base class specifically for SauceDemo application tests, extending common test functionalities
-/// from <see cref="BaseTest"/>. It handles SauceDemo-specific setup, including loading application settings,
-/// navigating to the SauceDemo URL, and validating initial page state and configuration.
+/// Defines a comprehensive test fixture for UI testing of the SauceDemo application.
+/// This fixture groups a variety of test scenarios, including different user login behaviors,
+/// inventory page interactions (like product sorting and image verification), and visual validation checks.
+/// It is designed to run tests across multiple browsers, as specified by NUnit's [TestFixture] attributes.
 /// </summary>
 /// <remarks>
-/// This partial class is intended to be the direct base for actual test fixture classes targeting SauceDemo.
-/// It is parameterized by <see cref="BrowserType"/> using NUnit's <c>[TestFixture]</c> attribute,
-/// allowing tests to be run against different browsers.
-/// The <see cref="SetUp"/> method overrides the base setup to:
+/// The <c>SauceDemoTests</c> class is implemented as a <see langword="partial"/> class,
+/// with its constituent parts organized into separate files for better maintainability and clarity:
 /// <list type="bullet">
-///   <item><description>Load <see cref="SauceDemoSettings"/>.</description></item>
-///   <item><description>Validate essential settings like the Page URL and credentials.</description></item>
-///   <item><description>Navigate to the SauceDemo login page (<see cref="SauceDemoSettings.PageUrl"/>).</description></item>
-///   <item><description>Verify the initial page title.</description></item>
+///   <item>
+///     <term>SauceDemoTests.Base.cs</term>
+///     <description>Contains the core fixture setup, including NUnit's <c>[TestFixture]</c> attributes for browser parameterization,
+///     the class constructor, common SauceDemo-specific fields (like <see cref="_sauceDemoSettings"/>),
+///     and an overridden <see cref="SetUp"/> method for SauceDemo-specific initializations (e.g., loading settings, initial navigation).
+///     It inherits common test functionalities from <see cref="BaseTest"/>.</description>
+///   </item>
+///   <item>
+///     <term>SauceDemoTests.Data.cs</term>
+///     <description>Holds test data specifically related to the SauceDemo application, such as the
+///     <see cref="_inventoryProductsDropdownOptions"/> list used for verifying product sorting.</description>
+///   </item>
+///   <item>
+///     <term>SauceDemoTests.Login.cs</term>
+///     <description>Contains test methods that primarily focus on validating different login scenarios and outcomes
+///     directly on the login page. This includes tests for users like the "locked_out_user" and potentially other login error conditions.
+///     It now also includes the test for the "problem_user" focusing on inventory display issues post-login.</description>
+///   </item>
+///   <item>
+///     <term>SauceDemoTests.Inventory.cs</term>
+///     <description>Groups test methods that, following a successful login, concentrate on interactions with and verifications of
+///     the inventory page. This includes testing standard user flows like product sorting, and behaviors specific to user types
+///     like the "visual_user" for visual regression checks.</description>
+///   </item>
 /// </list>
-/// This class leverages Allure attributes for reporting suite, owner, and tags.
-/// It's designed to be used in CI/CD environments ([user_input_previous_message_with_filename_programming.ci_cd]) where browser selection might be driven by environment variables.
+/// All test methods leverage NUnit attributes for execution control (e.g., <c>[Test]</c>, <c>[Retry]</c>) and
+/// Allure attributes (e.g., <c>[AllureStep]</c>, <c>[AllureSeverity]</c>) for comprehensive reporting.
+/// The underlying <see cref="BaseTest"/> class provides shared infrastructure such as WebDriver management,
+/// DI service resolution, logging, and performance/resource monitoring capabilities.
 /// </remarks>
-[TestFixture(BrowserType.Chrome), Category("Chrome")]
 // [TestFixture(BrowserType.Brave), Category("Brave")]
+[TestFixture(BrowserType.Chrome), Category("Chrome")]
 [TestFixture(BrowserType.Firefox), Category("Firefox")]
 [FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
 [AllureSuite("SauceDemo Login and Inventory Tests")]

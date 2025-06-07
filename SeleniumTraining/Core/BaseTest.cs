@@ -205,7 +205,6 @@ public abstract class BaseTest : IDisposable
                     targetBrowserCiEnv,
                     BrowserType
                 );
-
             }
         }
         else
@@ -330,6 +329,20 @@ public abstract class BaseTest : IDisposable
             TestLogger.LogWarning("TestReporter was null during Cleanup. Report finalization skipped for {TestFullName}.", TestContext.CurrentContext.Test.FullName);
         }
 
+        try
+        {
+            if (WebDriverManager != null && WebDriverManager.IsDriverActive)
+            {
+                TestLogger.LogDebug("Quitting WebDriver via WebDriverManager in TearDown.");
+                WebDriverManager.QuitDriver();
+                TestLogger.LogInformation("WebDriver quit successfully in TearDown for {TestName}.", TestName);
+            }
+        }
+        catch (Exception ex)
+        {
+            TestLogger.LogError(ex, "Exception during WebDriverManager.QuitDriver in TearDown for test {TestName}.", TestName);
+        }
+
         TestLogger.LogInformation("BaseTest Cleanup (NUnit TearDown) completed for {TestFullName}.", TestContext.CurrentContext.Test.FullName);
 
         _loggingScope?.Dispose();
@@ -383,17 +396,6 @@ public abstract class BaseTest : IDisposable
 
         if (disposing)
         {
-            TestLogger.LogDebug("Attempting to quit WebDriver for {EffectiveTestName} via WebDriverManager.", currentTestNameForDispose);
-            try
-            {
-                WebDriverManager.QuitDriver();
-                TestLogger.LogInformation("WebDriver quit command issued for {EffectiveTestName}.", currentTestNameForDispose);
-            }
-            catch (Exception ex)
-            {
-                TestLogger.LogError(ex, "Exception during WebDriverManager.QuitDriver for test {EffectiveTestName}.", currentTestNameForDispose);
-            }
-
             TestLogger.LogDebug("Disposing WebDriverManager instance for {EffectiveTestName}.", currentTestNameForDispose);
             (WebDriverManager as IDisposable)?.Dispose();
 

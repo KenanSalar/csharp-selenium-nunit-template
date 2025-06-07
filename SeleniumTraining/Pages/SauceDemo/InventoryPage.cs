@@ -434,4 +434,68 @@ public class InventoryPage : BasePage
             }
         };
     }
+
+    /// <summary>
+    /// Gets the current number of items displayed in the shopping cart badge.
+    /// </summary>
+    /// <returns>The number of items in the cart, or 0 if the badge is not displayed or empty.</returns>
+    [AllureStep("Get shopping cart badge count")]
+    public int GetShoppingCartBadgeCount()
+    {
+        PageLogger.LogDebug("Attempting to get shopping cart badge count.");
+        try
+        {
+            IWebElement badge = FindElementOnPage(InventoryPageMap.ShoppingCartBadge);
+            if (badge.Displayed)
+            {
+                string countText = badge.Text;
+                if (int.TryParse(countText, out int count))
+                {
+                    PageLogger.LogInformation("Shopping cart badge count: {Count}", count);
+
+                    return count;
+                }
+                PageLogger.LogWarning("Could not parse cart badge text '{BadgeText}' to an integer.", countText);
+            }
+            else
+            {
+                PageLogger.LogInformation("Shopping cart badge is not displayed, assuming 0 items.");
+            }
+        }
+        catch (NoSuchElementException)
+        {
+            PageLogger.LogInformation("Shopping cart badge element not found, assuming 0 items.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Error getting shopping cart badge count.");
+        }
+
+        return 0;
+    }
+
+    [AllureStep("Navigate to Shopping Cart")]
+    public ShoppingCartPage ClickShoppingCartLink()
+    {
+        PageLogger.LogInformation("Attempting to click shopping cart link.");
+        try
+        {
+            IWebElement cartLink = FindElementOnPage(InventoryPageMap.ShoppingCartLink);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cartLink));
+
+            _ = HighlightIfEnabled(cartLink);
+
+            cartLink.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked shopping cart link using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the shopping cart link. The test will likely fail on the next page validation.");
+            throw;
+        }
+
+        return new ShoppingCartPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
+    }
 }

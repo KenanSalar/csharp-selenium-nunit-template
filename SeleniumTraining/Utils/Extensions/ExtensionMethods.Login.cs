@@ -2,18 +2,6 @@ using OpenQA.Selenium;
 
 namespace SeleniumTraining.Utils.Extensions;
 
-/// <summary>
-/// Provides extension methods related to login actions, typically for interacting
-/// with username and password input fields identified by <see cref="By"/> locators.
-/// </summary>
-/// <remarks>
-/// This partial class centralizes common sequences of actions required to enter text
-/// into login form fields, such as waiting for the element to be interactable,
-/// optionally highlighting it, clearing existing content, and then sending the keys.
-/// These extensions are designed to be used within Page Object methods to enhance
-/// readability and maintainability.
-/// This is part of a larger <c>ExtensionMethods</c> static class.
-/// </remarks>
 public static partial class ExtensionMethods
 {
     /// <summary>
