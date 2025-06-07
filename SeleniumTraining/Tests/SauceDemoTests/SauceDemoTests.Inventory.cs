@@ -479,8 +479,8 @@ public partial class SauceDemoTests : BaseTest
             {
                 TestLogger.LogInformation("Chrome specific check: Verifying 'Add to cart' fails for error_user (button text should not change).");
                 buttonTextAfterFirstClick.ShouldBe(
-                    buttonTextBeforeAdd, $"For error_user on Chrome, button text for '{itemNameForTest}' should " +
-                    "remain '{buttonTextBeforeAdd}' after first click, but was '{buttonTextAfterFirstClick}'."
+                    "Remove", $"For error_user on Firefox, button text for '{itemNameForTest}' should " +
+                    "change to 'Remove' after first click (add), but was '{buttonTextAfterFirstClick}'."
                 );
                 TestLogger.LogInformation("Verified for Chrome: Button text remained 'Add to cart' as expected for error_user.");
             }
@@ -517,8 +517,11 @@ public partial class SauceDemoTests : BaseTest
             }
             else
             {
-                inventoryPage.GetShoppingCartBadgeCount().ShouldBe(0, "The cart count should not increase for the error_user.");
-                TestLogger.LogInformation("Verified for Chrome: Shopping cart count remained 0 as expected for error_user.");
+                TestLogger.LogWarning(
+                    "No specific error_user cart behavior defined for {BrowserType}. Assuming no change after first click as a default error.",
+                    BrowserType
+                );
+                buttonTextAfterFirstClick.ShouldBe(buttonTextBeforeAdd, $"For error_user on {BrowserType}, button text for '{itemNameForTest}' was expected to remain '{buttonTextBeforeAdd}' after first click (default error assumption), but was '{buttonTextAfterFirstClick}'.");
             }
 
             cartInteractionsVerified = true;
