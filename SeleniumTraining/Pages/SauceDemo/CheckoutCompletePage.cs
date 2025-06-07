@@ -70,7 +70,24 @@ public class CheckoutCompletePage : BasePage
     public InventoryPage ClickBackHome()
     {
         PageLogger.LogInformation("Clicking 'Back Home' button.");
-        HighlightIfEnabled(CheckoutCompletePageMap.BackHomeButton).Click();
+        try
+        {
+            IWebElement backHomeButton = FindElementOnPage(CheckoutCompletePageMap.BackHomeButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(backHomeButton));
+
+            _ = HighlightIfEnabled(backHomeButton);
+
+            backHomeButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Back Home' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Back Home' button.");
+            throw;
+        }
+
         return new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }

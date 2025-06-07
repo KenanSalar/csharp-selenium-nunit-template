@@ -128,14 +128,17 @@ public class LoginPage : BasePage
         if (mode == LoginMode.Submit)
         {
             PageLogger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
-            _ = HighlightIfEnabled(LoginPageMap.PasswordInput);
-            Wait.WaitForElement(PageLogger, PageName, LoginPageMap.PasswordInput).Submit();
+            IWebElement passwordInput = FindElementOnPage(LoginPageMap.PasswordInput);
+            _ = HighlightIfEnabled(passwordInput);
+            passwordInput.Submit();
         }
         else
         {
             PageLogger.LogDebug("Clicking login button on {PageName}.", PageName);
-            _ = HighlightIfEnabled(LoginPageMap.LoginButton);
-            Wait.WaitForElement(PageLogger, PageName, LoginPageMap.LoginButton).Click();
+            IWebElement loginButton = FindElementOnPage(LoginPageMap.LoginButton);
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(loginButton));
+            _ = HighlightIfEnabled(loginButton);
+            loginButton.ClickStandard(Wait, PageLogger);
         }
 
         try

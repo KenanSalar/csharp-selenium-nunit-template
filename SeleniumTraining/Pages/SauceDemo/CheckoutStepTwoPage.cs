@@ -86,7 +86,24 @@ public class CheckoutStepTwoPage : BasePage
     public CheckoutCompletePage ClickFinish()
     {
         PageLogger.LogInformation("Clicking 'Finish' button.");
-        HighlightIfEnabled(CheckoutStepTwoPageMap.FinishButton).Click();
+        try
+        {
+            IWebElement finishButton = FindElementOnPage(CheckoutStepTwoPageMap.FinishButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(finishButton));
+
+            _ = HighlightIfEnabled(finishButton);
+
+            finishButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Finish' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Finish' button.");
+            throw;
+        }
+
         return new CheckoutCompletePage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 
@@ -98,7 +115,24 @@ public class CheckoutStepTwoPage : BasePage
     public InventoryPage ClickCancel()
     {
         PageLogger.LogInformation("Clicking 'Cancel' button.");
-        HighlightIfEnabled(CheckoutStepTwoPageMap.CancelButton).Click();
+        try
+        {
+            IWebElement cancelButton = FindElementOnPage(CheckoutStepTwoPageMap.CancelButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cancelButton));
+
+            _ = HighlightIfEnabled(cancelButton);
+
+            cancelButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Cancel' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Cancel' button.");
+            throw;
+        }
+
         return new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }

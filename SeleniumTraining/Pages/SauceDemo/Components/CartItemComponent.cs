@@ -26,7 +26,8 @@ public class CartItemComponent : BasePageComponent
         IWebDriver driver,
         ILoggerFactory loggerFactory,
         ISettingsProviderService settingsProvider,
-        IRetryService retryService)
+        IRetryService retryService
+    )
         : base(rootElement, driver, loggerFactory, settingsProvider, retryService)
     {
         ComponentLogger.LogDebug("CartItemComponent initialized for element.");
@@ -79,11 +80,27 @@ public class CartItemComponent : BasePageComponent
     [AllureStep("Click 'Remove' button for cart item")]
     public void ClickRemoveButton()
     {
-        IWebElement removeButton = FindElement(CartItemComponentMap.RemoveButton);
-        _ = HighlightIfEnabled(removeButton);
-        ComponentLogger.LogInformation("Clicking 'Remove' button for item: {ItemName}", ItemName);
-        removeButton.Click();
-        
-        ClearComponentElementCache();
+        string itemName = ItemName;
+        ComponentLogger.LogInformation("Attempting to click 'Remove' button for item: {ItemName}", itemName);
+
+        try
+        {
+            IWebElement removeButton = FindElement(CartItemComponentMap.RemoveButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(removeButton));
+
+            _ = HighlightIfEnabled(removeButton);
+
+            removeButton.ClickStandard(Wait, ComponentLogger);
+
+            ComponentLogger.LogInformation("Successfully clicked 'Remove' button for item: {ItemName}", itemName);
+
+            ClearComponentElementCache();
+        }
+        catch (Exception ex)
+        {
+            ComponentLogger.LogError(ex, "Failed to click 'Remove' button for item '{ItemName}'.", itemName);
+            throw;
+        }
     }
 }

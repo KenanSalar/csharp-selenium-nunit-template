@@ -112,7 +112,7 @@ public abstract class BasePage
         ILoggerFactory loggerFactory,
         ISettingsProviderService settingsProvider,
         IRetryService retryService,
-        int defaultTimeoutSeconds = 10
+        int defaultTimeoutSeconds = 5
     )
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
@@ -180,7 +180,7 @@ public abstract class BasePage
         }
         finally
         {
-            long expectedPageLoadTimeMs = 3000;
+            const long expectedPageLoadTimeMs = 3000;
             pageLoadTimer.StopAndLog(
                 attachToAllure: true,
                 expectedMaxMilliseconds: initializationSuccessful
@@ -370,7 +370,7 @@ public abstract class BasePage
         {
             try
             {
-                _ = cachedElement.Enabled; // Stale check
+                _ = cachedElement.Enabled;
                 PageLogger.LogTrace("Returning element for locator '{Locator}' from page cache on {PageName}.", locator, PageName);
                 return cachedElement;
             }

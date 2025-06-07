@@ -153,6 +153,49 @@ public static partial class ExtensionMethods
     }
 
     /// <summary>
+    /// Waits for an element to exist in the DOM and returns it.
+    /// </summary>
+    /// <param name="wait">The <see cref="WebDriverWait"/> instance to extend.</param>
+    /// <param name="logger">The <see cref="ILogger"/> instance for logging.</param>
+    /// <param name="locator">The <see cref="By"/> locator used to find the element.</param>
+    /// <returns>The located <see cref="IWebElement"/> once it exists.</returns>
+    /// <remarks>
+    /// This method uses <see cref="ExpectedConditions.ElementExists(By)"/>.
+    /// If the element does not exist within the timeout, a <see cref="WebDriverTimeoutException"/> is thrown.
+    /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the element specified by <paramref name="locator"/> does not exist in the DOM within the timeout.</exception>
+    [AllureStep("Wait and find element: {locator}")]
+    public static IWebElement WaitForElement(this WebDriverWait wait, ILogger logger, By locator)
+    {
+        logger.LogDebug(
+            "Waiting for element to exist. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s",
+            locator.ToString(),
+            wait.Timeout.TotalSeconds
+        );
+
+        try
+        {
+            IWebElement element = wait.Until(ExpectedConditions.ElementExists(locator));
+            logger.LogInformation(
+                "Element found successfully. Locator: {ElementLocator}",
+                locator.ToString()
+            );
+
+            return element;
+        }
+        catch (WebDriverTimeoutException ex)
+        {
+            logger.LogError(
+                ex,
+                "Timeout waiting for element to exist. Locator: {ElementLocator}, Timeout: {TimeoutSeconds}s.",
+                locator.ToString(),
+                wait.Timeout.TotalSeconds
+            );
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Gets the display name of an enum value, typically from its <see cref="DisplayAttribute"/>.
     /// If the attribute or its Name property is not present, the enum value's string representation is returned.
     /// </summary>

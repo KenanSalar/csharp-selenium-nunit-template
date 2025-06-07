@@ -89,42 +89,61 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
 
         if (settings.ChromeArguments != null && settings.ChromeArguments.Count != 0)
         {
-            ServiceLogger.LogDebug(
-                "Applying {ArgCount} custom Chrome arguments from configuration settings for {BrowserType}.",
-                settings.ChromeArguments.Count,
-                ConcreteBrowserType
-            );
             foreach (string arg in settings.ChromeArguments)
             {
                 if (!string.IsNullOrWhiteSpace(arg))
                 {
                     chromeOptions.AddArgument(arg);
                     appliedOptionsForLog.Add(arg);
-                    ServiceLogger.LogTrace("Applied Chrome argument from settings for {BrowserType}: '{ChromeArgument}'", ConcreteBrowserType, arg);
                 }
             }
+
+            ServiceLogger.LogDebug("Applying {ArgCount} custom Chrome arguments from settings.", settings.ChromeArguments.Count);
         }
 
-        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count > 0)
+        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
         {
             ServiceLogger.LogDebug(
-                "Applying {PrefCount} user profile preferences for {BrowserType}.",
-                settings.UserProfilePreferences.Count,
-                ConcreteBrowserType
+                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
+                settings.UserProfilePreferences.Count
             );
 
             foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
             {
                 try
                 {
-                    chromeOptions.AddUserProfilePreference(pref.Key, pref.Value);
-                    appliedOptionsForLog.Add($"pref:{pref.Key}={pref.Value}");
+                    string key = pref.Key;
+                    // Defensively convert the value to a string to handle any binding quirks.
+                    string? stringValue = pref.Value?.ToString();
 
-                    ServiceLogger.LogTrace("Applied user profile preference for {BrowserType}: '{PrefKey}' = '{PrefValue}'", ConcreteBrowserType, pref.Key, pref.Value);
+                    if (stringValue is null)
+                    {
+                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
+                        continue;
+                    }
+
+                    object finalValue;
+
+                    if (bool.TryParse(stringValue, out bool boolResult))
+                    {
+                        finalValue = boolResult;
+                    }
+                    else if (int.TryParse(stringValue, out int intResult))
+                    {
+                        finalValue = intResult;
+                    }
+                    else
+                    {
+                        // If it's not a boolean or integer, treat it as a string.
+                        finalValue = stringValue;
+                    }
+
+                    chromeOptions.AddUserProfilePreference(key, finalValue);
+                    appliedOptionsForLog.Add($"pref:{key}={finalValue} (Type: {finalValue.GetType().Name})");
                 }
                 catch (Exception ex)
                 {
-                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}' for {BrowserType}.", pref.Key, pref.Value, ConcreteBrowserType);
+                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
                 }
             }
         }

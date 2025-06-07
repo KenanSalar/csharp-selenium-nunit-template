@@ -96,8 +96,23 @@ public class ShoppingCartPage : BasePage
     public BasePage ClickCheckout()
     {
         PageLogger.LogInformation("Clicking 'Checkout' button.");
-        HighlightIfEnabled(ShoppingCartPageMap.CheckoutButton).Click();
-        PageLogger.LogWarning("Checkout page object not yet implemented. Returning BasePage.");
+        try
+        {
+            IWebElement checkoutButton = FindElementOnPage(ShoppingCartPageMap.CheckoutButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(checkoutButton));
+
+            _ = HighlightIfEnabled(checkoutButton);
+
+            checkoutButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Checkout' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Checkout' button. The test will likely fail on the next page validation.");
+            throw;
+        }
 
         return new CheckoutStepOnePage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
@@ -110,7 +125,25 @@ public class ShoppingCartPage : BasePage
     public InventoryPage ClickContinueShopping()
     {
         PageLogger.LogInformation("Clicking 'Continue Shopping' button.");
-        HighlightIfEnabled(ShoppingCartPageMap.ContinueShoppingButton).Click();
+        try
+        {
+            IWebElement continueButton = FindElementOnPage(ShoppingCartPageMap.ContinueShoppingButton);
+
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(continueButton));
+
+            _ = HighlightIfEnabled(continueButton);
+
+            continueButton.ClickStandard(Wait, PageLogger);
+
+            PageLogger.LogInformation("Successfully clicked 'Continue Shopping' button using JavaScript.");
+        }
+        catch (Exception ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Continue Shopping' button. The test will likely fail on the next page validation.");
+
+            throw;
+        }
+
         return new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
     }
 }
