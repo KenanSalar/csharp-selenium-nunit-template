@@ -1,5 +1,14 @@
 namespace SeleniumTraining.Tests.SauceDemoTests;
 
+using System;
+using System.Linq;
+using Shouldly;
+using SeleniumTraining.Enums;
+using SeleniumTraining.Pages.SauceDemo;
+using SeleniumTraining.Pages.SauceDemo.Components;
+using System.Globalization; // Added for CultureInfo
+// NUnit, Allure, OpenQA.Selenium etc. are expected to be already covered by existing usings or project settings.
+
 public partial class SauceDemoTests : BaseTest
 {
     /// <summary>
@@ -701,5 +710,277 @@ public partial class SauceDemoTests : BaseTest
             visualTestTimer.Dispose();
             TestLogger.LogInformation("Finished visual test: {TestName} for visual_user", currentTestName);
         }
+    }
+
+    [Test]
+    [Retry(2)]
+    [AllureStep("Standard user sorts products by Name (A-Z) and verifies order")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies that a standard user can sort products by name in ascending order using both text and value selection, and that the product order is correct.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void TestStandardUserCanSortByNameAscending()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting test: {TestName} - Sort by Name (A-Z)", currentTestName);
+
+        InventoryPage inventoryPage = LoginAsStandardUserAndNavigateToInventoryPage();
+
+        // Test sorting by TEXT: "Name (A to Z)"
+        using (var sortByNameAscTextTimer = new PerformanceTimer("TestStep_SortByNameAsc_Text", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Name (A to Z) using TEXT selection.");
+            inventoryPage.SortProducts(SortByType.Text, "Name (A to Z)");
+            inventoryPage.GetSelectedSortText().ShouldBe("Name (A to Z)");
+            TestLogger.LogInformation("Verified selected sort option is 'Name (A to Z)'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                items[0].ItemName.ShouldBeLessThanOrEqualTo(items[1].ItemName, $"Item '{items[0].ItemName}' should be less than or equal to '{items[1].ItemName}' (Name A-Z).");
+                if (items.Count >= 3)
+                {
+                    items[1].ItemName.ShouldBeLessThanOrEqualTo(items[2].ItemName, $"Item '{items[1].ItemName}' should be less than or equal to '{items[2].ItemName}' (Name A-Z).");
+                }
+                TestLogger.LogInformation("Verified product sort order for Name (A to Z) by TEXT (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Name (A to Z) by TEXT.", items.Count);
+            }
+            sortByNameAscTextTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+
+        // Test sorting by VALUE: "az"
+        using (var sortByNameAscValueTimer = new PerformanceTimer("TestStep_SortByNameAsc_Value", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Name (A to Z) using VALUE 'az'.");
+            inventoryPage.SortProducts(SortByType.Value, "az");
+            inventoryPage.GetSelectedSortValue().ShouldBe("az");
+            TestLogger.LogInformation("Verified selected sort option value is 'az'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                items[0].ItemName.ShouldBeLessThanOrEqualTo(items[1].ItemName, $"Item '{items[0].ItemName}' should be less than or equal to '{items[1].ItemName}' (Value 'az').");
+                if (items.Count >= 3)
+                {
+                    items[1].ItemName.ShouldBeLessThanOrEqualTo(items[2].ItemName, $"Item '{items[1].ItemName}' should be less than or equal to '{items[2].ItemName}' (Value 'az').");
+                }
+                TestLogger.LogInformation("Verified product sort order for Name (A to Z) by VALUE (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Name (A to Z) by VALUE.", items.Count);
+            }
+            sortByNameAscValueTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
+    }
+
+    [Test]
+    [Retry(2)]
+    [AllureStep("Standard user sorts products by Name (Z-A) and verifies order")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies that a standard user can sort products by name in descending order using both text and value selection, and that the product order is correct.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void TestStandardUserCanSortByNameDescending()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting test: {TestName} - Sort by Name (Z-A)", currentTestName);
+
+        InventoryPage inventoryPage = LoginAsStandardUserAndNavigateToInventoryPage();
+
+        // Test sorting by TEXT: "Name (Z to A)"
+        using (var sortByNameDescTextTimer = new PerformanceTimer("TestStep_SortByNameDesc_Text", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Name (Z to A) using TEXT selection.");
+            inventoryPage.SortProducts(SortByType.Text, "Name (Z to A)");
+            inventoryPage.GetSelectedSortText().ShouldBe("Name (Z to A)");
+            TestLogger.LogInformation("Verified selected sort option is 'Name (Z to A)'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                items[0].ItemName.ShouldBeGreaterThanOrEqualTo(items[1].ItemName, $"Item '{items[0].ItemName}' should be greater than or equal to '{items[1].ItemName}' (Name Z-A).");
+                if (items.Count >= 3)
+                {
+                    items[1].ItemName.ShouldBeGreaterThanOrEqualTo(items[2].ItemName, $"Item '{items[1].ItemName}' should be greater than or equal to '{items[2].ItemName}' (Name Z-A).");
+                }
+                TestLogger.LogInformation("Verified product sort order for Name (Z to A) by TEXT (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Name (Z to A) by TEXT.", items.Count);
+            }
+            sortByNameDescTextTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+
+        // Test sorting by VALUE: "za"
+        using (var sortByNameDescValueTimer = new PerformanceTimer("TestStep_SortByNameDesc_Value", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Name (Z to A) using VALUE 'za'.");
+            inventoryPage.SortProducts(SortByType.Value, "za");
+            inventoryPage.GetSelectedSortValue().ShouldBe("za");
+            TestLogger.LogInformation("Verified selected sort option value is 'za'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                items[0].ItemName.ShouldBeGreaterThanOrEqualTo(items[1].ItemName, $"Item '{items[0].ItemName}' should be greater than or equal to '{items[1].ItemName}' (Value 'za').");
+                if (items.Count >= 3)
+                {
+                    items[1].ItemName.ShouldBeGreaterThanOrEqualTo(items[2].ItemName, $"Item '{items[1].ItemName}' should be greater than or equal to '{items[2].ItemName}' (Value 'za').");
+                }
+                TestLogger.LogInformation("Verified product sort order for Name (Z to A) by VALUE (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Name (Z to A) by VALUE.", items.Count);
+            }
+            sortByNameDescValueTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
+    }
+
+    [Test]
+    [Retry(2)]
+    [AllureStep("Standard user sorts products by Price (low to high) and verifies order")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies that a standard user can sort products by price in ascending order using both text and value selection, and that the product order is correct.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void TestStandardUserCanSortByPriceAscending()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting test: {TestName} - Sort by Price (low to high)", currentTestName);
+
+        InventoryPage inventoryPage = LoginAsStandardUserAndNavigateToInventoryPage();
+
+        // Test sorting by TEXT: "Price (low to high)"
+        using (var sortByPriceAscTextTimer = new PerformanceTimer("TestStep_SortByPriceAsc_Text", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Price (low to high) using TEXT selection.");
+            inventoryPage.SortProducts(SortByType.Text, "Price (low to high)");
+            inventoryPage.GetSelectedSortText().ShouldBe("Price (low to high)");
+            TestLogger.LogInformation("Verified selected sort option is 'Price (low to high)'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                var price1 = decimal.Parse(items[0].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                var price2 = decimal.Parse(items[1].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                price1.ShouldBeLessThanOrEqualTo(price2, $"Price for '{items[0].ItemName}' (${price1}) should be less than or equal to price for '{items[1].ItemName}' (${price2}) (Price low to high).");
+                if (items.Count >= 3)
+                {
+                    var price3 = decimal.Parse(items[2].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                    price2.ShouldBeLessThanOrEqualTo(price3, $"Price for '{items[1].ItemName}' (${price2}) should be less than or equal to price for '{items[2].ItemName}' (${price3}) (Price low to high).");
+                }
+                TestLogger.LogInformation("Verified product sort order for Price (low to high) by TEXT (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Price (low to high) by TEXT.", items.Count);
+            }
+            sortByPriceAscTextTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+
+        // Test sorting by VALUE: "lohi"
+        using (var sortByPriceAscValueTimer = new PerformanceTimer("TestStep_SortByPriceAsc_Value", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Price (low to high) using VALUE 'lohi'.");
+            inventoryPage.SortProducts(SortByType.Value, "lohi");
+            inventoryPage.GetSelectedSortValue().ShouldBe("lohi");
+            TestLogger.LogInformation("Verified selected sort option value is 'lohi'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                var price1 = decimal.Parse(items[0].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                var price2 = decimal.Parse(items[1].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                price1.ShouldBeLessThanOrEqualTo(price2, $"Price for '{items[0].ItemName}' (${price1}) should be less than or equal to price for '{items[1].ItemName}' (${price2}) (Value 'lohi').");
+                if (items.Count >= 3)
+                {
+                    var price3 = decimal.Parse(items[2].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                    price2.ShouldBeLessThanOrEqualTo(price3, $"Price for '{items[1].ItemName}' (${price2}) should be less than or equal to price for '{items[2].ItemName}' (${price3}) (Value 'lohi').");
+                }
+                TestLogger.LogInformation("Verified product sort order for Price (low to high) by VALUE (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Price (low to high) by VALUE.", items.Count);
+            }
+            sortByPriceAscValueTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
+    }
+
+    [Test]
+    [Retry(2)]
+    [AllureStep("Standard user sorts products by Price (high to low) and verifies order")]
+    [AllureSeverity(SeverityLevel.normal)]
+    [AllureDescription("Verifies that a standard user can sort products by price in descending order using both text and value selection, and that the product order is correct.")]
+    [AllureLink("SauceDemo Site", "https://www.saucedemo.com")]
+    public void TestStandardUserCanSortByPriceDescending()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Starting test: {TestName} - Sort by Price (high to low)", currentTestName);
+
+        InventoryPage inventoryPage = LoginAsStandardUserAndNavigateToInventoryPage();
+
+        // Test sorting by TEXT: "Price (high to low)"
+        using (var sortByPriceDescTextTimer = new PerformanceTimer("TestStep_SortByPriceDesc_Text", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Price (high to low) using TEXT selection.");
+            inventoryPage.SortProducts(SortByType.Text, "Price (high to low)");
+            inventoryPage.GetSelectedSortText().ShouldBe("Price (high to low)");
+            TestLogger.LogInformation("Verified selected sort option is 'Price (high to low)'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                var price1 = decimal.Parse(items[0].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                var price2 = decimal.Parse(items[1].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                price1.ShouldBeGreaterThanOrEqualTo(price2, $"Price for '{items[0].ItemName}' (${price1}) should be greater than or equal to price for '{items[1].ItemName}' (${price2}) (Price high to low).");
+                if (items.Count >= 3)
+                {
+                    var price3 = decimal.Parse(items[2].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                    price2.ShouldBeGreaterThanOrEqualTo(price3, $"Price for '{items[1].ItemName}' (${price2}) should be greater than or equal to price for '{items[2].ItemName}' (${price3}) (Price high to low).");
+                }
+                TestLogger.LogInformation("Verified product sort order for Price (high to low) by TEXT (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Price (high to low) by TEXT.", items.Count);
+            }
+            sortByPriceDescTextTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+
+        // Test sorting by VALUE: "hilo"
+        using (var sortByPriceDescValueTimer = new PerformanceTimer("TestStep_SortByPriceDesc_Value", TestLogger, resourceMonitor: ResourceMonitor))
+        {
+            TestLogger.LogInformation("Sorting products by Price (high to low) using VALUE 'hilo'.");
+            inventoryPage.SortProducts(SortByType.Value, "hilo");
+            inventoryPage.GetSelectedSortValue().ShouldBe("hilo");
+            TestLogger.LogInformation("Verified selected sort option value is 'hilo'.");
+
+            var items = inventoryPage.GetInventoryItems().ToList();
+            if (items.Count >= 2)
+            {
+                var price1 = decimal.Parse(items[0].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                var price2 = decimal.Parse(items[1].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                price1.ShouldBeGreaterThanOrEqualTo(price2, $"Price for '{items[0].ItemName}' (${price1}) should be greater than or equal to price for '{items[1].ItemName}' (${price2}) (Value 'hilo').");
+                if (items.Count >= 3)
+                {
+                    var price3 = decimal.Parse(items[2].ItemPrice.TrimStart('$'), CultureInfo.InvariantCulture);
+                    price2.ShouldBeGreaterThanOrEqualTo(price3, $"Price for '{items[1].ItemName}' (${price2}) should be greater than or equal to price for '{items[2].ItemName}' (${price3}) (Value 'hilo').");
+                }
+                TestLogger.LogInformation("Verified product sort order for Price (high to low) by VALUE (first {Count} items).", Math.Min(3, items.Count));
+            }
+            else
+            {
+                TestLogger.LogWarning("Not enough items ({Count}) to fully verify sort order by Price (high to low) by VALUE.", items.Count);
+            }
+            sortByPriceDescValueTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
+        }
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 }

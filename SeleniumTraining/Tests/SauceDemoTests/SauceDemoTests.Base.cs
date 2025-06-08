@@ -181,4 +181,44 @@ public partial class SauceDemoTests : BaseTest
             BrowserType.ToString()
         );
     }
+
+    /// <summary>
+    /// Logs in as the standard_user and navigates to the InventoryPage.
+    /// Includes performance timing and logging for the login action.
+    /// </summary>
+    /// <returns>An instance of <see cref="InventoryPage"/> upon successful login and navigation.</returns>
+    /// <remarks>This method centralizes the standard user login logic.</remarks>
+    protected InventoryPage LoginAsStandardUserAndNavigateToInventoryPage()
+    {
+        string currentTestName = TestContext.CurrentContext.Test.Name;
+        TestLogger.LogInformation("Attempting to log in as standard_user for test: {TestName}", currentTestName);
+
+        InventoryPage inventoryPage;
+        var loginOperationProps = new Dictionary<string, object>
+        {
+            { "Username", _sauceDemoSettings.LoginUsernameStandardUser },
+            { "LoginAction", LoginMode.Click.ToString() },
+            { "TestName", currentTestName }
+        };
+
+        using (var loginTimer = new PerformanceTimer(
+                   "Helper_LoginAsStandardUser",
+                   TestLogger,
+                   Microsoft.Extensions.Logging.LogLevel.Information,
+                   loginOperationProps,
+                   ResourceMonitor))
+        {
+            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            inventoryPage = loginPage
+                .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
+                .EnterPassword(_sauceDemoSettings.LoginPassword)
+                .LoginAndExpectNavigation(LoginMode.Click)
+                .ShouldBeOfType<InventoryPage>("Login as standard_user should lead to Inventory Page.");
+
+            loginTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 7000);
+        }
+
+        TestLogger.LogInformation("Successfully logged in as standard_user and navigated to InventoryPage for test: {TestName}", currentTestName);
+        return inventoryPage;
+    }
 }
