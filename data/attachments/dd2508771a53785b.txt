@@ -1,0 +1,8 @@
+Operation: TestStep_VerifyCartBehavior_ErrorUser
+Duration: 282 ms (0.283 s)
+Expected Max: 6000 ms
+Status: PASS
+Start Memory: WorkingSet: 224.28 MB, PrivateMemory: 566.28 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 224.78 MB, PrivateMemory: 566.65 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.50 MB
+Delta PrivateMemory: 0.38 MB

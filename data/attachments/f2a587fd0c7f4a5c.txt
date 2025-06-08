@@ -1,0 +1,8 @@
+Operation: TestStep_Setup_LoginAndAddItemForCheckout
+Duration: 1076 ms (1.077 s)
+Expected Max: 10000 ms
+Status: PASS
+Start Memory: WorkingSet: 230.29 MB, PrivateMemory: 569.59 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 230.29 MB, PrivateMemory: 569.59 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.00 MB
+Delta PrivateMemory: 0.00 MB

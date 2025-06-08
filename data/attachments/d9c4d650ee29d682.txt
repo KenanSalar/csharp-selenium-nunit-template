@@ -1,0 +1,4 @@
+Operation: PageLoad_InventoryPage
+Duration: 98 ms (0.099 s)
+Expected Max: 3000 ms
+Status: PASS

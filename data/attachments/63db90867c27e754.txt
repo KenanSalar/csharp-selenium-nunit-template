@@ -1,0 +1,8 @@
+Operation: TestStep_AddItemsToCart
+Duration: 1214 ms (1.214 s)
+Expected Max: 15000 ms
+Status: PASS
+Start Memory: WorkingSet: 143.86 MB, PrivateMemory: 457.93 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 149.36 MB, PrivateMemory: 461.20 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 5.51 MB
+Delta PrivateMemory: 3.27 MB

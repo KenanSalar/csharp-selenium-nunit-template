@@ -1,0 +1,8 @@
+Operation: TestStep_UserLogin_Standard
+Duration: 5767 ms (5.767 s)
+Expected Max: 5000 ms
+Status: FAIL (Exceeded Threshold)
+Start Memory: WorkingSet: 218.23 MB, PrivateMemory: 558.57 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 218.48 MB, PrivateMemory: 558.62 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.25 MB
+Delta PrivateMemory: 0.05 MB

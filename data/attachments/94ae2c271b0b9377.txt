@@ -1,0 +1,4 @@
+Operation: PageLoad_CheckoutStepOnePage
+Duration: 104 ms (0.105 s)
+Expected Max: 3000 ms
+Status: PASS

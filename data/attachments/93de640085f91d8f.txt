@@ -1,0 +1,8 @@
+Operation: TestStep_FillCheckoutStepOneInfo
+Duration: 844 ms (0.845 s)
+Expected Max: 5000 ms
+Status: PASS
+Start Memory: WorkingSet: 230.29 MB, PrivateMemory: 569.59 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 230.29 MB, PrivateMemory: 569.59 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.00 MB
+Delta PrivateMemory: 0.00 MB
