@@ -1,4 +1,5 @@
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Remote;
 using WebDriverManager;
 using WebDriverManager.DriverConfigs.Impl;
 
@@ -169,23 +170,28 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         ServiceLogger.LogInformation(
             "FirefoxOptions configured. Effective arguments: [{EffectiveArgs}]",
-            string.Join(", ", appliedOptionsForLog.Distinct()));
+            string.Join(", ", appliedOptionsForLog.Distinct())
+        );
 
         ServiceLogger.LogDebug("Attempting to instantiate new FirefoxDriver with configured options.");
-        FirefoxDriver driver;
-        try
+        
+        if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
         {
-            driver = new FirefoxDriver(firefoxOptions);
-            ServiceLogger.LogInformation("FirefoxDriver instance created successfully. Driver hash: {DriverHashCode}", driver.GetHashCode());
+            ServiceLogger.LogInformation("Creating local FirefoxDriver instance.");
 
-            PerformVersionCheck(driver, Type.ToString(), _minimumSupportedVersion); // From DriverFactoryServiceBase
-            return driver;
+            var localDriver = new FirefoxDriver(firefoxOptions);
+            PerformVersionCheck(localDriver, Type.ToString(), _minimumSupportedVersion);
+
+            return localDriver;
         }
-        catch (Exception ex)
+        else
         {
-            LogAndThrowWebDriverCreationError(ex, Type, firefoxOptions, "While creating Firefox driver.");
-            if (ex is UnsupportedBrowserVersionException) throw;
-            throw;
+            ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Firefox Grid at {GridUrl}", settings.SeleniumGridUrl);
+
+            var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), firefoxOptions);
+            PerformVersionCheck(remoteDriver, Type.ToString(), _minimumSupportedVersion);
+
+            return remoteDriver;
         }
     }
 }

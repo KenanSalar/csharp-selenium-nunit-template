@@ -92,4 +92,6 @@ public abstract class BaseBrowserSettings
     /// (e.g., FirefoxDriver has no direct "LeaveBrowserRunning" option like ChromeDriver).
     /// </remarks>
     public bool LeaveBrowserOpenAfterTest { get; set; }
+
+    public string? SeleniumGridUrl { get; set; }
 }
