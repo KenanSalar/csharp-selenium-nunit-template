@@ -92,6 +92,20 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
             throw new InvalidOperationException($"'{sectionName}' not found or could not be bound for {browserType} in configuration.");
         }
 
+        try
+        {
+            SeleniumGridSettings gridSettings = GetSettings<SeleniumGridSettings>("SeleniumGrid");
+            if (gridSettings != null && gridSettings.Enabled)
+            {
+                ServiceLogger.LogInformation("Selenium Grid is enabled. Setting remote URL to: {GridUrl}", gridSettings.Url);
+                settings.SeleniumGridUrl = gridSettings.Url;
+            }
+        }
+        catch (Exception ex)
+        {
+            ServiceLogger.LogWarning(ex, "Could not load SeleniumGrid settings. Assuming Grid is disabled.");
+        }
+
         string? ciEnvironmentVariable = Environment.GetEnvironmentVariable("CI");
         if (!string.IsNullOrEmpty(ciEnvironmentVariable) && ciEnvironmentVariable.Equals("true", StringComparison.OrdinalIgnoreCase))
         {

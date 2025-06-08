@@ -1,4 +1,47 @@
 services:
+  selenium-hub:
+    image: selenium/hub:latest
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+
+  chrome:
+    image: selenium/node-chrome:latest
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+
+  firefox:
+    image: selenium/node-firefox:latest
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - chrome
+      - firefox
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - DOTNET_CLI_TELEMETRY_OPTOUT=true
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+      - SauceDemo__LoginPassword=${SAUCE_DEMO_PASSWORD}
+    volumes:
+      - ./SeleniumTraining/bin/Release/net9.0/allure-results:/app/allure-results
+      - ./SeleniumTraining/bin/Release/net9.0/TestOutput:/app/TestOutput
+      - ./SeleniumTraining/ProjectVisualBaselines:/app/ProjectVisualBaselines
+      
   allure-reporter-service:
     image: "frankescobar/allure-docker-service:latest"
     container_name: allure_live_report_server
