@@ -108,6 +108,10 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
     }
 
     /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
+    /// <remarks>
+    /// If a <see cref="BaseBrowserSettings.SeleniumGridUrl"/> is provided in the settings, this method creates a
+    /// <see cref="RemoteWebDriver"/> instance targeting the grid. Otherwise, it creates a local <see cref="ChromeDriver"/> instance.
+    /// </remarks>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not ChromeSettings settings)
