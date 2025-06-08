@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Remote;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
@@ -168,6 +169,20 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
             appliedOptionsForLog.Distinct())
         );
 
-        return CreateDriverInstanceWithChecks(chromeOptions);
+        if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
+        {
+            ServiceLogger.LogInformation("Creating local ChromeDriver instance.");
+            
+            return CreateDriverInstanceWithChecks(chromeOptions);
+        }
+        else
+        {
+            ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Chrome Grid at {GridUrl}", settings.SeleniumGridUrl);
+
+            var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), chromeOptions);
+            PerformVersionCheck(remoteDriver, Type.ToString(), MinimumSupportedVersion);
+
+            return remoteDriver;
+        }
     }
 }

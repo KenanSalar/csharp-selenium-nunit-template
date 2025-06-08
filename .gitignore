@@ -547,4 +547,4 @@ fabric.properties
 # Folders and files to ignore
 SeleniumTraining/bin
 SeleniumTraining/obj
-temp.txt.
+.env
