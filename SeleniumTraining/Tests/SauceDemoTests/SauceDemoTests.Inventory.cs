@@ -346,31 +346,20 @@ public partial class SauceDemoTests : BaseTest
     }
 
     /// <summary>
-    /// Verifies that the "error_user" encounters browser-specific issues when interacting with the cart
-    /// functionality on the inventory page.
+    /// Verifies that the "error_user" cannot functionally add items to the cart.
     /// </summary>
     /// <remarks>
-    /// This test checks for distinct error behaviors depending on the browser:
-    /// <list type="bullet">
-    ///   <item>
-    ///     <term>For Chrome (and potentially other similar browsers):</term>
-    ///     <description>
-    ///       1. Logs in as "error_user".
-    ///       2. Attempts to add an item to the cart.
-    ///       3. Asserts that the item's "Add to cart" button text *does not* change, indicating the add action failed at the UI level.
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <term>For Firefox:</term>
-    ///     <description>
-    ///       1. Logs in as "error_user".
-    ///       2. Adds an item to the cart (button text *is expected* to change to "Remove").
-    ///       3. Attempts to remove the item from the cart by clicking the "Remove" button.
-    ///       4. Asserts that the item's button text *does not* change back from "Remove", indicating the remove action failed at the UI level.
-    ///     </description>
-    ///   </item>
+    /// This test confirms the core functional bug for the `error_user`.
+    /// Test Steps:
+    /// <list type="number">
+    ///   <item><description>Logs in as "error_user".</description></item>
+    ///   <item><description>Verifies the initial cart badge count is 0.</description></item>
+    ///   <item><description>Attempts to add an item to the cart.</description></item>
+    ///   <item><description>Asserts that the cart badge count *does not* increase.</description></item>
+    ///   <item><description>Navigates to the cart and asserts that it is empty.</description></item>
     /// </list>
-    /// Performance and resource usage of login and cart interactions are measured.
+    /// This approach is robust because it tests the actual application state (the cart's contents)
+    /// rather than relying on brittle UI text changes, which can differ between browsers.
     /// </remarks>
     [Test]
     [Retry(2)]
