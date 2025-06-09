@@ -37,12 +37,18 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
     }
 
     /// <summary>
-    /// Creates and returns a new WebDriver instance for Firefox, configured with the provided settings.
+    /// Creates and configures a WebDriver instance for Firefox, supporting both local and remote (Selenium Grid) execution.
     /// </summary>
     /// <remarks>
-    /// If a <see cref="BaseBrowserSettings.SeleniumGridUrl"/> is provided in the settings, this method creates a
-    /// <see cref="RemoteWebDriver"/> instance targeting the grid. Otherwise, it creates a local <see cref="FirefoxDriver"/> instance.
-    /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver for local runs.
+    /// This method orchestrates the creation of a Firefox WebDriver by following these steps:
+    /// <list type="number">
+    ///   <item><description>Validates that the provided settings are of type <see cref="FirefoxSettings"/>.</description></item>
+    ///   <item><description>Configures <see cref="FirefoxOptions"/> with common settings (headless, window size, etc.) and any custom arguments or profile preferences.</description></item>
+    ///   <item><description>Checks if a <see cref="BaseBrowserSettings.SeleniumGridUrl"/> is specified in the settings.</description></item>
+    ///   <item><description><b>If a Grid URL is present</b>, it creates a <see cref="RemoteWebDriver"/> instance pointing to the grid.</description></item>
+    ///   <item><description><b>If no Grid URL is present</b>, it uses <see cref="WebDriverManager"/> to set up the local `geckodriver.exe` and then creates a local <see cref="FirefoxDriver"/> instance.</description></item>
+    ///   <item><description>Performs a browser version check against the minimum supported version.</description></item>
+    /// </list>
     /// </remarks>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
@@ -59,18 +65,6 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
             settings.WindowWidth ?? -1,
             settings.WindowHeight ?? -1
         );
-
-        ServiceLogger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
-        try
-        {
-            _ = new DriverManager().SetUpDriver(new FirefoxConfig());
-            ServiceLogger.LogInformation("WebDriverManager successfully completed GeckoDriver setup (FirefoxConfig).");
-        }
-        catch (Exception ex)
-        {
-            ServiceLogger.LogError(ex, "WebDriverManager failed to set up GeckoDriver (FirefoxConfig).");
-            throw;
-        }
 
         FirefoxOptions firefoxOptions = options as FirefoxOptions ?? new FirefoxOptions();
         ServiceLogger.LogDebug("Initialized FirefoxOptions. Base options type: {OptionsBaseType}",
@@ -169,27 +163,33 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         ServiceLogger.LogInformation(
             "FirefoxOptions configured. Effective arguments: [{EffectiveArgs}]",
-            string.Join(", ", appliedOptionsForLog.Distinct())
-        );
+            string.Join(", ", appliedOptionsForLog.Distinct()));
 
-        ServiceLogger.LogDebug("Attempting to instantiate new FirefoxDriver with configured options.");
-        
         if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
         {
             ServiceLogger.LogInformation("Creating local FirefoxDriver instance.");
 
+            ServiceLogger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
+            try
+            {
+                _ = new DriverManager().SetUpDriver(new FirefoxConfig());
+                ServiceLogger.LogInformation("WebDriverManager successfully completed GeckoDriver setup (FirefoxConfig).");
+            }
+            catch (Exception ex)
+            {
+                ServiceLogger.LogError(ex, "WebDriverManager failed to set up GeckoDriver (FirefoxConfig).");
+                throw;
+            }
+
             var localDriver = new FirefoxDriver(firefoxOptions);
             PerformVersionCheck(localDriver, Type.ToString(), _minimumSupportedVersion);
-
             return localDriver;
         }
         else
         {
             ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Firefox Grid at {GridUrl}", settings.SeleniumGridUrl);
-
             var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), firefoxOptions);
             PerformVersionCheck(remoteDriver, Type.ToString(), _minimumSupportedVersion);
-
             return remoteDriver;
         }
     }
