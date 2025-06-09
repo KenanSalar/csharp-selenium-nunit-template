@@ -1,8 +1,8 @@
-namespace SeleniumTraining.Enums;
+namespace SeleniumTraining.Pages.Enums;
 
 /// <summary>
 /// Defines the different methods or actions that can be used to trigger a login attempt
-/// within the web automation framework ([1]).
+/// within the web automation framework.
 /// </summary>
 /// <remarks>
 /// This enumeration helps in parameterizing login actions in page objects or test steps,
