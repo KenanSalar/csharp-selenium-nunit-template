@@ -12,7 +12,7 @@ namespace SeleniumTraining.Utils.Waits;
 /// and return a "truthy" value (e.g., true, a non-null IWebElement) when the condition is met,
 /// or a "falsy" value (e.g., false, null) otherwise, prompting the wait to continue.
 /// </remarks>
-public class CustomExpectedConditions
+public static class CustomExpectedConditions
 {
     /// <summary>
     /// Waits for an element to have a specific attribute with a specific value.
@@ -74,7 +74,8 @@ public class CustomExpectedConditions
     /// Waits for at least a minimum number of elements to be found by the locator.
     /// </summary>
     /// <param name="locator">The locator used to find the elements.</param>
-    /// <param name="minCount">The minimum number of elements expected.</param>
+    /// <param name="minCount">The minimum number of elements expected. This parameter is documented inline in your XML documentation but should include specific description details about it being an integer value specifying the maximum retry attempts or similar context depending on its use case.</param>
+    /// <param name="logger"><see langword="ILogger"/> instance for tracking wait operations and potential errors. The logger helps monitor the execution process, including tracing element counts found during each attempt and logging any exceptions encountered. It can also be used to implement custom logging behavior or record metrics about wait times if required.</param>
     /// <returns>A function that returns the collection of IWebElements if the count is met or exceeded, or null otherwise.</returns>
     public static Func<IWebDriver, IEnumerable<IWebElement>?> ElementCountToBeGreaterThanOrEqual(By locator, int minCount, ILogger? logger = null)
     {

@@ -200,7 +200,7 @@ public class PerformanceTimer : IDisposable
             endMemoryInfo = _resourceMonitor.GetCurrentProcessMemoryUsage();
         }
         else if (_resourceMonitor != null)
-        { 
+        {
             endMemoryInfo = _resourceMonitor.GetCurrentProcessMemoryUsage();
         }
 

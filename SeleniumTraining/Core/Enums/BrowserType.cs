@@ -1,4 +1,4 @@
-namespace SeleniumTraining.Enums;
+namespace SeleniumTraining.Core.Enums;
 
 /// <summary>
 /// Defines the types of web browsers supported by the Selenium test framework.

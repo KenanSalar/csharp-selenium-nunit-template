@@ -16,7 +16,7 @@ namespace SeleniumTraining;
 ///   after all tests in the assembly have completed, via <see cref="GlobalTeardownAfterAllTests"/>.</description></item>
 /// </list>
 /// This centralized setup and teardown is critical for preparing the test environment and ensuring
-/// proper cleanup, especially in automated CI/CD pipelines ([2]) where resource management is important.
+/// proper cleanup, especially in automated CI/CD pipelines where resource management is important.
 /// </remarks>
 [SetUpFixture]
 public class AssemblyInitialize

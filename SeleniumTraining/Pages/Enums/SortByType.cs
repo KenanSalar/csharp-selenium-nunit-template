@@ -1,10 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace SeleniumTraining.Enums;
+namespace SeleniumTraining.Pages.Enums;
 
 /// <summary>
 /// Defines the criteria by which an option in a dropdown list (or similar selection UI element)
-/// should be selected during web automation ([3]).
+/// should be selected during web automation.
 /// </summary>
 /// <remarks>
 /// This enumeration allows test automation scripts to specify whether a selection

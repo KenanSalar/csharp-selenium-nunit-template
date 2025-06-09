@@ -22,7 +22,7 @@ namespace SeleniumTraining.Core.Services;
 /// </list>
 /// It retrieves visual test settings (like baseline directory, auto-creation flags, default tolerance)
 /// via <see cref="ISettingsProviderService"/>. This service is critical for detecting unintended UI changes,
-/// especially in CI/CD environments ([3]) where visual consistency is paramount.
+/// especially in CI/CD environments where visual consistency is paramount.
 /// Inherits from <see cref="BaseService"/> for common logging capabilities.
 /// </remarks>
 public class VisualTestService : BaseService, IVisualTestService

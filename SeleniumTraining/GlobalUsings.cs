@@ -1,4 +1,3 @@
-global using SeleniumTraining.Enums;
 global using SeleniumTraining.Utils;
 global using SeleniumTraining.Utils.Waits;
 global using SeleniumTraining.Utils.Settings;
@@ -8,10 +7,12 @@ global using SeleniumTraining.Utils.Settings.BrowserSettings;
 global using SeleniumTraining.Utils.Settings.SiteSettings;
 global using SeleniumTraining.Utils.Extensions;
 global using SeleniumTraining.Pages;
+global using SeleniumTraining.Pages.Enums;
 global using SeleniumTraining.Pages.SauceDemo;
 global using SeleniumTraining.Pages.SauceDemo.Components;
 global using SeleniumTraining.Pages.SauceDemo.ElementMap;
 global using SeleniumTraining.Core;
+global using SeleniumTraining.Core.Enums;
 global using SeleniumTraining.Core.Exceptions;
 global using SeleniumTraining.Core.Extensions;
 global using SeleniumTraining.Core.Models;
