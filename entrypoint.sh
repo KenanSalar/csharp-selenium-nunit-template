@@ -26,7 +26,7 @@ echo "====================================================="
 dotnet test ./SeleniumTraining.dll \
   --logger "console;verbosity=detailed" \
   --logger "nunit;LogFilePath=allure-results/nunit-log-$BROWSER.xml" \
-  --filter "TestCategory=UI"
+  --filter "(TestCategory=UI)&(TestCategory=$BROWSER)"
 
 echo "====================================================="
 echo "  Test run finished for: $BROWSER"

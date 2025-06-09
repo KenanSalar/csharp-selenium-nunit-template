@@ -18,9 +18,11 @@ public enum BrowserType
     /// </summary>
     Chrome = 0,
 
+    Edge = 1,
+
     /// <summary>
     /// Represents the Mozilla Firefox browser.
     /// This is typically associated with GeckoDriver.
     /// </summary>
-    Firefox = 1
+    Firefox = 2
 }

@@ -65,6 +65,7 @@ public static class AppServiceCollectionExtensions
             .AddSingleton<IBrowserFactoryManagerService, BrowserFactoryManagerService>()
             .AddSingleton<IBrowserDriverFactoryService, ChromeDriverFactoryService>()
             // .AddSingleton<IBrowserDriverFactoryService, BraveDriverFactoryService>()
+            .AddSingleton<IBrowserDriverFactoryService, EdgeDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, FirefoxDriverFactoryService>()
             .AddTransient<IThreadLocalDriverStorageService, ThreadLocalDriverStorageService>()
             .AddTransient<IDriverInitializationService, DriverInitializationService>()
@@ -107,6 +108,11 @@ public static class AppServiceCollectionExtensions
     {
         _ = services.AddOptions<ChromeSettings>()
             .Bind(configuration.GetSection("ChromeBrowserOptions"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        _ = services.AddOptions<EdgeSettings>()
+            .Bind(configuration.GetSection("EdgeBrowserOptions"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

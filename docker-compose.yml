@@ -24,6 +24,15 @@ services:
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
+  edge:
+    image: selenium/node-edge:latest
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+
   # The Firefox node provides a Firefox browser environment for testing.
   firefox:
     image: selenium/node-firefox:latest
@@ -41,6 +50,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - chrome
+      - edge
       - firefox
     environment:
       # Sets the environment to 'Docker' so the app loads appsettings.Docker.json.

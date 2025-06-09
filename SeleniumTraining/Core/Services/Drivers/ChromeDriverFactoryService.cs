@@ -75,8 +75,7 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         {
             string progFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string progFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            pathsToTry =
-            [
+            pathsToTry = [
                 Path.Combine(progFiles, "Google", "Chrome", "Application", "chrome.exe"),
                 Path.Combine(progFilesX86, "Google", "Chrome", "Application", "chrome.exe")
             ];
