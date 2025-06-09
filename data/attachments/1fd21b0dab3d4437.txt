@@ -1,8 +1,0 @@
-Operation: TestStep_VerifyProductImages_ProblemUser
-Duration: 482 ms (0.483 s)
-Expected Max: 5000 ms
-Status: PASS
-Start Memory: WorkingSet: 222.53 MB, PrivateMemory: 564.30 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 222.53 MB, PrivateMemory: 564.30 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 0.00 MB
-Delta PrivateMemory: 0.00 MB

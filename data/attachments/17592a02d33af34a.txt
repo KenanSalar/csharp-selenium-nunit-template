@@ -1,0 +1,4 @@
+Operation: PageLoad_ShoppingCartPage
+Duration: 37 ms (0.038 s)
+Expected Max: 3000 ms
+Status: PASS

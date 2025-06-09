@@ -1,0 +1,4 @@
+Operation: SortProducts_InventoryPage
+Duration: 575 ms (0.576 s)
+Expected Max: 2000 ms
+Status: PASS

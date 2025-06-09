@@ -1,4 +1,0 @@
-Operation: PageLoad_LoginPage
-Duration: 159 ms (0.159 s)
-Expected Max: 3000 ms
-Status: PASS

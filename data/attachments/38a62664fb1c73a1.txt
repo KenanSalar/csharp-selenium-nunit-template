@@ -1,0 +1,8 @@
+Operation: TestStep_RemoveItemsFromCart
+Duration: 2067 ms (2.067 s)
+Expected Max: 8000 ms
+Status: PASS
+Start Memory: WorkingSet: 153.12 MB, PrivateMemory: 465.50 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 166.62 MB, PrivateMemory: 496.04 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 13.49 MB
+Delta PrivateMemory: 30.55 MB

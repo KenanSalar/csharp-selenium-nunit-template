@@ -1,8 +1,0 @@
-Operation: TestStep_Login_StandardUser_ForCartTest
-Duration: 1561 ms (1.562 s)
-Expected Max: 7000 ms
-Status: PASS
-Start Memory: WorkingSet: 137.61 MB, PrivateMemory: 453.86 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 142.64 MB, PrivateMemory: 457.37 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 5.04 MB
-Delta PrivateMemory: 3.51 MB

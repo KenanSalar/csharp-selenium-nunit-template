@@ -1,4 +1,0 @@
-Operation: LoginAndNavigate_LoginPage_Click
-Duration: 704 ms (0.704 s)
-Expected Max: 5000 ms
-Status: PASS

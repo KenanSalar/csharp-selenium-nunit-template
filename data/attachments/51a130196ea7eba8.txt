@@ -1,0 +1,8 @@
+Operation: TestStep_Setup_CompletePurchase
+Duration: 4407 ms (4.408 s)
+Expected Max: 20000 ms
+Status: PASS
+Start Memory: WorkingSet: 182.18 MB, PrivateMemory: 511.38 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 211.20 MB, PrivateMemory: 543.98 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 29.02 MB
+Delta PrivateMemory: 32.61 MB
