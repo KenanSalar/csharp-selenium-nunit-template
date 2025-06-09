@@ -59,11 +59,9 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
     /// <inheritdoc cref="ISettingsProviderService.GetBrowserSettings(BrowserType)" />
     /// <remarks>
     /// This implementation maps the <paramref name="browserType"/> to a specific configuration section name
-    /// (e.g., "ChromeBrowserOptions", "FirefoxBrowserOptions"). It then attempts to retrieve and bind
-    /// this section to the corresponding settings class (e.g., <see cref="ChromeSettings"/>, <see cref="FirefoxSettings"/>).
-    /// Crucially, if a CI environment is detected (via the "CI" environment variable being "true"),
-    /// it will override the <c>Headless</c> property of the retrieved settings to <c>true</c>,
-    /// ensuring tests run headlessly in CI/CD pipelines. This behavior is logged.
+    /// (e.g., "ChromeBrowserOptions"). It then retrieves and binds this section.
+    /// It also checks for "SeleniumGrid" settings and, if enabled, populates the <see cref="BaseBrowserSettings.SeleniumGridUrl"/> property.
+    /// Finally, if a CI environment is detected, it overrides the <c>Headless</c> property to <c>true</c>.
     /// </remarks>
     [AllureStep("Retrieving browser settings for {browserType}")]
     public BaseBrowserSettings GetBrowserSettings(BrowserType browserType)

@@ -8,7 +8,7 @@ namespace SeleniumTraining.Core.Services;
 /// <remarks>
 /// This service implements <see cref="IDirectoryManagerService"/> and calculates paths relative
 /// to the test assembly and project root. It is crucial for organizing test artifacts
-/// in a consistent manner, especially for CI/CD pipelines ([3]) and local debugging.
+/// in a consistent manner, especially for CI/CD pipelines and local debugging.
 /// It inherits from <see cref="BaseService"/> for common logging capabilities.
 /// The logic for determining the project root involves searching upwards from the
 /// test assembly directory for a <c>.csproj</c> file.

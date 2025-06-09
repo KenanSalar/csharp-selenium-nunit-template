@@ -253,21 +253,13 @@ public abstract class BaseTest : IDisposable
     }
 
     /// <summary>
-    /// Performs cleanup operations common to all tests after each test method execution.
-    /// This includes:
+    /// Performs cleanup operations after each test. This includes:
     /// <list type="bullet">
-    ///   <item><description>Finalizing the test report (e.g., for Allure), including capturing screenshots on failure if a driver is available.</description></item>
-    ///   <item><description>Disposing the logging scope.</description></item>
-    ///   <item><description>Disposing the test-specific DI scope.</description></item>
+    ///   <item><description>Finalizing the test report (including taking screenshots on failure).</description></item>
+    ///   <item><description>Quitting the WebDriver instance to close the browser.</description></item>
+    ///   <item><description>Disposing the logging and DI scopes for the test.</description></item>
     /// </list>
-    /// This method is skipped if the test was ignored in <see cref="SetUpAttribute"/> due to CI browser mismatch.
     /// </summary>
-    /// <remarks>
-    /// This method is decorated with <see cref="TearDownAttribute"/> and will be called by NUnit after each test.
-    /// It retrieves the active WebDriver (if any) to assist in report finalization (e.g., for screenshots).
-    /// Errors during report finalization are logged but typically do not cause the teardown itself to fail.
-    /// The NUnit <see cref="TestContext"/> is used to determine the outcome of the test.
-    /// </remarks>
     [TearDown]
     public void Cleanup()
     {
@@ -370,20 +362,9 @@ public abstract class BaseTest : IDisposable
     }
 
     /// <summary>
-    /// Releases managed and unmanaged resources used by the <see cref="BaseTest"/>.
+    /// Releases managed resources. It ensures that all disposable services resolved
+    /// for the test scope are disposed. The WebDriver instance itself is quit in the `[TearDown]` method.
     /// </summary>
-    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed and unmanaged resources);
-    /// false if called from a finalizer (unmanaged resources only, though this class doesn't have a finalizer).</param>
-    /// <remarks>
-    /// If <paramref name="disposing"/> is true, this method ensures that:
-    /// <list type="bullet">
-    ///   <item><description>The WebDriver is quit via <see cref="ITestWebDriverManager.QuitDriver()"/>.</description></item>
-    ///   <item><description>All resolved disposable services (like <see cref="ITestWebDriverManager"/>, <see cref="ITestReporterService"/>, <see cref="IResourceMonitorService"/> etc.) are disposed if they implement <see cref="IDisposable"/>.</description></item>
-    ///   <item><description>The logging scope (<see cref="_loggingScope"/>) and DI scope (<see cref="_testScope"/>) are disposed.</description></item>
-    /// </list>
-    /// This method is protected by a flag to ensure it's only executed once.
-    /// Errors during disposal of individual services are logged but do not prevent other services from being disposed.
-    /// </remarks>
     protected virtual void Dispose(bool disposing)
     {
         string currentTestNameForDispose = TestName ?? "UnknownTest_Dispose";

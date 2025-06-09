@@ -93,5 +93,11 @@ public abstract class BaseBrowserSettings
     /// </remarks>
     public bool LeaveBrowserOpenAfterTest { get; set; }
 
+    /// <summary>
+    /// Gets or sets the URL for a remote Selenium Grid Hub.
+    /// If this value is set, the framework will attempt to create a <see cref="OpenQA.Selenium.Remote.RemoteWebDriver"/>
+    /// instance pointing to this URL instead of a local driver.
+    /// </summary>
+    /// <value>The URL of the Selenium Grid Hub, or <c>null</c> to use a local driver.</value>
     public string? SeleniumGridUrl { get; set; }
 }

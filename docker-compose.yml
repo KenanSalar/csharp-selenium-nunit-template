@@ -1,21 +1,30 @@
+# Defines the services, networks, and volumes for the multi-container Docker application.
 services:
+  # The Selenium Hub is the central point that receives test requests and distributes them to available nodes.
   selenium-hub:
     image: selenium/hub:latest
     container_name: selenium-hub
     ports:
+      # Port for nodes to register to the hub and for the event bus.
       - "4442:4442"
+      # Port for the event bus subscription.
       - "4443:4443"
+      # The main port for receiving RemoteWebDriver commands from tests.
       - "4444:4444"
 
+  # The Chrome node provides a Chrome browser environment for testing.
   chrome:
     image: selenium/node-chrome:latest
+    # Depends on the hub, ensuring the hub is started before this node tries to connect.
     depends_on:
       - selenium-hub
+    # Environment variables to configure the node to connect to the hub.
     environment:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
+  # The Firefox node provides a Firefox browser environment for testing.
   firefox:
     image: selenium/node-firefox:latest
     depends_on:
@@ -25,6 +34,7 @@ services:
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
+  # This service runs the .NET tests.
   test-runner:
     build:
       context: .
@@ -33,24 +43,30 @@ services:
       - chrome
       - firefox
     environment:
+      # Sets the environment to 'Docker' so the app loads appsettings.Docker.json.
       - ASPNETCORE_ENVIRONMENT=Docker
       - DOTNET_CLI_TELEMETRY_OPTOUT=true
       - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+      # Pulls the password from the .env file for local secret management.
       - SauceDemo__LoginPassword=${SAUCE_DEMO_PASSWORD}
     volumes:
+      # Mounts volumes to persist test results from the container back to the local machine.
       - ./SeleniumTraining/bin/Release/net9.0/allure-results:/app/allure-results
       - ./SeleniumTraining/bin/Release/net9.0/TestOutput:/app/TestOutput
       - ./SeleniumTraining/ProjectVisualBaselines:/app/ProjectVisualBaselines
-      
+
+  # This service runs the Allure server to display live reports.
   allure-reporter-service:
     image: "frankescobar/allure-docker-service:latest"
     container_name: allure_live_report_server
     environment:
-      - CHECK_RESULTS_EVERY_SECONDS=3
-      - KEEP_HISTORY=1
+      - CHECK_RESULTS_EVERY_SECONDS=3 # How often to refresh the report.
+      - KEEP_HISTORY=1 # Keep a history of test runs.
     ports:
       - "5050:5050"
     volumes:
+      # Mounts the same allure-results directory to read the test outputs.
       - ./SeleniumTraining/bin/Release/net9.0/allure-results:/app/allure-results
+      # Mounts a directory to store the generated HTML report history.
       - ./SeleniumTraining/bin/Release/net9.0/TestOutput/AllureReportLive:/app/default-reports
     restart: unless-stopped

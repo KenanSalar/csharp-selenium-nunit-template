@@ -37,13 +37,12 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
     }
 
     /// <summary>
-    /// Creates and returns a new <see cref="FirefoxDriver"/> instance configured with the provided settings and options.
+    /// Creates and returns a new WebDriver instance for Firefox, configured with the provided settings.
     /// </summary>
     /// <remarks>
-    /// This method ensures that the provided <paramref name="settingsBase"/> are of type <see cref="FirefoxSettings"/>.
-    /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver.
-    /// It then configures <see cref="FirefoxOptions"/> by applying headless mode, window size,
-    /// custom arguments, and profile preferences from settings before instantiating the <see cref="FirefoxDriver"/>.
+    /// If a <see cref="BaseBrowserSettings.SeleniumGridUrl"/> is provided in the settings, this method creates a
+    /// <see cref="RemoteWebDriver"/> instance targeting the grid. Otherwise, it creates a local <see cref="FirefoxDriver"/> instance.
+    /// It uses <see cref="WebDriverManager"/> to set up GeckoDriver for local runs.
     /// </remarks>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
