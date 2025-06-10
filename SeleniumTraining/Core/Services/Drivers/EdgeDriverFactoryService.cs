@@ -7,10 +7,9 @@ using System.Runtime.InteropServices;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
-public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrowserDriverFactoryService
+public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
 {
-    public BrowserType Type => BrowserType.Edge;
-    protected override BrowserType ConcreteBrowserType => BrowserType.Edge;
+    public override BrowserType Type => BrowserType.Edge;
     protected override Version MinimumSupportedVersion { get; } = new("110.0");
 
     public EdgeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
@@ -18,91 +17,73 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrows
         ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(EdgeDriverFactoryService), Type);
     }
 
-    public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
+    public override IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not EdgeSettings settings)
         {
-            var ex = new ArgumentException(
-                $"Invalid settings type provided. Expected {nameof(EdgeSettings)}, got {settingsBase.GetType().Name}.",
-                nameof(settingsBase)
+            throw new ArgumentException($"Invalid settings type. Expected {nameof(EdgeSettings)}, got {settingsBase.GetType().Name}.", nameof(settingsBase));
+        }
+
+        EdgeOptions edgeOptions = ConfigureCommonChromiumOptions<EdgeOptions>(settings, options, out _);
+
+        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
+        {
+            ServiceLogger.LogDebug(
+                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
+                settings.UserProfilePreferences.Count
             );
-            ServiceLogger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(EdgeDriverFactoryService));
-            throw ex;
-        }
 
-        ServiceLogger.LogInformation(
-            "Creating {BrowserType} WebDriver. Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if specified).",
-            Type,
-            settings.Headless,
-            settings.WindowWidth ?? -1,
-            settings.WindowHeight ?? -1
-        );
+            foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
+            {
+                try
+                {
+                    string key = pref.Key;
+                    string? stringValue = pref.Value?.ToString();
 
-        EdgeOptions edgeOptions = options as EdgeOptions ?? new EdgeOptions();
-        var appliedOptionsForLog = new List<string>();
+                    if (stringValue is null)
+                    {
+                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
+                        continue;
+                    }
 
-        string windowSizeArgument = GetWindowSizeArgumentInternal(settings);
-        if (!string.IsNullOrEmpty(windowSizeArgument))
-        {
-            edgeOptions.AddArgument(windowSizeArgument);
-            appliedOptionsForLog.Add(windowSizeArgument);
-        }
+                    object finalValue;
 
-        if (settings.Headless && !string.IsNullOrEmpty(settings.ChromeHeadlessArgument))
-        {
-            edgeOptions.AddArgument(settings.ChromeHeadlessArgument);
-            appliedOptionsForLog.Add(settings.ChromeHeadlessArgument);
-        }
+                    if (bool.TryParse(stringValue, out bool boolResult))
+                    {
+                        finalValue = boolResult;
+                    }
+                    else if (int.TryParse(stringValue, out int intResult))
+                    {
+                        finalValue = intResult;
+                    }
+                    else
+                    {
+                        finalValue = stringValue;
+                    }
 
-        if (settings.LeaveBrowserOpenAfterTest)
-        {
-            ServiceLogger.LogWarning("LeaveBrowserOpenAfterTest=true is not directly supported by EdgeOptions.");
-        }
-
-        if (settings.ChromeArguments != null && settings.ChromeArguments.Count != 0)
-        {
-            edgeOptions.AddArguments(settings.ChromeArguments);
-            appliedOptionsForLog.AddRange(settings.ChromeArguments);
+                    edgeOptions.AddUserProfilePreference(key, finalValue);
+                }
+                catch (Exception ex)
+                {
+                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
+                }
+            }
         }
 
         string edgeExecutablePath = GetEdgeExecutablePathInternal();
-        if (!string.IsNullOrEmpty(edgeExecutablePath) && File.Exists(edgeExecutablePath))
+        if (!string.IsNullOrEmpty(edgeExecutablePath))
         {
             edgeOptions.BinaryLocation = edgeExecutablePath;
         }
 
-        ServiceLogger.LogInformation(
-            "EdgeOptions configured for {BrowserType}. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]",
-            Type,
-            edgeOptions.BinaryLocation ?? "Default/System PATH",
-            string.Join(", ", appliedOptionsForLog.Distinct())
-        );
-
         if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
         {
-            ServiceLogger.LogInformation("Creating local EdgeDriver instance.");
-            ServiceLogger.LogDebug("Attempting to set up EdgeDriver using WebDriverManager (EdgeConfig).");
-            try
-            {
-                _ = new DriverManager().SetUpDriver(new EdgeConfig());
-                ServiceLogger.LogInformation("WebDriverManager successfully completed EdgeDriver setup (EdgeConfig).");
-            }
-            catch (Exception ex)
-            {
-                ServiceLogger.LogError(ex, "WebDriverManager failed to set up EdgeDriver (EdgeConfig).");
-                throw;
-            }
-
-            var localDriver = new EdgeDriver(edgeOptions);
-            PerformVersionCheck(localDriver, Type.ToString(), MinimumSupportedVersion);
-            return localDriver;
+            _ = new DriverManager().SetUpDriver(new EdgeConfig());
+            return CreateDriverInstanceWithChecks(edgeOptions, options => new EdgeDriver(options));
         }
         else
         {
-            ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Edge Grid at {GridUrl}", settings.SeleniumGridUrl);
-            var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), edgeOptions);
-            PerformVersionCheck(remoteDriver, Type.ToString(), MinimumSupportedVersion);
-            return remoteDriver;
+            return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), edgeOptions);
         }
     }
 
@@ -112,41 +93,26 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrows
         string? edgePathEnv = Environment.GetEnvironmentVariable("EDGE_EXECUTABLE_PATH");
         if (!string.IsNullOrEmpty(edgePathEnv) && File.Exists(edgePathEnv))
         {
-            ServiceLogger.LogInformation("Using Edge executable from EDGE_EXECUTABLE_PATH: {EdgePathEnv}", edgePathEnv);
             return edgePathEnv;
         }
 
-        string[] pathsToTry;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             string progFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            pathsToTry = [Path.Combine(progFilesX86, "Microsoft", "Edge", "Application", "msedge.exe")];
+            string[] pathsToTry = [Path.Combine(progFilesX86, "Microsoft", "Edge", "Application", "msedge.exe")];
+            return pathsToTry.FirstOrDefault(File.Exists) ?? string.Empty;
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            pathsToTry = ["/usr/bin/microsoft-edge-stable", "/usr/bin/microsoft-edge-dev"];
+            string[] pathsToTry = ["/usr/bin/microsoft-edge-stable", "/usr/bin/microsoft-edge-dev"];
+            return pathsToTry.FirstOrDefault(File.Exists) ?? string.Empty;
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            pathsToTry = ["/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"];
-        }
-        else
-        {
-            ServiceLogger.LogWarning("Unsupported OS platform for Edge path detection: {OSPlatform}", RuntimeInformation.OSDescription);
-            return string.Empty;
+            const string osxPath = "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge";
+            if (File.Exists(osxPath)) return osxPath;
         }
 
-        foreach (string path in pathsToTry)
-        {
-            if (File.Exists(path))
-            {
-                ServiceLogger.LogInformation("Found Edge executable at: {EdgePath}", path);
-                return path;
-            }
-            ServiceLogger.LogDebug("Edge executable not found at: {PathToTry}", path);
-        }
-
-        ServiceLogger.LogWarning("Edge executable not found in standard installation paths for OS {OSPlatform}.", RuntimeInformation.OSDescription);
         return string.Empty;
     }
 }

@@ -48,7 +48,6 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 [AllureSuite("SauceDemo Login and Inventory Tests")]
 [AllureOwner("Kenan")]
 [AllureTag("UI", "SauceDemo")]
-[Category("UI")]
 public partial class SauceDemoTests : BaseTest
 {
     /// <summary>

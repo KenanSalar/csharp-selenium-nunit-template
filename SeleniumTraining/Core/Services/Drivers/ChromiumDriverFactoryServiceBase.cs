@@ -1,191 +1,90 @@
-using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Chromium;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
-/// <summary>
-/// Provides a base class for creating WebDriver instances for Chromium-based browsers (e.g., Chrome, Edge).
-/// It encapsulates common logic for configuring <see cref="ChromeOptions"/> and performing
-/// version checks specific to Chromium browsers.
-/// </summary>
-/// <remarks>
-/// Derived classes must implement <see cref="ConcreteBrowserType"/> and <see cref="MinimumSupportedVersion"/>
-/// to specify the particular Chromium browser and its minimum version requirement.
-/// This class inherits from <see cref="DriverFactoryServiceBase"/>, which in turn provides
-/// logging and potentially other base factory functionalities.
-/// </remarks>
-public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBase
+public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBase, IBrowserDriverFactoryService
 {
-    /// <summary>
-    /// Gets the specific <see cref="BrowserType"/> (e.g., Chrome, Edge) that the derived factory implementation handles.
-    /// This must be implemented by concrete derived classes.
-    /// </summary>
-    /// <value>The <see cref="BrowserType"/> for this specific Chromium-based browser factory.</value>
-    protected abstract BrowserType ConcreteBrowserType { get; }
-
-    /// <summary>
-    /// Gets the minimum supported version for the specific Chromium-based browser handled by this factory.
-    /// This must be implemented by concrete derived classes.
-    /// </summary>
-    /// <value>The minimum <see cref="Version"/> that is supported.</value>
+    public abstract BrowserType Type { get; }
     protected abstract Version MinimumSupportedVersion { get; }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ChromiumDriverFactoryServiceBase"/> class.
-    /// </summary>
-    /// <param name="loggerFactory">The factory used to create loggers, passed to the base <see cref="DriverFactoryServiceBase"/>.</param>
     protected ChromiumDriverFactoryServiceBase(ILoggerFactory loggerFactory)
-        : base(loggerFactory) { }
-
-    /// <summary>
-    /// Configures common <see cref="ChromeOptions"/> applicable to Chromium-based browsers
-    /// using the provided settings. This method can be overridden by derived classes
-    /// to add further browser-specific options.
-    /// </summary>
-    /// <param name="settings">The <see cref="ChromiumBasedSettings"/> containing configurations like headless mode,
-    /// window size, and custom arguments. Must not be null.</param>
-    /// <param name="baseOptions">Optional existing <see cref="DriverOptions"/>. If provided and is a <see cref="ChromeOptions"/> instance,
-    /// it will be used as a base; otherwise, new <see cref="ChromeOptions"/> are created.</param>
-    /// <param name="appliedOptionsForLog">An output list that will be populated with strings representing the options
-    /// that were actually applied, for logging purposes.</param>
-    /// <returns>A configured <see cref="ChromeOptions"/> instance.</returns>
-    /// <remarks>
-    /// This method handles standard options such as window size, headless mode,
-    /// <c>LeaveBrowserRunning</c> (for debugging), and custom arguments specified in <paramref name="settings"/>.
-    /// </remarks>
-    protected virtual ChromeOptions ConfigureCommonChromeOptions(
-        ChromiumBasedSettings settings,
-        DriverOptions? baseOptions,
-        out List<string> appliedOptionsForLog
-    )
+        : base(loggerFactory)
     {
-        appliedOptionsForLog = [];
-        ChromeOptions chromeOptions = baseOptions as ChromeOptions ?? new ChromeOptions();
-        ServiceLogger.LogDebug(
-            "Initialized ChromeOptions for {BrowserType}. Base options type: {OptionsBaseType}",
-            ConcreteBrowserType,
-            chromeOptions.GetType().BaseType?.Name ?? chromeOptions.GetType().Name
-        );
-
-        string windowSizeArgument = GetWindowSizeArgumentInternal(settings);
-        if (!string.IsNullOrEmpty(windowSizeArgument))
-        {
-            chromeOptions.AddArgument(windowSizeArgument);
-            appliedOptionsForLog.Add(windowSizeArgument);
-            ServiceLogger.LogDebug("Applied window size argument for {BrowserType}: '{WindowSizeArgument}'", ConcreteBrowserType, windowSizeArgument);
-        }
-
-        if (settings.Headless && !string.IsNullOrEmpty(settings.ChromeHeadlessArgument))
-        {
-            chromeOptions.AddArgument(settings.ChromeHeadlessArgument);
-            appliedOptionsForLog.Add(settings.ChromeHeadlessArgument);
-            ServiceLogger.LogDebug("Applied headless argument for {BrowserType}: '{HeadlessArgument}'", ConcreteBrowserType, settings.ChromeHeadlessArgument);
-        }
-
-        if (settings.LeaveBrowserOpenAfterTest)
-        {
-            chromeOptions.LeaveBrowserRunning = true;
-            ServiceLogger.LogWarning("DEBUGGING: {BrowserType} browser will be left running after the test due to LeaveBrowserOpenAfterTest=true setting.", ConcreteBrowserType);
-        }
-
-        if (settings.ChromeArguments != null && settings.ChromeArguments.Count != 0)
-        {
-            foreach (string arg in settings.ChromeArguments)
-            {
-                if (!string.IsNullOrWhiteSpace(arg))
-                {
-                    chromeOptions.AddArgument(arg);
-                    appliedOptionsForLog.Add(arg);
-                }
-            }
-
-            ServiceLogger.LogDebug("Applying {ArgCount} custom Chrome arguments from settings.", settings.ChromeArguments.Count);
-        }
-
-        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
-        {
-            ServiceLogger.LogDebug(
-                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
-                settings.UserProfilePreferences.Count
-            );
-
-            foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
-            {
-                try
-                {
-                    string key = pref.Key;
-                    // Defensively convert the value to a string to handle any binding quirks.
-                    string? stringValue = pref.Value?.ToString();
-
-                    if (stringValue is null)
-                    {
-                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
-                        continue;
-                    }
-
-                    object finalValue;
-
-                    if (bool.TryParse(stringValue, out bool boolResult))
-                    {
-                        finalValue = boolResult;
-                    }
-                    else if (int.TryParse(stringValue, out int intResult))
-                    {
-                        finalValue = intResult;
-                    }
-                    else
-                    {
-                        // If it's not a boolean or integer, treat it as a string.
-                        finalValue = stringValue;
-                    }
-
-                    chromeOptions.AddUserProfilePreference(key, finalValue);
-                    appliedOptionsForLog.Add($"pref:{key}={finalValue} (Type: {finalValue.GetType().Name})");
-                }
-                catch (Exception ex)
-                {
-                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
-                }
-            }
-        }
-
-        return chromeOptions;
+        
     }
 
-    /// <summary>
-    /// Creates a new instance of <see cref="ChromeDriver"/> using the provided <see cref="ChromeOptions"/>
-    /// and performs standard checks such as browser version verification.
-    /// </summary>
-    /// <param name="chromeOptions">The fully configured <see cref="ChromeOptions"/> to use for instantiating the ChromeDriver.</param>
-    /// <returns>A new <see cref="ChromeDriver"/> instance.</returns>
-    /// <exception cref="Exception">Re-throws any exception that occurs during driver creation after logging it
-    /// via <see cref="DriverFactoryServiceBase.LogAndThrowWebDriverCreationError"/> (if that method throws).</exception>
-    /// <remarks>
-    /// This method centralizes the instantiation of the ChromeDriver and the subsequent call to
-    /// <see cref="DriverFactoryServiceBase.PerformVersionCheck"/>. If driver creation fails,
-    /// detailed error information is logged.
-    /// </remarks>
-    protected ChromeDriver CreateDriverInstanceWithChecks(ChromeOptions chromeOptions)
+    public abstract IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null);
+
+    protected TDriver CreateDriverInstanceWithChecks<TDriver, TOptions>(
+        TOptions driverOptions,
+        Func<TOptions, TDriver> driverFactory
+    )
+        where TDriver : ChromiumDriver
+        where TOptions : ChromiumOptions
     {
-        ServiceLogger.LogDebug("Attempting to instantiate new ChromeDriver (for {BrowserType}) with configured options.", ConcreteBrowserType);
-        ChromeDriver driver;
+        ServiceLogger.LogDebug("Attempting to instantiate new {DriverType} with configured options.", typeof(TDriver).Name);
+        TDriver driver;
         try
         {
-            driver = new ChromeDriver(chromeOptions);
-
+            driver = driverFactory(driverOptions);
             ServiceLogger.LogInformation(
-                "{BrowserType} WebDriver (via ChromeDriver) instance created successfully. Driver hash: {DriverHashCode}",
-                ConcreteBrowserType,
-                driver.GetHashCode()
+                "{BrowserType} WebDriver ({DriverType}) instance created successfully. Driver hash: {DriverHashCode}",
+                Type, typeof(TDriver).Name, driver.GetHashCode()
             );
-
-            PerformVersionCheck(driver, ConcreteBrowserType.ToString(), MinimumSupportedVersion);
+            PerformVersionCheck(driver, Type.ToString(), MinimumSupportedVersion);
             return driver;
         }
         catch (Exception ex)
         {
-            LogAndThrowWebDriverCreationError(ex, ConcreteBrowserType, chromeOptions, $"While creating {ConcreteBrowserType} driver.");
+            LogAndThrowWebDriverCreationError(ex, Type, driverOptions, $"While creating {Type} driver.");
             throw;
         }
+    }
+
+    protected TChromiumOptions ConfigureCommonChromiumOptions<TChromiumOptions>(
+        ChromiumBasedSettings settings,
+        DriverOptions? baseOptions,
+        out List<string> appliedOptionsForLog
+    )
+        where TChromiumOptions : ChromiumOptions, new()
+    {
+        appliedOptionsForLog = [];
+        TChromiumOptions chromiumOptions = baseOptions as TChromiumOptions ?? new TChromiumOptions();
+        ServiceLogger.LogDebug("Initialized {OptionsType} for {BrowserType}.", typeof(TChromiumOptions).Name, Type);
+
+        string windowSizeArgument = GetWindowSizeArgumentInternal(settings);
+        if (!string.IsNullOrEmpty(windowSizeArgument))
+        {
+            chromiumOptions.AddArgument(windowSizeArgument);
+            appliedOptionsForLog.Add(windowSizeArgument);
+        }
+
+        if (settings.Headless && !string.IsNullOrEmpty(settings.ChromeHeadlessArgument))
+        {
+            chromiumOptions.AddArgument(settings.ChromeHeadlessArgument);
+            appliedOptionsForLog.Add(settings.ChromeHeadlessArgument);
+        }
+
+        if (settings.LeaveBrowserOpenAfterTest)
+        {
+            chromiumOptions.AddAdditionalOption("detach", true);
+            ServiceLogger.LogWarning("DEBUGGING: {BrowserType} browser will be left running after the test.", Type);
+        }
+
+        if (settings.ChromeArguments != null && settings.ChromeArguments.Count != 0)
+        {
+            ServiceLogger.LogDebug("Applying {ArgCount} custom Chrome arguments from settings.", settings.ChromeArguments.Count);
+            foreach (string arg in settings.ChromeArguments)
+            {
+                if (!string.IsNullOrWhiteSpace(arg))
+                {
+                    chromiumOptions.AddArgument(arg);
+                    appliedOptionsForLog.Add(arg);
+                }
+            }
+        }
+
+        return chromiumOptions;
     }
 
     /// <summary>

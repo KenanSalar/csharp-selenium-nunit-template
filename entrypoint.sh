@@ -20,13 +20,16 @@ echo ""
 echo "Selenium Hub is ready!"
 echo ""
 
+export TARGET_BROWSER_CI=$BROWSER
+
 echo "====================================================="
 echo "  Running Tests on Browser: $BROWSER"
+echo "  (Using in-code filter via TARGET_BROWSER_CI=$TARGET_BROWSER_CI)"
 echo "====================================================="
+
 dotnet test ./SeleniumTraining.dll \
   --logger "console;verbosity=detailed" \
-  --logger "nunit;LogFilePath=allure-results/nunit-log-$BROWSER.xml" \
-  --filter "(TestCategory=UI)&(TestCategory=$BROWSER)"
+  --logger "nunit;LogFilePath=allure-results/nunit-log-$BROWSER.xml"
 
 echo "====================================================="
 echo "  Test run finished for: $BROWSER"
