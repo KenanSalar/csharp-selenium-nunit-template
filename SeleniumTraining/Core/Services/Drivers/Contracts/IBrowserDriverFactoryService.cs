@@ -12,7 +12,7 @@ namespace SeleniumTraining.Core.Services.Drivers.Contracts;
 /// </remarks>
 public interface IBrowserDriverFactoryService
 {
-    // <summary>
+    /// <summary>
     /// Gets the specific <see cref="BrowserType"/> that this factory is responsible for creating drivers for.
     /// </summary>
     /// <value>The <see cref="BrowserType"/> supported by this factory implementation.</value>

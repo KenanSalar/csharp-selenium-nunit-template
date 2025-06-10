@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [Chrome, Firefox]
+        browser: [Chrome, Edge, Firefox]
     
     steps:
       - name: Checkout repository

@@ -464,7 +464,7 @@ public partial class SauceDemoTests : BaseTest
             string buttonTextAfterFirstClick = firstItem.GetActionButtonText();
             TestLogger.LogDebug("Action button text for '{ItemName}' after first click: '{ButtonText}'", itemNameForTest, buttonTextAfterFirstClick);
 
-            if (BrowserType == BrowserType.Chrome)
+            if (BrowserType is BrowserType.Chrome or BrowserType.Edge)
             {
                 TestLogger.LogInformation("Chrome specific check: Verifying 'Add to cart' fails for error_user (button text should not change).");
                 buttonTextAfterFirstClick.ShouldBe(
