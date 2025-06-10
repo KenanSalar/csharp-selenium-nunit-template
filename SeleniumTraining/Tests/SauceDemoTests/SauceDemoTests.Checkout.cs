@@ -9,10 +9,8 @@ public partial class SauceDemoTests : BaseTest
     /// <remarks>
     /// Test Steps:
     /// <list type="number">
-    ///   <item><description>Logs in as the standard_user.</description></item>
-    ///   <item><description>Adds an item to the cart (e.g., "Sauce Labs Backpack").</description></item>
-    ///   <item><description>Navigates to the ShoppingCartPage.</description></item>
-    ///   <item><description>Clicks the "Checkout" button.</description></item>
+    ///   <item><description>Uses a helper method to log in as the standard_user and add an item to the cart.</description></item>
+    ///   <item><description>Navigates from the inventory page to the ShoppingCartPage and clicks "Checkout".</description></item>
     ///   <item><description>Verifies landing on the CheckoutStepOnePage.</description></item>
     ///   <item><description>Fills in valid First Name, Last Name, and Zip/Postal Code.</description></item>
     ///   <item><description>Clicks "Continue".</description></item>
@@ -33,28 +31,20 @@ public partial class SauceDemoTests : BaseTest
         string firstName = "Test";
         string lastName = "User";
         string postalCode = "12345";
-        string itemToAddToCart = "Sauce Labs Backpack";
+        var itemsToOrder = new List<string> { "Sauce Labs Backpack" };
 
         // --- Login and Add Item to Cart (Setup) ---
-        var setupTimer = new PerformanceTimer("TestStep_Setup_LoginAndAddItemForCheckout", TestLogger, resourceMonitor: ResourceMonitor);
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
-        InventoryPage inventoryPage = loginPage
-            .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
-            .EnterPassword(_sauceDemoSettings.LoginPassword)
-            .LoginAndExpectNavigation(LoginMode.Click)
-            .ShouldBeOfType<InventoryPage>("Login should lead to Inventory Page.");
+        InventoryPage inventoryPage = LoginAndAddItemsToCart(itemsToOrder);
 
-        InventoryItemComponent? item = inventoryPage.GetInventoryItems().FirstOrDefault(i => i.ItemName == itemToAddToCart);
-        _ = item.ShouldNotBeNull($"Item '{itemToAddToCart}' must be present to add to cart.");
-        item.ClickActionButton();
-        TestLogger.LogInformation("Item '{ItemName}' added to cart for checkout.", itemToAddToCart);
-        setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 10000);
+        // --- ACT ---
+        // Navigate from inventory to the first checkout step
+        ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
+        var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
+        TestLogger.LogInformation("Navigated to Checkout Step One page.");
 
         // --- Navigate to Cart and Proceed to Checkout ---
-        ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink()
-            .ShouldBeOfType<ShoppingCartPage>();
-
-        var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
+        _ = inventoryPage.ClickShoppingCartLink().ShouldBeOfType<ShoppingCartPage>();
+        _ = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
         TestLogger.LogInformation("Navigated to Checkout Step One page.");
 
         // --- Fill Information and Continue ---
@@ -81,7 +71,11 @@ public partial class SauceDemoTests : BaseTest
             fillInfoTimer.Dispose();
         }
 
-        TestLogger.LogInformation("Finished test: {TestName}. Checkout information successfully submitted.", currentTestName);
+        // --- ASSERT ---
+        // Verify we landed on the correct page after filling the form
+        _ = checkoutStepTwoPage.ShouldNotBeNull("Proceeding from checkout step one should lead to step two.");
+        TestLogger.LogInformation("Successfully submitted checkout info and landed on the overview page.");
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 
     /// <summary>
@@ -91,12 +85,10 @@ public partial class SauceDemoTests : BaseTest
     /// <remarks>
     /// Test Steps:
     /// <list type="number">
-    ///   <item><description>Logs in as the standard_user.</description></item>
-    ///   <item><description>Adds "Sauce Labs Backpack" and "Sauce Labs Bike Light" to the cart.</description></item>
-    ///   <item><description>Proceeds through the first step of checkout (entering user information).</description></item>
+    ///   <item><description>Uses a helper method to log in as the standard_user and add two specific items to the cart.</description></item>
+    ///   <item><description>Proceeds through the first step of checkout by filling in user information.</description></item>
     ///   <item><description>Verifies landing on the CheckoutStepTwoPage (Overview).</description></item>
-    ///   <item><description>Verifies that the correct items are listed in the overview (e.g., by checking count and names).</description></item>
-    ///   <item><description>Optionally, verifies pricing details (subtotal, tax, total) - (Simplified for this example).</description></item>
+    ///   <item><description>Verifies that the correct items are listed in the overview by checking count and names.</description></item>
     ///   <item><description>Clicks the "Finish" button.</description></item>
     ///   <item><description>Asserts navigation to the CheckoutCompletePage.</description></item>
     /// </list>
@@ -112,44 +104,32 @@ public partial class SauceDemoTests : BaseTest
         string currentTestName = TestContext.CurrentContext.Test.Name;
         TestLogger.LogInformation("Starting test: {TestName}", currentTestName);
 
+        // --- ARRANGE ---
+        // Define test data
         string firstName = "Checkout";
         string lastName = "UserTwo";
         string postalCode = "54321";
         var itemsToOrder = new List<string> { "Sauce Labs Backpack", "Sauce Labs Bike Light" };
 
         // --- Setup: Login, Add Items, Reach Checkout Step One ---
-        var setupTimer = new PerformanceTimer("TestStep_Setup_ReachCheckoutOverview", TestLogger, resourceMonitor: ResourceMonitor);
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
-        InventoryPage inventoryPage = loginPage
-            .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
-            .EnterPassword(_sauceDemoSettings.LoginPassword)
-            .LoginAndExpectNavigation(LoginMode.Click)
-            .ShouldBeOfType<InventoryPage>();
+        InventoryPage inventoryPage = LoginAndAddItemsToCart(itemsToOrder);
 
-        var allInventoryItems = inventoryPage.GetInventoryItems().ToList();
-        foreach (string itemName in itemsToOrder)
-        {
-            allInventoryItems.First(i => i.ItemName == itemName).ClickActionButton();
-        }
-        inventoryPage.GetShoppingCartBadgeCount().ShouldBe(itemsToOrder.Count);
-
+        // Navigate to the checkout overview page
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-
         CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
             .EnterFirstName(firstName)
             .EnterLastName(lastName)
             .EnterPostalCode(postalCode)
             .ClickContinue();
-
-        setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 15000);
         TestLogger.LogInformation("Setup complete, on Checkout Overview page.");
 
-        // --- Verify Overview and Finish ---
+        // --- ACT & ASSERT ---
         var overviewAndFinishTimer = new PerformanceTimer("TestStep_VerifyOverviewAndFinish", TestLogger, resourceMonitor: ResourceMonitor);
         CheckoutCompletePage checkoutCompletePage;
         try
         {
+            // Verify items in overview
             var overviewItems = checkoutStepTwoPage.GetItemsInOverview().ToList();
             overviewItems.Count.ShouldBe(itemsToOrder.Count, $"Expected {itemsToOrder.Count} items in overview.");
             foreach (string itemName in itemsToOrder)
@@ -158,12 +138,12 @@ public partial class SauceDemoTests : BaseTest
             }
             TestLogger.LogInformation("Items verified on overview page.");
 
+            // Verify pricing details (optional)
             TestLogger.LogInformation("Subtotal: {Subtotal}", checkoutStepTwoPage.GetSubtotalText());
             TestLogger.LogInformation("Total: {Total}", checkoutStepTwoPage.GetTotalText());
 
+            // Finish the purchase
             checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
-            _ = checkoutCompletePage.ShouldNotBeNull("Finishing order should lead to complete page.");
-            TestLogger.LogInformation("Clicked 'Finish'. Expected to be on Checkout Complete page.");
         }
         finally
         {
@@ -171,7 +151,10 @@ public partial class SauceDemoTests : BaseTest
             overviewAndFinishTimer.Dispose();
         }
 
-        TestLogger.LogInformation("Finished test: {TestName}. Purchase completed from overview.", currentTestName);
+        // Verify landing on the final page
+        _ = checkoutCompletePage.ShouldNotBeNull("Finishing order should lead to complete page.");
+        TestLogger.LogInformation("Clicked 'Finish'. Verified navigation to Checkout Complete page.");
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 
     /// <summary>
@@ -181,12 +164,12 @@ public partial class SauceDemoTests : BaseTest
     /// <remarks>
     /// Test Steps:
     /// <list type="number">
-    ///   <item><description>Logs in as standard_user, adds items, and completes all checkout steps to reach the CheckoutCompletePage.</description></item>
-    ///   <item><description>On CheckoutCompletePage: Verifies the confirmation header text (e.g., "THANK YOU FOR YOUR ORDER").</description></item>
-    ///   <item><description>Verifies the presence of the "Pony Express" image.</description></item>
+    ///   <item><description>Uses a helper method to log in as standard_user and add an item to the cart.</description></item>
+    ///   <item><description>Completes all checkout steps to reach the CheckoutCompletePage.</description></item>
+    ///   <item><description>On CheckoutCompletePage, verifies the confirmation header text and the presence of the "Pony Express" image.</description></item>
     ///   <item><description>Clicks the "Back Home" button.</description></item>
     ///   <item><description>Asserts navigation back to the InventoryPage.</description></item>
-    ///   <item><description>Asserts that the shopping cart is now empty (badge count is 0).</description></item>
+    ///   <item><description>Asserts that the shopping cart is now empty by checking the badge count is 0.</description></item>
     /// </list>
     /// Performance of the confirmation page interaction and navigation is measured.
     /// </remarks>
@@ -203,54 +186,45 @@ public partial class SauceDemoTests : BaseTest
         string firstName = "ThankYou";
         string lastName = "User";
         string postalCode = "98765";
-        string itemToOrder = "Sauce Labs Fleece Jacket";
+        var itemsToOrder = new List<string> { "Sauce Labs Fleece Jacket" };
 
         // --- Setup: Login, Add Item, Complete Checkout to reach Confirmation Page ---
-        var setupTimer = new PerformanceTimer("TestStep_Setup_CompletePurchase", TestLogger, resourceMonitor: ResourceMonitor);
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
-        InventoryPage inventoryPage = loginPage
-            .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
-            .EnterPassword(_sauceDemoSettings.LoginPassword)
-            .LoginAndExpectNavigation(LoginMode.Click)
-            .ShouldBeOfType<InventoryPage>();
+        InventoryPage inventoryPage = LoginAndAddItemsToCart(itemsToOrder);
 
-        inventoryPage.GetInventoryItems().First(i => i.ItemName == itemToOrder).ClickActionButton();
-
+        // Complete checkout process to get to the confirmation page
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-
         CheckoutStepTwoPage checkoutStepTwoPage = checkoutStepOnePage
             .EnterFirstName(firstName)
             .EnterLastName(lastName)
             .EnterPostalCode(postalCode)
             .ClickContinue();
-
         CheckoutCompletePage checkoutCompletePage = checkoutStepTwoPage.ClickFinish();
-
-        setupTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 20000);
         TestLogger.LogInformation("Setup complete, on Checkout Complete page.");
 
-        // --- Verify Confirmation Page and Return Home ---
+        // --- ACT & ASSERT ---
         var confirmationTimer = new PerformanceTimer("TestStep_VerifyConfirmationAndReturnHome", TestLogger, resourceMonitor: ResourceMonitor);
         InventoryPage finalInventoryPage;
         try
         {
+            // Verify confirmation page details
             checkoutCompletePage.GetConfirmationHeaderText().ShouldBe("Thank you for your order!", StringCompareShould.IgnoreCase);
             checkoutCompletePage.IsPonyExpressImageDisplayed().ShouldBeTrue("Pony Express image should be displayed.");
             TestLogger.LogInformation("Confirmation page details verified.");
 
+            // Click back home
             finalInventoryPage = checkoutCompletePage.ClickBackHome();
-            _ = finalInventoryPage.ShouldNotBeNull("Clicking 'Back Home' should return to Inventory Page.");
-            TestLogger.LogInformation("Navigated back to Inventory page.");
-
-            finalInventoryPage.GetShoppingCartBadgeCount().ShouldBe(0, "Shopping cart should be empty after completing an order and returning home.");
-            TestLogger.LogInformation("Shopping cart badge is correctly empty on Inventory page.");
         }
         finally
         {
             confirmationTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 7000);
             confirmationTimer.Dispose();
         }
-        TestLogger.LogInformation("Finished test: {TestName}. Purchase confirmation and empty cart verified.", currentTestName);
+
+        // Verify state after returning to inventory
+        _ = finalInventoryPage.ShouldNotBeNull("Clicking 'Back Home' should return to Inventory Page.");
+        finalInventoryPage.GetShoppingCartBadgeCount().ShouldBe(0, "Shopping cart should be empty after completing an order and returning home.");
+        TestLogger.LogInformation("Verified cart is empty on Inventory page.");
+        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 }
