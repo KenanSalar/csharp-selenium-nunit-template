@@ -11,7 +11,6 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 /// overridden <see cref="SetUp"/> method for test-specific initializations. It inherits
 /// common test functionalities from <see cref="BaseTest"/>.
 /// </remarks>
-// [TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Chrome), Category("Chrome")]
 [TestFixture(BrowserType.Edge), Category("Edge")]
 [TestFixture(BrowserType.Firefox), Category("Firefox")]
