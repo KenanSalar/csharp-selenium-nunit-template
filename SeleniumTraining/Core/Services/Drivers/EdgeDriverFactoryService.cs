@@ -12,7 +12,7 @@ namespace SeleniumTraining.Core.Services.Drivers;
 /// </summary>
 /// <remarks>
 /// This service handles the Edge-specific setup, including applying user preferences
-/// via <c>AddExperimentalOption</c> and locating the Edge executable before creating the driver instance.
+/// and locating the Edge executable before creating the driver instance.
 /// </remarks>
 public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
 {

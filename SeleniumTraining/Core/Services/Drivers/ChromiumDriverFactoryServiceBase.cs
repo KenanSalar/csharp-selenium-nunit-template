@@ -91,12 +91,14 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
         {
             chromiumOptions.AddArgument(windowSizeArgument);
             appliedOptionsForLog.Add(windowSizeArgument);
+            ServiceLogger.LogDebug("Applied window size argument for {BrowserType}: '{WindowSizeArgument}'", Type, windowSizeArgument);
         }
 
         if (settings.Headless && !string.IsNullOrEmpty(settings.ChromeHeadlessArgument))
         {
             chromiumOptions.AddArgument(settings.ChromeHeadlessArgument);
             appliedOptionsForLog.Add(settings.ChromeHeadlessArgument);
+            ServiceLogger.LogDebug("Applied headless argument for {BrowserType}: '{HeadlessArgument}'", Type, settings.ChromeHeadlessArgument);
         }
 
         if (settings.LeaveBrowserOpenAfterTest)
