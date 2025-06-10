@@ -39,8 +39,6 @@ public abstract class DriverFactoryServiceBase : BaseService
     /// This method attempts to parse the browser version from the driver's capabilities.
     /// If the version cannot be determined or parsed, a warning is logged, and the check is skipped.
     /// It handles common version string formats (e.g., "100.0.1234.56", "101.0.2345-beta").
-    /// If an unexpected error occurs during the check (not an <see cref="UnsupportedBrowserVersionException"/>),
-    /// it's logged, and the method proceeds without version verification to allow the test to continue if possible.
     /// </remarks>
     protected void PerformVersionCheck(IWebDriver driver, string browserNameForLog, Version minimumSupportedVersion)
     {
@@ -103,8 +101,6 @@ public abstract class DriverFactoryServiceBase : BaseService
     /// <remarks>
     /// This method serializes the <paramref name="driverOptions"/> to JSON to provide a detailed snapshot
     /// of the configuration at the time of failure, aiding in debugging.
-    /// It distinguishes between <see cref="WebDriverException"/>, <see cref="InvalidOperationException"/>,
-    /// and other unexpected exceptions for more specific logging.
     /// </remarks>
     protected void LogAndThrowWebDriverCreationError(Exception ex, BrowserType browserType, DriverOptions driverOptions, string additionalContext = "")
     {

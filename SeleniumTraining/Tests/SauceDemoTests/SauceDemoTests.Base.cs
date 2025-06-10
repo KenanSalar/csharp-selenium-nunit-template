@@ -2,43 +2,14 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 
 /// <summary>
 /// Defines a comprehensive test fixture for UI testing of the SauceDemo application.
-/// This fixture groups a variety of test scenarios, including different user login behaviors,
-/// inventory page interactions (like product sorting and image verification), and visual validation checks.
-/// It is designed to run tests across multiple browsers, as specified by NUnit's [TestFixture] attributes.
+/// This fixture groups a variety of test scenarios and is parameterized to run across
+/// multiple browsers as specified by the [TestFixture] attributes.
 /// </summary>
 /// <remarks>
-/// The <c>SauceDemoTests</c> class is implemented as a <see langword="partial"/> class,
-/// with its constituent parts organized into separate files for better maintainability and clarity:
-/// <list type="bullet">
-///   <item>
-///     <term>SauceDemoTests.Base.cs</term>
-///     <description>Contains the core fixture setup, including NUnit's <c>[TestFixture]</c> attributes for browser parameterization,
-///     the class constructor, common SauceDemo-specific fields (like <see cref="_sauceDemoSettings"/>),
-///     and an overridden <see cref="SetUp"/> method for SauceDemo-specific initializations (e.g., loading settings, initial navigation).
-///     It inherits common test functionalities from <see cref="BaseTest"/>.</description>
-///   </item>
-///   <item>
-///     <term>SauceDemoTests.Data.cs</term>
-///     <description>Holds test data specifically related to the SauceDemo application, such as the
-///     <see cref="_inventoryProductsDropdownOptions"/> list used for verifying product sorting.</description>
-///   </item>
-///   <item>
-///     <term>SauceDemoTests.Login.cs</term>
-///     <description>Contains test methods that primarily focus on validating different login scenarios and outcomes
-///     directly on the login page. This includes tests for users like the "locked_out_user" and potentially other login error conditions.
-///     It now also includes the test for the "problem_user" focusing on inventory display issues post-login.</description>
-///   </item>
-///   <item>
-///     <term>SauceDemoTests.Inventory.cs</term>
-///     <description>Groups test methods that, following a successful login, concentrate on interactions with and verifications of
-///     the inventory page. This includes testing standard user flows like product sorting, and behaviors specific to user types
-///     like the "visual_user" for visual regression checks.</description>
-///   </item>
-/// </list>
-/// All test methods leverage NUnit attributes for execution control (e.g., <c>[Test]</c>, <c>[Retry]</c>) and
-/// Allure attributes (e.g., <c>[AllureStep]</c>, <c>[AllureSeverity]</c>) for comprehensive reporting.
-/// The underlying <see cref="BaseTest"/> class provides shared infrastructure such as WebDriver management,
-/// DI service resolution, logging, and performance/resource monitoring capabilities.
+/// This <see langword="partial"/> class serves as the base for all SauceDemo tests, containing
+/// the core fixture setup for browser parameterization, the class constructor, and an
+/// overridden <see cref="SetUp"/> method for test-specific initializations. It inherits
+/// common test functionalities from <see cref="BaseTest"/>.
 /// </remarks>
 // [TestFixture(BrowserType.Brave), Category("Brave")]
 [TestFixture(BrowserType.Chrome), Category("Chrome")]
@@ -58,14 +29,10 @@ public partial class SauceDemoTests : BaseTest
     private SauceDemoSettings _sauceDemoSettings = null!;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SauceDemoTests"/> base class for a specific browser type.
+    /// Initializes a new instance of the <see cref="SauceDemoTests"/> class for a specific browser type.
     /// </summary>
-    /// <param name="browserType">The <see cref="BrowserType"/> on which the tests derived from this base
-    /// are intended to run. This is passed to the base <see cref="BaseTest"/> constructor.</param>
-    /// <remarks>
-    /// This constructor primarily calls the base class constructor to set up the common test infrastructure.
-    /// SauceDemo-specific setup, including loading settings and navigation, occurs in the <see cref="SetUp"/> method.
-    /// </remarks>
+    /// <param name="browserType">The <see cref="BrowserType"/> on which the tests are intended to run,
+    /// passed by the NUnit [TestFixture] attribute.</param>
     public SauceDemoTests(BrowserType browserType)
         : base(browserType)
     {
@@ -73,23 +40,14 @@ public partial class SauceDemoTests : BaseTest
 
     /// <summary>
     /// Overrides the base <see cref="BaseTest.SetUp()"/> to perform SauceDemo-specific initialization
-    /// after the common base setup is complete. This includes:
-    /// <list type="bullet">
-    ///   <item><description>Loading and validating <see cref="SauceDemoSettings"/>.</description></item>
-    ///   <item><description>Navigating to the SauceDemo application URL specified in settings.</description></item>
-    ///   <item><description>Verifying the initial page title against <see cref="LoginPageMap.PageTitle"/>.</description></item>
-    ///   <item><description>Validating the presence of login credentials in the loaded settings.</description></item>
-    /// </list>
+    /// after the common base setup is complete.
     /// </summary>
     /// <remarks>
-    /// This method is decorated with <see cref="SetUpAttribute"/> and is called by NUnit before each test.
-    /// If any validation (settings, URL, title, credentials) fails, a <see cref="ShouldAssertException"/>
-    /// or other relevant exception is thrown, typically failing the test early.
-    /// Performance of the navigation step is measured.
-    /// Errors during setup are logged extensively.
+    /// This method loads the <see cref="SauceDemoSettings"/> from configuration, navigates to the
+    /// application URL, and verifies the page title before any test logic runs.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">Thrown if SauceDemo settings cannot be loaded, if WebDriver is not available for navigation, or if a WebDriverException occurs during navigation.</exception>
-    /// <exception cref="ShouldAssertException">Thrown if URL, page title, or credential validations fail.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if settings cannot be loaded or navigation fails.</exception>
+    /// <exception cref="ShouldAssertException">Thrown if URL or page title validations fail.</exception>
     [SetUp]
     public override void SetUp()
     {

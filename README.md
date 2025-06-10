@@ -96,6 +96,10 @@ All commands should be run from the root directory of the project.
         ```bash
         docker compose run --rm test-runner Chrome
         ```
+    * **Run on Edge only:**
+        ```bash
+        docker compose run --rm test-runner Edge
+        ```
     * **Run on Firefox only:**
         ```bash
         docker compose run --rm test-runner Firefox
@@ -131,6 +135,10 @@ You can also run tests directly on your local machine using the .NET CLI. This r
     * **Run Chrome tests:**
         ```bash
         dotnet test --filter "TestCategory=Chrome"
+        ```
+    * **Run Edge tests:**
+        ```bash
+        dotnet test --filter "TestCategory=Edge"
         ```
     * **Run Firefox tests:**
         ```bash

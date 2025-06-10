@@ -7,16 +7,31 @@ using System.Runtime.InteropServices;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
+/// <summary>
+/// Factory service specifically for creating and configuring <see cref="EdgeDriver"/> instances.
+/// </summary>
+/// <remarks>
+/// This service handles the Edge-specific setup, including applying user preferences
+/// via <c>AddExperimentalOption</c> and locating the Edge executable before creating the driver instance.
+/// </remarks>
 public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
 {
+    /// <inheritdoc/>
     public override BrowserType Type => BrowserType.Edge;
+
+    /// <inheritdoc/>
     protected override Version MinimumSupportedVersion { get; } = new("110.0");
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EdgeDriverFactoryService"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">The factory used to create loggers.</param>
     public EdgeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(EdgeDriverFactoryService), Type);
     }
 
+    /// <inheritdoc/>
     public override IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not EdgeSettings settings)
@@ -87,6 +102,10 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
         }
     }
 
+    /// <summary>
+    /// Attempts to locate the Microsoft Edge executable on the current system.
+    /// </summary>
+    /// <returns>The full path to the Edge executable if found; otherwise, an empty string.</returns>
     private string GetEdgeExecutablePathInternal()
     {
         ServiceLogger.LogDebug("Searching for Edge executable...");
