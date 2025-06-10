@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using WebDriverManager;
+using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
@@ -8,39 +10,96 @@ namespace SeleniumTraining.Core.Services.Drivers;
 /// Factory service specifically for creating and configuring <see cref="ChromeDriver"/> instances.
 /// </summary>
 /// <remarks>
-/// This service handles the Chrome-specific setup, including locating the Chrome executable,
-/// configuring <see cref="ChromeOptions"/> with common and Chrome-specific settings,
-/// and instantiating the <see cref="ChromeDriver"/>. It implements <see cref="IBrowserDriverFactoryService"/>
-/// and inherits common Chromium configurations from <see cref="ChromiumDriverFactoryServiceBase"/>.
+/// This service handles the Chrome-specific setup, including applying user preferences
+/// and locating the Chrome executable before creating the driver instance.
 /// </remarks>
-public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBrowserDriverFactoryService
+public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase
 {
-    public BrowserType Type => BrowserType.Chrome;
+    /// <inheritdoc/>
+    public override BrowserType Type => BrowserType.Chrome;
 
-    /// <summary>
-    /// Gets the browser type this factory is responsible for, which is always <see cref="BrowserType.Chrome"/>.
-    /// </summary>
-    /// <inheritdoc cref="IBrowserDriverFactoryService.Type" />
-    /// 
-    /// /// <summary>
-    /// Gets the specific <see cref="BrowserType"/> (Chrome) that this factory implementation handles.
-    /// </summary>
-    /// <inheritdoc cref="ChromiumDriverFactoryServiceBase.ConcreteBrowserType" />
-    protected override BrowserType ConcreteBrowserType => BrowserType.Chrome;
-
-    /// <summary>
-    /// Gets the minimum supported version for the Google Chrome browser handled by this factory.
-    /// </summary>
-    /// <inheritdoc cref="ChromiumDriverFactoryServiceBase.MinimumSupportedVersion" />
+    /// <inheritdoc/>
     protected override Version MinimumSupportedVersion { get; } = new("110.0");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeDriverFactoryService"/> class.
     /// </summary>
-    /// <param name="loggerFactory">The factory used to create loggers, passed to the base class.</param>
-    public ChromeDriverFactoryService(ILoggerFactory loggerFactory) : base(loggerFactory)
+    /// <param name="loggerFactory">The factory used to create loggers.</param>
+    public ChromeDriverFactoryService(ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         ServiceLogger.LogInformation("{FactoryName} initialized for {BrowserType}.", nameof(ChromeDriverFactoryService), Type);
+    }
+
+    /// <inheritdoc/>
+    public override IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
+    {
+        if (settingsBase is not ChromeSettings settings)
+        {
+            throw new ArgumentException($"Invalid settings type. Expected {nameof(ChromeSettings)}, got {settingsBase.GetType().Name}.", nameof(settingsBase));
+        }
+
+        ChromeOptions chromeOptions = ConfigureCommonChromiumOptions<ChromeOptions>(settings, options, out _);
+
+        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
+        {
+            ServiceLogger.LogDebug(
+                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
+                settings.UserProfilePreferences.Count
+            );
+
+            foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
+            {
+                try
+                {
+                    string key = pref.Key;
+                    string? stringValue = pref.Value?.ToString();
+
+                    if (stringValue is null)
+                    {
+                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
+                        continue;
+                    }
+
+                    object finalValue;
+
+                    if (bool.TryParse(stringValue, out bool boolResult))
+                    {
+                        finalValue = boolResult;
+                    }
+                    else if (int.TryParse(stringValue, out int intResult))
+                    {
+                        finalValue = intResult;
+                    }
+                    else
+                    {
+                        finalValue = stringValue;
+                    }
+
+                    chromeOptions.AddUserProfilePreference(key, finalValue);
+                }
+                catch (Exception ex)
+                {
+                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
+                }
+            }
+        }
+
+        string chromeExecutablePath = GetChromeExecutablePathInternal();
+        if (!string.IsNullOrEmpty(chromeExecutablePath))
+        {
+            chromeOptions.BinaryLocation = chromeExecutablePath;
+        }
+
+        if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
+        {
+            _ = new DriverManager().SetUpDriver(new ChromeConfig());
+            return CreateDriverInstanceWithChecks(chromeOptions, opts => new ChromeDriver(opts));
+        }
+        else
+        {
+            return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), chromeOptions);
+        }
     }
 
     /// <summary>
@@ -73,8 +132,7 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
         {
             string progFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string progFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            pathsToTry =
-            [
+            pathsToTry = [
                 Path.Combine(progFiles, "Google", "Chrome", "Application", "chrome.exe"),
                 Path.Combine(progFilesX86, "Google", "Chrome", "Application", "chrome.exe")
             ];
@@ -105,88 +163,5 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase, IBro
 
         ServiceLogger.LogWarning("Chrome executable not found in standard installation paths for OS {OSPlatform}.", RuntimeInformation.OSDescription);
         return string.Empty;
-    }
-
-    /// <inheritdoc cref="IBrowserDriverFactoryService.CreateDriver(BaseBrowserSettings, DriverOptions)" />
-    /// <remarks>
-    /// If a <see cref="BaseBrowserSettings.SeleniumGridUrl"/> is provided in the settings, this method creates a
-    /// <see cref="RemoteWebDriver"/> instance targeting the grid. Otherwise, it creates a local <see cref="ChromeDriver"/> instance.
-    /// </remarks>
-    public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
-    {
-        if (settingsBase is not ChromeSettings settings)
-        {
-            var ex = new ArgumentException(
-                $"Invalid settings type provided. Expected {nameof(ChromeSettings)}, got {settingsBase.GetType().Name}.",
-                nameof(settingsBase)
-            );
-            ServiceLogger.LogError(ex, "Settings type mismatch in {FactoryName}.", nameof(ChromeDriverFactoryService));
-            throw ex;
-        }
-
-        ServiceLogger.LogInformation(
-            "Creating {BrowserType} WebDriver. Requested settings - Headless: {IsHeadless}, WindowSize: {WindowWidth}x{WindowHeight} (if specified).",
-            Type,
-            settings.Headless,
-            settings.WindowWidth ?? -1,
-            settings.WindowHeight ?? -1
-        );
-
-        string chromeExecutablePath = GetChromeExecutablePathInternal();
-
-        if (string.IsNullOrEmpty(chromeExecutablePath))
-        {
-            ServiceLogger.LogWarning("Chrome executable path not found. WebDriverManager will use default detection if possible, and Selenium will rely on PATH.");
-        }
-        else
-        {
-            ServiceLogger.LogInformation("Chrome executable path determined to be: {ChromePath}", chromeExecutablePath);
-        }
-
-        // try
-        // {
-        //     Logger.LogInformation("Attempting to set up ChromeDriver using WebDriverManager's default behavior for ChromeConfig (will attempt auto-detection).");
-        //     _ = new DriverManager().SetUpDriver(new ChromeConfig());
-        //     Logger.LogInformation("WebDriverManager successfully completed default ChromeDriver setup for Chrome.");
-        // }
-        // catch (Exception ex)
-        // {
-        //     Logger.LogError(ex, "WebDriverManager failed to set up ChromeDriver using default ChromeConfig.");
-        //     throw;
-        // }
-
-        ChromeOptions chromeOptions = ConfigureCommonChromeOptions(settings, options, out List<string> appliedOptionsForLog);
-
-        if (!string.IsNullOrEmpty(chromeExecutablePath) && File.Exists(chromeExecutablePath))
-        {
-            chromeOptions.BinaryLocation = chromeExecutablePath;
-        }
-        else
-        {
-            ServiceLogger.LogDebug("Chrome binary location not explicitly set in options; Selenium will use default system path or detected driver's expectation.");
-        }
-
-        ServiceLogger.LogInformation(
-            "ChromeOptions configured for {BrowserType}. BinaryLocation: {BinaryLocation}. Effective arguments: [{EffectiveArgs}]",
-            Type, chromeOptions.BinaryLocation ?? "Default/System PATH",
-            string.Join(", ",
-            appliedOptionsForLog.Distinct())
-        );
-
-        if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
-        {
-            ServiceLogger.LogInformation("Creating local ChromeDriver instance.");
-            
-            return CreateDriverInstanceWithChecks(chromeOptions);
-        }
-        else
-        {
-            ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Chrome Grid at {GridUrl}", settings.SeleniumGridUrl);
-
-            var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), chromeOptions);
-            PerformVersionCheck(remoteDriver, Type.ToString(), MinimumSupportedVersion);
-
-            return remoteDriver;
-        }
     }
 }
