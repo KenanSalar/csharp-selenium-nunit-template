@@ -1,4 +1,0 @@
-Operation: LoginAndNavigate_LoginPage_Click
-Duration: 5567 ms (5.567 s)
-Expected Max: 5000 ms
-Status: FAIL (Exceeded Threshold)

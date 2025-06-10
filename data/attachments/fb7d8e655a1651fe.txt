@@ -1,0 +1,8 @@
+Operation: TestStep_VerifyConfirmationAndReturnHome
+Duration: 508 ms (0.509 s)
+Expected Max: 7000 ms
+Status: PASS
+Start Memory: WorkingSet: 182.66 MB, PrivateMemory: 496.51 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 184.41 MB, PrivateMemory: 498.30 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 1.75 MB
+Delta PrivateMemory: 1.80 MB

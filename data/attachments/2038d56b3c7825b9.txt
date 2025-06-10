@@ -1,0 +1,4 @@
+Operation: GetInventoryItems_InventoryPage
+Duration: 65 ms (0.065 s)
+Expected Max: 1000 ms
+Status: PASS
