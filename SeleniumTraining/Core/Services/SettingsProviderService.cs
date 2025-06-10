@@ -69,7 +69,6 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
             BrowserType.Chrome => "ChromeBrowserOptions",
             BrowserType.Edge => "EdgeBrowserOptions",
             BrowserType.Firefox => "FirefoxBrowserOptions",
-            // BrowserType.Brave => "BraveBrowserOptions",
             _ => throw new NotSupportedException($"Browser type '{browserType}' is not supported for specific settings.")
         };
 
@@ -80,7 +79,6 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
             BrowserType.Chrome => Configuration.GetSection(sectionName).Get<ChromeSettings>(),
             BrowserType.Edge => Configuration.GetSection(sectionName).Get<EdgeSettings>(),
             BrowserType.Firefox => Configuration.GetSection(sectionName).Get<FirefoxSettings>(),
-            // BrowserType.Brave => Configuration.GetSection(sectionName).Get<BraveSettings>(),
             _ => null
         };
 

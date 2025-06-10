@@ -64,7 +64,6 @@ public static class AppServiceCollectionExtensions
             .AddSingleton<IDirectoryManagerService, DirectoryManagerService>()
             .AddSingleton<IBrowserFactoryManagerService, BrowserFactoryManagerService>()
             .AddSingleton<IBrowserDriverFactoryService, ChromeDriverFactoryService>()
-            // .AddSingleton<IBrowserDriverFactoryService, BraveDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, EdgeDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, FirefoxDriverFactoryService>()
             .AddTransient<IThreadLocalDriverStorageService, ThreadLocalDriverStorageService>()
@@ -94,7 +93,6 @@ public static class AppServiceCollectionExtensions
     /// <list type="bullet">
     ///   <item><description><see cref="ChromeBrowserOptions"/> from section "ChromeBrowserOptions".</description></item>
     ///   <item><description><see cref="FirefoxBrowserOptions"/> from section "FirefoxBrowserOptions".</description></item>
-    ///   <item><description><c>BraveBrowserOptions</c> (commented out) from section "BraveBrowserOptions".</description></item>
     ///   <item><description><see cref="SauceDemoSettings"/> from section "SauceDemo".</description></item>
     ///   <item><description><see cref="VisualTestSettings"/> from section "VisualTestSettings".</description></item>
     /// </list>
@@ -120,11 +118,6 @@ public static class AppServiceCollectionExtensions
             .Bind(configuration.GetSection("FirefoxBrowserOptions"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-
-        // _ = services.AddOptions<BraveSettings>()
-        //     .Bind(configuration.GetSection("BraveBrowserOptions"))
-        //     .ValidateDataAnnotations()
-        //     .ValidateOnStart();
 
         _ = services.AddOptions<SauceDemoSettings>()
             .Bind(configuration.GetSection("SauceDemo"))
