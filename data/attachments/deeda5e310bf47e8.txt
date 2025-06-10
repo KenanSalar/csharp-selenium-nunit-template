@@ -1,4 +1,0 @@
-Operation: PageLoad_CheckoutStepTwoPage
-Duration: 50 ms (0.051 s)
-Expected Max: 3000 ms
-Status: PASS

@@ -1,0 +1,8 @@
+Operation: TestStep_VerifyInventoryItemsLoad_PerformanceGlitchUser
+Duration: 56 ms (0.057 s)
+Expected Max: 15000 ms
+Status: PASS
+Start Memory: WorkingSet: 192.41 MB, PrivateMemory: 507.61 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 192.41 MB, PrivateMemory: 507.61 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.00 MB
+Delta PrivateMemory: 0.00 MB

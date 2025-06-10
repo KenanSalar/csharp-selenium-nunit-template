@@ -1,8 +1,0 @@
-Operation: TestStep_VerifyCartContentsBeforeRemove
-Duration: 207 ms (0.207 s)
-Expected Max: 3000 ms
-Status: PASS
-Start Memory: WorkingSet: 139.38 MB, PrivateMemory: 454.38 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 139.80 MB, PrivateMemory: 454.51 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 0.42 MB
-Delta PrivateMemory: 0.14 MB

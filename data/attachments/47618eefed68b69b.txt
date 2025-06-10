@@ -1,8 +1,0 @@
-Operation: TestStep_Setup_ReachCheckoutOverview
-Duration: 2909 ms (2.909 s)
-Expected Max: 15000 ms
-Status: PASS
-Start Memory: WorkingSet: 233.23 MB, PrivateMemory: 570.79 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 236.85 MB, PrivateMemory: 574.61 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 3.62 MB
-Delta PrivateMemory: 3.83 MB

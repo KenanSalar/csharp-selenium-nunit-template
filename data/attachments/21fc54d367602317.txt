@@ -1,8 +1,0 @@
-Operation: TestStep_VisualAssertion_ShouldDetectVisualAnomaliesForVisualUser
-Duration: 2614 ms (2.614 s)
-Expected Max: 30000 ms
-Status: PASS
-Start Memory: WorkingSet: 153.38 MB, PrivateMemory: 465.55 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 178.79 MB, PrivateMemory: 509.23 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 25.42 MB
-Delta PrivateMemory: 43.68 MB
