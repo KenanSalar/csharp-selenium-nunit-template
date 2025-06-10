@@ -7,7 +7,7 @@ namespace SeleniumTraining.Core.Services.Drivers;
 /// Factory service specifically for creating and configuring <see cref="FirefoxDriver"/> (GeckoDriver) instances.
 /// </summary>
 /// <remarks>
-/// This service handles the Firefox-specific setup, including invoking WebDriverManager for GeckoDriver setup,
+/// This service handles the Firefox-specific setup for GeckoDriver setup,
 /// configuring <see cref="FirefoxOptions"/> with common and Firefox-specific settings,
 /// and instantiating the <see cref="FirefoxDriver"/>. It implements <see cref="IBrowserDriverFactoryService"/>
 /// and inherits common factory functionalities from <see cref="DriverFactoryServiceBase"/>.
