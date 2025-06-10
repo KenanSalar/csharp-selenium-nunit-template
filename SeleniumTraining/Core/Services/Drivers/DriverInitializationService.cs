@@ -67,9 +67,13 @@ public class DriverInitializationService : BaseService, IDriverInitializationSer
                 {
                     Size initialSize = driver.Manage().Window.Size;
                     ServiceLogger.LogInformation(
-                        "WebDriver initialized successfully. Initial window size: {WindowWidth}x{WindowHeight}. Headless: {IsHeadless}. ImplicitWait: {ImplicitWaitSeconds}s",
-                        initialSize.Width, initialSize.Height, browserSettings.Headless, browserSettings.TimeoutSeconds);
-                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(browserSettings.TimeoutSeconds);
+                       "WebDriver initialized successfully. Initial window size: {WindowWidth}x{WindowHeight}. Headless: {IsHeadless}. Explicit wait timeout will be {ExplicitWaitTimeout}s.",
+                       initialSize.Width,
+                       initialSize.Height,
+                       browserSettings.Headless,
+                       browserSettings.TimeoutSeconds
+                    );
+                    
                     return driver;
                 }
                 else
