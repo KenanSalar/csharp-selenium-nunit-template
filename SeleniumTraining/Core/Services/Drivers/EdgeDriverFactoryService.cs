@@ -1,7 +1,4 @@
 using OpenQA.Selenium.Remote;
-using OpenQA.Selenium.Chrome;
-using WebDriverManager;
-using WebDriverManager.DriverConfigs.Impl;
 using OpenQA.Selenium.Edge;
 using System.Runtime.InteropServices;
 
@@ -93,11 +90,12 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
 
         if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
         {
-            _ = new DriverManager().SetUpDriver(new EdgeConfig());
+            ServiceLogger.LogInformation("Creating local EdgeDriver. Selenium Manager will ensure the driver is available.");
             return CreateDriverInstanceWithChecks(edgeOptions, options => new EdgeDriver(options));
         }
         else
         {
+            ServiceLogger.LogInformation("Creating RemoteWebDriver for Edge Grid at {GridUrl}", settings.SeleniumGridUrl);
             return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), edgeOptions);
         }
     }

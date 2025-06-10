@@ -1,7 +1,5 @@
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Remote;
-using WebDriverManager;
-using WebDriverManager.DriverConfigs.Impl;
 
 namespace SeleniumTraining.Core.Services.Drivers;
 
@@ -167,29 +165,20 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
         if (string.IsNullOrEmpty(settings.SeleniumGridUrl))
         {
-            ServiceLogger.LogInformation("Creating local FirefoxDriver instance.");
-
-            ServiceLogger.LogDebug("Attempting to set up GeckoDriver using WebDriverManager (FirefoxConfig).");
-            try
-            {
-                _ = new DriverManager().SetUpDriver(new FirefoxConfig());
-                ServiceLogger.LogInformation("WebDriverManager successfully completed GeckoDriver setup (FirefoxConfig).");
-            }
-            catch (Exception ex)
-            {
-                ServiceLogger.LogError(ex, "WebDriverManager failed to set up GeckoDriver (FirefoxConfig).");
-                throw;
-            }
+            ServiceLogger.LogInformation("Creating local FirefoxDriver instance. Selenium Manager will ensure the driver is available.");
 
             var localDriver = new FirefoxDriver(firefoxOptions);
             PerformVersionCheck(localDriver, Type.ToString(), _minimumSupportedVersion);
+
             return localDriver;
         }
         else
         {
             ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Firefox Grid at {GridUrl}", settings.SeleniumGridUrl);
+
             var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), firefoxOptions);
             PerformVersionCheck(remoteDriver, Type.ToString(), _minimumSupportedVersion);
+
             return remoteDriver;
         }
     }
