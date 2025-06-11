@@ -26,6 +26,7 @@ public abstract class BaseTest : IDisposable
 {
     private bool _disposed;
     private IServiceScope? _testScope; // DI scope for the current test
+    private IDisposable? _loggingScope; // For structured logging scope
 
     /// <summary>
     /// Gets the <see cref="BrowserType"/> for which this test fixture is configured to run.
@@ -124,9 +125,6 @@ public abstract class BaseTest : IDisposable
     /// </summary>
     /// <value>The resource monitor service. Null until <see cref="SetUp"/> completes successfully.</value>
     protected IResourceMonitorService ResourceMonitor { get; private set; } = null!;
-
-    private IDisposable? _loggingScope; // For structured logging scope
-
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseTest"/> class for a specific browser type.
