@@ -80,7 +80,6 @@ public class ShoppingCartPage : BasePage
         itemToRemove.ClickRemoveButton();
         PageLogger.LogInformation("Clicked 'Remove' for item: {ItemName}. Page might refresh or item disappear.", itemName);
 
-        ClearPageElementCache();
         return this;
     }
 
