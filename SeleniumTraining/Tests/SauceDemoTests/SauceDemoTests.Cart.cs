@@ -33,7 +33,7 @@ public partial class SauceDemoTests : BaseTest
         var itemsToAdd = new List<string> { "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
         var itemsToRemove = new List<string> { "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
         string itemToRemain = "Sauce Labs Backpack";
-        var wait = new WebDriverWait(WebDriverManager.GetDriver(), TimeSpan.FromSeconds(10));
+        var wait = new WebDriverWait(LifecycleManager.WebDriverManager.GetDriver(), TimeSpan.FromSeconds(10));
 
         // --- Login Step ---
         InventoryPage inventoryPage = LoginAndAddItemsToCart(itemsToAdd);

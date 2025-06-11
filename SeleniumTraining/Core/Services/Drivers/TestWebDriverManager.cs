@@ -2,17 +2,14 @@ namespace SeleniumTraining.Core.Services.Drivers;
 
 /// <summary>
 /// Manages the lifecycle of a WebDriver instance within the scope of a single test.
-/// It handles initialization, retrieval, and quitting of the driver, using thread-local storage
-/// to ensure test isolation in parallel execution environments.
+/// It handles initialization, retrieval, and quitting of the driver for a specific test scope.
 /// </summary>
 /// <remarks>
-/// This class implements <see cref="ITestWebDriverManager"/> and acts as an orchestrator,
-/// delegating driver creation to <see cref="IDriverInitializationService"/>,
-/// driver termination to <see cref="IDriverLifecycleService"/>, and thread-safe storage
-/// to <see cref="IThreadLocalDriverStorageService"/>.
-/// It ensures that driver operations are logged and that resources are cleaned up
-/// via its <see cref="IDisposable"/> implementation.
-/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// This class implements <see cref="ITestWebDriverManager"/> and acts as a scoped orchestrator.
+/// It delegates driver creation to <see cref="IDriverInitializationService"/> and termination
+/// to <see cref="IDriverLifecycleService"/>. For thread-safe storage, it consumes the singleton
+/// <see cref="IThreadLocalDriverStorageService"/> but does not manage its lifecycle, adhering to DI best practices.
+/// The <see cref="IDisposable"/> implementation ensures that any driver initialized within its scope is properly quit.
 /// </remarks>
 public class TestWebDriverManager : BaseService, ITestWebDriverManager
 {
@@ -117,15 +114,16 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
     }
 
     /// <summary>
-    /// Releases managed and unmanaged resources.
-    /// Ensures that any active WebDriver instance managed by this service is quit.
+    /// Releases managed and unmanaged resources. Ensures that any active WebDriver instance
+    /// managed by this service's scope is quit.
     /// </summary>
     /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed and unmanaged resources);
     /// false if called from a finalizer (unmanaged resources only).</param>
     /// <remarks>
-    /// If <paramref name="disposing"/> is true and a driver is still active, this method
+    /// If <paramref name="disposing"/> is true and a driver is still active for the current scope, this method
     /// will attempt to quit the driver using <see cref="QuitDriver"/> to ensure proper cleanup.
-    /// It also disposes the underlying <see cref="IThreadLocalDriverStorageService"/>.
+    /// It does **not** dispose of injected singleton services like the driver store, as their
+    /// lifecycle is managed by the root DI container.
     /// </remarks>
     protected virtual void Dispose(bool disposing)
     {
@@ -151,7 +149,6 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
                 QuitDriver();
             }
 
-            _driverStore.Dispose();
             ServiceLogger.LogInformation("{ServiceName} dispose complete.", nameof(TestWebDriverManager));
         }
         _disposed = true;

@@ -20,7 +20,6 @@ namespace SeleniumTraining.Core;
 /// </remarks>
 public static class TestHost
 {
-
     private static IServiceProvider? _serviceProvider;
     private static IConfiguration? _configuration;
 

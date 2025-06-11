@@ -81,7 +81,7 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Attempting to navigate to SauceDemo URL: {SauceDemoAppUrl}", _sauceDemoSettings.PageUrl);
         try
         {
-            IWebDriver driver = WebDriverManager.GetDriver();
+            IWebDriver driver = LifecycleManager.WebDriverManager.GetDriver();
 
             using (new PerformanceTimer(
                 $"NavigateTo_{LoginPageMap.PageTitle}",
@@ -113,7 +113,7 @@ public partial class SauceDemoTests : BaseTest
                 "Page title verification failed for URL {SauceDemoAppUrl}. Expected '{ExpectedTitle}', Actual '{ActualTitle}'. Message: {ShouldlyMessage}",
                 _sauceDemoSettings.PageUrl,
                 LoginPageMap.PageTitle,
-                WebDriverManager.GetDriver().Title,
+                LifecycleManager.WebDriverManager.GetDriver().Title,
                 ex.Message
             );
             throw;
