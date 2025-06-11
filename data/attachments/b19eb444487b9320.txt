@@ -1,8 +1,0 @@
-Operation: TestStep_VerifyOverviewAndFinish
-Duration: 433 ms (0.434 s)
-Expected Max: 7000 ms
-Status: PASS
-Start Memory: WorkingSet: 180.13 MB, PrivateMemory: 479.58 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 180.13 MB, PrivateMemory: 479.84 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 0.00 MB
-Delta PrivateMemory: 0.26 MB

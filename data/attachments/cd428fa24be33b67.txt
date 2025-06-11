@@ -1,0 +1,8 @@
+Operation: TestStep_GetLoginErrorMessage_LockedOut
+Duration: 17 ms (0.017 s)
+Expected Max: 1000 ms
+Status: PASS
+Start Memory: WorkingSet: 194.43 MB, PrivateMemory: 527.82 MB, PagedMemory: 0.00 MB
+End Memory: WorkingSet: 194.56 MB, PrivateMemory: 527.82 MB, PagedMemory: 0.00 MB
+Delta WorkingSet: 0.12 MB
+Delta PrivateMemory: 0.00 MB

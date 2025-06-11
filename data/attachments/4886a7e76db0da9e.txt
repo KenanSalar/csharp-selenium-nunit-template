@@ -1,8 +1,0 @@
-Operation: TestStep_UserLogin_PerformanceGlitchUser
-Duration: 5998 ms (5.999 s)
-Expected Max: 20000 ms
-Status: PASS
-Start Memory: WorkingSet: 171.39 MB, PrivateMemory: 473.46 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 171.52 MB, PrivateMemory: 473.45 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 0.12 MB
-Delta PrivateMemory: -0.01 MB
