@@ -43,7 +43,7 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogInformation("Navigating to shopping cart page.");
         ShoppingCartPage shoppingCartPage = inventoryPage.ClickShoppingCartLink();
 
-        var cartItems = shoppingCartPage.GetCartItems().ToList();
+        List<CartItemComponent> cartItems = shoppingCartPage.GetCartItems();
         cartItems.Count.ShouldBe(itemsToAdd.Count, $"Expected {itemsToAdd.Count} items in cart, but found {cartItems.Count}.");
         foreach (string itemName in itemsToAdd)
         {
