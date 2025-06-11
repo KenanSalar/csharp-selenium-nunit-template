@@ -2,18 +2,13 @@ namespace SeleniumTraining.Tests.SauceDemoTests;
 
 public partial class SauceDemoTests : BaseTest
 {
-    /// <summary>
-    /// Verifies that a "locked out" user cannot log in successfully and receives the appropriate error message.
-    /// The login attempt is made using the 'Submit' action (e.g., pressing Enter in the password field).
-    /// </summary>
     /// <remarks>
     /// Test Steps:
     /// <list type="number">
     ///   <item><description>Instantiates the LoginPage.</description></item>
     ///   <item><description>Enters credentials for a "locked out" user.</description></item>
-    ///   <item><description>Performs login using the 'Submit' mode and expects to remain on the LoginPage.</description></item>
-    ///   <item><description>Asserts that the current page is still the LoginPage.</description></item>
-    ///   <item><description>Retrieves the error message displayed on the LoginPage.</description></item>
+    ///   <item><description>Calls the <see cref="LoginPage.LoginAndExpectFailure"/> method, which performs the login action without verifying navigation. This makes the test's intent explicit.</description></item>
+    ///   <item><description>Retrieves the error message displayed on the returned LoginPage instance.</description></item>
     ///   <item><description>Asserts that the error message matches the expected message for a locked out user (<see cref="SauceDemoMessages.LockedOutUserError"/>).</description></item>
     /// </list>
     /// This test is critical for verifying error handling and security aspects of the login process.
@@ -33,47 +28,37 @@ public partial class SauceDemoTests : BaseTest
         const LoginMode loginMode = LoginMode.Submit;
 
         var loginAttemptProps = new Dictionary<string, object>
-        {
-            { "Username", _sauceDemoSettings.LoginUsernameStandardUser },
-            { "LoginAction", LoginMode.Click.ToString() }
-        };
+    {
+        { "Username", _sauceDemoSettings.LoginUsernameLockedOutUser },
+        { "LoginAction", loginMode.ToString() }
+    };
 
         var loginAttemptTimer = new PerformanceTimer(
-            "TestStep_UserLogin_Standard",
+            "TestStep_UserLogin_LockedOut_Failure",
             TestLogger,
             Microsoft.Extensions.Logging.LogLevel.Information,
             loginAttemptProps,
             ResourceMonitor
         );
 
-        bool loginAttemptSuccessAsExpected = false;
-
-        BasePage resultPage;
+        LoginPage loginPage;
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage.");
-            LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            var initialPage = new LoginPage(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
 
-            resultPage = loginPage
+            loginPage = initialPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameLockedOutUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
-                .LoginAndExpectNavigation(loginMode);
-
-            loginAttemptSuccessAsExpected = resultPage is LoginPage;
+                .LoginAndExpectFailure(loginMode);
         }
         finally
         {
-            loginAttemptTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: loginAttemptSuccessAsExpected ? 5000 : null);
+            loginAttemptTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 5000);
             loginAttemptTimer.Dispose();
         }
 
-        TestLogger.LogInformation(
-            "Attempting login with username: {LoginUsername} using {LoginActionType} action.",
-            _sauceDemoSettings.LoginUsernameLockedOutUser,
-            loginMode
-        );
-
-        LoginPage loginPageInstance = resultPage.ShouldBeOfType<LoginPage>("User should have remained on the Login Page.");
+        TestLogger.LogInformation("Login attempt completed for {LoginUsername}. Verifying error message.", _sauceDemoSettings.LoginUsernameLockedOutUser);
 
         var errorMsgTimer = new PerformanceTimer(
             "TestStep_GetLoginErrorMessage_LockedOut",
@@ -84,7 +69,7 @@ public partial class SauceDemoTests : BaseTest
         string actualErrorMessage;
         try
         {
-            actualErrorMessage = loginPageInstance.GetErrorMessage();
+            actualErrorMessage = loginPage.GetErrorMessage();
         }
         finally
         {
@@ -92,9 +77,9 @@ public partial class SauceDemoTests : BaseTest
             errorMsgTimer.Dispose();
         }
 
-        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, $"Error message should be: {SauceDemoMessages.LockedOutUserError} but was: {actualErrorMessage}");
+        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, $"The error message was not as expected.");
 
-        TestLogger.LogInformation("Login not successful, currently on LoginPage.");
+        TestLogger.LogInformation("Verified correct error message is displayed. Test passed.");
         TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
     }
 }
