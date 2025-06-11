@@ -66,7 +66,7 @@ public static class AppServiceCollectionExtensions
             .AddSingleton<IBrowserDriverFactoryService, ChromeDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, EdgeDriverFactoryService>()
             .AddSingleton<IBrowserDriverFactoryService, FirefoxDriverFactoryService>()
-            .AddTransient<IThreadLocalDriverStorageService, ThreadLocalDriverStorageService>()
+            .AddSingleton<IThreadLocalDriverStorageService, ThreadLocalDriverStorageService>()
             .AddTransient<IDriverInitializationService, DriverInitializationService>()
             .AddTransient<IDriverLifecycleService, DriverLifecycleService>()
             .AddScoped<ITestWebDriverManager, TestWebDriverManager>()
