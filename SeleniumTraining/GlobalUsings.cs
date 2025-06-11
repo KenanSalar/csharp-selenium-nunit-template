@@ -30,7 +30,6 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Options;
 global using System.ComponentModel.DataAnnotations;
 global using System.Collections.ObjectModel;
-global using NUnit.Framework;
 global using Shouldly;
 global using Allure.NUnit;
 global using Allure.NUnit.Attributes;
