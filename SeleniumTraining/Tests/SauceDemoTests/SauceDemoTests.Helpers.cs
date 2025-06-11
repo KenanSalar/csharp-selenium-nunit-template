@@ -23,7 +23,7 @@ public partial class SauceDemoTests : BaseTest
             resourceMonitor: ResourceMonitor
         );
 
-        LoginPage loginPage = new(WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+        LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
         BasePage resultPage = loginPage
             .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
             .EnterPassword(_sauceDemoSettings.LoginPassword)
@@ -61,7 +61,7 @@ public partial class SauceDemoTests : BaseTest
         );
 
         var allInventoryItems = inventoryPage.GetInventoryItems().ToList();
-        var wait = new WebDriverWait(WebDriverManager.GetDriver(), TimeSpan.FromSeconds(10));
+        var wait = new WebDriverWait(LifecycleManager.WebDriverManager.GetDriver(), TimeSpan.FromSeconds(10));
 
         foreach (string itemName in itemsToAddToCart)
         {

@@ -89,42 +89,22 @@ public class LoginPage : BasePage
     }
 
     /// <summary>
-    /// Attempts to log in using the specified <see cref="LoginMode"/> (either by submitting the form
-    /// or clicking the login button) and expects navigation to a new page, typically the inventory page.
+    /// Attempts to log in and expects a successful navigation to a new page, typically the inventory page.
+    /// This method should only be used for positive test scenarios where login is expected to succeed.
     /// </summary>
     /// <param name="mode">The <see cref="LoginMode"/> to use for the login attempt. Defaults to <see cref="LoginMode.Submit"/>.</param>
-    /// <returns>
-    /// If login and navigation are successful, returns a new instance of the target page (e.g., <see cref="InventoryPage"/>).
-    /// If login or navigation fails, returns the current <see cref="LoginPage"/> instance, allowing further interaction or error checking.
-    /// </returns>
+    /// <returns>A new instance of the <see cref="InventoryPage"/> upon successful navigation.</returns>
     /// <remarks>
-    /// This method measures the performance of the login operation.
-    /// After performing the login action (submit or click), it waits for a specific element on the expected
-    /// next page (<see cref="InventoryPageMap.InventoryContainer"/>) to become visible to confirm navigation.
-    /// If navigation is not confirmed, an error is logged.
-    /// It utilizes the <see cref="Retry"/> service implicitly through the <c>Wait</c> operations.
-    /// Element highlighting is applied to the password field (for submit) or login button (for click) if enabled.
+    /// This method implements a "fail-fast" strategy. After performing the login action (submit or click), 
+    /// it explicitly waits for a critical element on the destination page (<see cref="InventoryPageMap.InventoryContainer"/>) 
+    /// to become visible. If navigation does not occur within the configured timeout, this method will
+    /// throw a <see cref="WebDriverTimeoutException"/>, immediately failing the test at the root cause of the failure.
     /// </remarks>
+    /// <exception cref="WebDriverTimeoutException">Thrown if navigation to the InventoryPage does not complete within the wait timeout.</exception>
     public BasePage LoginAndExpectNavigation(LoginMode mode = LoginMode.Submit)
     {
-        PageLogger.LogInformation("Attempting login on {PageName} using {LoginMode} mode.", PageName, mode);
+        PageLogger.LogInformation("Attempting login on {PageName} using {LoginMode} mode, expecting successful navigation.", PageName, mode);
 
-        string operationName = $"LoginAndNavigate_{PageName}_{mode}";
-        var additionalProps = new Dictionary<string, object>
-        {
-            { "LoginMode", mode.ToString() }
-        };
-        long expectedMaxLoginTimeMs = 5000;
-        bool loginSuccessful = false;
-
-        var timer = new PerformanceTimer(
-            operationName,
-            PageLogger,
-            Microsoft.Extensions.Logging.LogLevel.Information,
-            additionalProps
-        );
-
-        BasePage nextPage;
         if (mode == LoginMode.Submit)
         {
             PageLogger.LogDebug("Submitting login form via password field on {PageName}.", PageName);
@@ -141,36 +121,43 @@ public class LoginPage : BasePage
             loginButton.ClickStandard(Wait, PageLogger);
         }
 
-        try
-        {
-            Wait.EnsureElementIsVisible(PageLogger, PageName, InventoryPageMap.InventoryContainer);
-            PageLogger.LogInformation("Login successful on {PageName}. Confirmed navigation to InventoryPage.", PageName);
+        Wait.EnsureElementIsVisible(PageLogger, PageName, InventoryPageMap.InventoryContainer);
+        PageLogger.LogInformation("Login successful. Confirmed navigation to InventoryPage.");
 
-            loginSuccessful = true;
-            nextPage = new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
-        }
-        catch (Exception ex)
-        {
-            PageLogger.LogError(
-                ex,
-                "Login action on {PageName} did not result in navigation to InventoryPage. User likely remained on {PageName}.",
-                PageName,
-                PageName
-            );
+        return new InventoryPage(Driver, LoggerFactory, PageSettingsProvider, Retry);
+    }
 
-            loginSuccessful = false;
-            nextPage = this;
-        }
-        finally
+    /// <summary>
+    /// Attempts a login action but does not wait for or verify navigation. This method is specifically
+    /// designed for negative test scenarios where the login is expected to fail and remain on the LoginPage.
+    /// </summary>
+    /// <param name="mode">The <see cref="LoginMode"/> to use for the login attempt. Defaults to <see cref="LoginMode.Submit"/>.</param>
+    /// <returns>The current <see cref="LoginPage"/> instance, allowing for subsequent assertions on the page (e.g., verifying an error message).</returns>
+    /// <remarks>
+    /// Use this method to test invalid credentials, locked-out users, or any other case where the
+    /// expected outcome is to stay on the login page. It performs the login action and immediately
+    /// returns the page object for the test to continue its verifications.
+    /// </remarks>
+    [AllureStep("Attempting login, expecting failure")]
+    public LoginPage LoginAndExpectFailure(LoginMode mode = LoginMode.Submit)
+    {
+        PageLogger.LogInformation("Attempting login on {PageName} using {LoginMode} mode, expecting to remain on the page.", PageName, mode);
+
+        if (mode == LoginMode.Submit)
         {
-            timer.StopAndLog(
-                attachToAllure: true,
-                expectedMaxMilliseconds: loginSuccessful ? expectedMaxLoginTimeMs : null
-            );
-            timer.Dispose();
+            IWebElement passwordInput = FindElementOnPage(LoginPageMap.PasswordInput);
+            _ = HighlightIfEnabled(passwordInput);
+            passwordInput.Submit();
+        }
+        else
+        {
+            IWebElement loginButton = FindElementOnPage(LoginPageMap.LoginButton);
+            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(loginButton));
+            _ = HighlightIfEnabled(loginButton);
+            loginButton.ClickStandard(Wait, PageLogger);
         }
 
-        return nextPage;
+        return this;
     }
 
     /// <summary>

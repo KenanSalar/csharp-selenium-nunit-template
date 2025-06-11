@@ -5,32 +5,65 @@ namespace SeleniumTraining.Core.Services;
 
 /// <summary>
 /// Provides retry capabilities for actions and functions using policies primarily based on Polly.
-/// It handles a predefined set of common Selenium exceptions and uses an exponential backoff strategy.
+/// It handles a configurable set of common Selenium exceptions and uses an exponential backoff strategy.
 /// </summary>
 /// <remarks>
 /// This service implements <see cref="IRetryService"/> and centralizes the logic for retrying operations
 /// that might be prone to transient failures. It uses helper methods to build Polly policies
-/// based on a configurable list of default Selenium exceptions.
+/// based on a list of exception names loaded from configuration.
 /// Logging of retry attempts and outcomes is performed using the provided or internal logger.
 /// It inherits from <see cref="BaseService"/> for common logging infrastructure.
 /// </remarks>
 public class RetryService : BaseService, IRetryService
 {
-    private static readonly Type[] _defaultSeleniumExceptions = [
-        typeof(NoSuchElementException),
-        typeof(StaleElementReferenceException),
-        typeof(ElementNotInteractableException),
-        typeof(WebDriverTimeoutException),
-        typeof(ElementClickInterceptedException)
-    ];
+    private readonly List<Type> _retryableExceptionTypes = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RetryService"/> class.
     /// </summary>
     /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/> for creating loggers. Must not be null.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> is null.</exception>
-    public RetryService(ILoggerFactory loggerFactory) : base(loggerFactory)
+    /// <param name="retryPolicySettings">The configured settings containing the list of retryable exception names.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="loggerFactory"/> or <paramref name="retryPolicySettings"/> is null.</exception>
+    public RetryService(ILoggerFactory loggerFactory, IOptions<RetryPolicySettings> retryPolicySettings)
+        : base(loggerFactory)
     {
+        if (retryPolicySettings?.Value == null)
+        {
+            throw new ArgumentNullException(nameof(retryPolicySettings));
+        }
+
+        List<string> exceptionNames = retryPolicySettings.Value.RetryableExceptionFullNames;
+        ServiceLogger.LogInformation(
+            "{ServiceName} is initializing with {ExceptionCount} retryable exceptions from configuration.",
+            nameof(RetryService),
+            exceptionNames.Count);
+
+        foreach (string name in exceptionNames)
+        {
+            try
+            {
+                var exceptionType = Type.GetType(name, throwOnError: false);
+                if (exceptionType != null)
+                {
+                    _retryableExceptionTypes.Add(exceptionType);
+                    ServiceLogger.LogDebug("Successfully loaded retryable exception type: {ExceptionName}", name);
+                }
+                else
+                {
+                    ServiceLogger.LogWarning("Could not find exception type for name: '{ExceptionName}'. It will be ignored by the retry policy.", name);
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLogger.LogError(ex, "An error occurred while loading exception type '{ExceptionName}'.", name);
+            }
+        }
+
+        if (_retryableExceptionTypes.Count == 0)
+        {
+            ServiceLogger.LogWarning("No retryable exception types were loaded successfully. The retry policy may not function as expected.");
+        }
+
         ServiceLogger.LogInformation("RetryService initialized.");
     }
 
@@ -161,16 +194,6 @@ public class RetryService : BaseService, IRetryService
         }
     }
 
-    /// <summary>
-    /// Calculates the duration for an exponential backoff strategy based on the attempt number.
-    /// The delay increases exponentially with each attempt (e.g., initial, initial*2, initial*4).
-    /// </summary>
-    /// <param name="initialDelay">The base delay for the first attempt.</param>
-    /// <param name="attemptNumber">The current retry attempt number (should be 1-based).</param>
-    /// <returns>A <see cref="TimeSpan"/> representing the calculated delay for the current attempt.</returns>
-    /// <remarks>
-    /// The calculated delay is capped at a maximum of 30 seconds to prevent excessively long waits.
-    /// </remarks>
     private static TimeSpan CalculateExponentialBackoff(TimeSpan initialDelay, int attemptNumber)
     {
         return TimeSpan.FromMilliseconds(initialDelay.TotalMilliseconds * Math.Pow(2, attemptNumber - 1));
@@ -178,24 +201,19 @@ public class RetryService : BaseService, IRetryService
 
     /// <summary>
     /// Builds a Polly <see cref="PolicyBuilder"/> configured to handle a default set of
-    /// common Selenium exceptions defined in <see cref="_defaultSeleniumExceptions"/>.
+    /// common Selenium exceptions defined in the configuration.
     /// </summary>
-    /// <returns>A <see cref="PolicyBuilder"/> instance configured with the default exception handling rules.</returns>
-    /// <remarks>
-    /// This method iterates through the <see cref="_defaultSeleniumExceptions"/> array, adding each
-    /// exception type to the policy builder's handling logic using <c>IsAssignableFrom</c>
-    /// for flexibility with derived exception types.
-    /// </remarks>
-    private static PolicyBuilder BuildPolicyForDefaultExceptions()
+    private PolicyBuilder BuildPolicyForDefaultExceptions()
     {
-        if (_defaultSeleniumExceptions == null || _defaultSeleniumExceptions.Length == 0)
+        if (_retryableExceptionTypes.Count == 0)
         {
+            ServiceLogger.LogWarning("Building a retry policy that handles generic System.Exception because the list of configured retryable exceptions is empty.");
             return Policy.Handle<Exception>();
         }
 
-        PolicyBuilder policyBuilder = Policy.Handle((Exception ex) => _defaultSeleniumExceptions[0].IsAssignableFrom(ex.GetType()));
+        PolicyBuilder policyBuilder = Policy.Handle((Exception ex) => _retryableExceptionTypes[0].IsAssignableFrom(ex.GetType()));
 
-        foreach (Type? exType in _defaultSeleniumExceptions.Skip(1))
+        foreach (Type exType in _retryableExceptionTypes.Skip(1))
         {
             policyBuilder = policyBuilder.Or((Exception ex) => exType.IsAssignableFrom(ex.GetType()));
         }
@@ -204,24 +222,19 @@ public class RetryService : BaseService, IRetryService
 
     /// <summary>
     /// Builds a Polly <see cref="PolicyBuilder{TResult}"/> configured to handle a default set of
-    /// common Selenium exceptions defined in <see cref="_defaultSeleniumExceptions"/> for functions returning <typeparamref name="TResult"/>.
+    /// common Selenium exceptions for functions returning <typeparamref name="TResult"/>.
     /// </summary>
-    /// <typeparam name="TResult">The type of the result returned by the function to be retried.</typeparam>
-    /// <returns>A <see cref="PolicyBuilder{TResult}"/> instance configured with the default exception handling rules.</returns>
-    /// <remarks>
-    /// This method is analogous to <see cref="BuildPolicyForDefaultExceptions()"/> but for policies
-    /// that operate on functions returning a result. It uses <see cref="Policy{TResult}.Handle(Func{Exception, bool})"/>.
-    /// </remarks>
-    private static PolicyBuilder<TResult> BuildPolicyForDefaultExceptions<TResult>()
+    private PolicyBuilder<TResult> BuildPolicyForDefaultExceptions<TResult>()
     {
-        if (_defaultSeleniumExceptions == null || _defaultSeleniumExceptions.Length == 0)
+        if (_retryableExceptionTypes.Count == 0)
         {
+            ServiceLogger.LogWarning("Building a retry policy that handles generic System.Exception because the list of configured retryable exceptions is empty.");
             return Policy<TResult>.Handle<Exception>();
         }
 
-        PolicyBuilder<TResult> policyBuilder = Policy<TResult>.Handle((Exception ex) => _defaultSeleniumExceptions[0].IsAssignableFrom(ex.GetType()));
+        PolicyBuilder<TResult> policyBuilder = Policy<TResult>.Handle((Exception ex) => _retryableExceptionTypes[0].IsAssignableFrom(ex.GetType()));
 
-        foreach (Type? exType in _defaultSeleniumExceptions.Skip(1))
+        foreach (Type exType in _retryableExceptionTypes.Skip(1))
         {
             policyBuilder = policyBuilder.Or((Exception ex) => exType.IsAssignableFrom(ex.GetType()));
         }

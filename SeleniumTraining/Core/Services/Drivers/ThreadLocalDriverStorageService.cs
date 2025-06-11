@@ -1,15 +1,16 @@
 namespace SeleniumTraining.Core.Services.Drivers;
 
 /// <summary>
-/// Provides thread-local storage for WebDriver instances and associated test context information,
+/// Provides thread-local storage for WebDriver instances and associated test context,
 /// enabling isolated browser sessions in parallel test execution environments.
 /// </summary>
 /// <remarks>
-/// This service implements <see cref="IThreadLocalDriverStorageService"/> using <see cref="ThreadLocal{T}"/>
-/// instances to store the <see cref="IWebDriver"/>, test name, and correlation ID independently for each thread.
-/// It is crucial for maintaining test integrity when running tests in parallel.
-/// The <see cref="Dispose()"/> method ensures that the underlying <see cref="ThreadLocal{T}"/> resources are released.
-/// This class inherits from <see cref="BaseService"/> for common logging capabilities.
+/// This service implements <see cref="IThreadLocalDriverStorageService"/> and is designed to be
+/// registered as a **Singleton** in the DI container. Its singleton nature ensures a single, consistent
+/// point of storage for the entire application, while its internal use of <see cref="ThreadLocal{T}"/>
+/// guarantees that each thread's data (WebDriver, test name, correlation ID) is kept completely separate.
+/// This combination is critical for maintaining test integrity when running tests in parallel.
+/// The <see cref="Dispose()"/> method is intended to be called once by the root service provider when the test run ends.
 /// </remarks>
 public class ThreadLocalDriverStorageService : BaseService, IThreadLocalDriverStorageService
 {

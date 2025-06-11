@@ -39,4 +39,19 @@ public class TestFrameworkSettings
     /// A short duration provides a visual cue without significantly slowing down test execution.
     /// </remarks>
     public int HighlightDurationMs { get; set; } = 200;
+
+    /// <summary>
+    /// Gets or sets the default timeout in seconds for explicit waits (e.g., for WebDriverWait).
+    /// </summary>
+    /// <value>
+    /// The default timeout duration in seconds. Defaults to 10 seconds if not otherwise specified
+    /// in the configuration.
+    /// </value>
+    /// <remarks>
+    /// This central setting is used to initialize all <see cref="WebDriverWait"/> instances,
+    /// such as in the <see cref="BasePage"/> constructor, ensuring consistent wait times
+    /// across the framework. Making this configurable allows for easy adjustment of the framework's
+    /// patience based on environment or application performance.
+    /// </remarks>
+    public int DefaultExplicitWaitSeconds { get; set; } = 10;
 }

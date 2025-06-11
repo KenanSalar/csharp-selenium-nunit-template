@@ -94,8 +94,6 @@ public class CartItemComponent : BasePageComponent
             removeButton.ClickStandard(Wait, ComponentLogger);
 
             ComponentLogger.LogInformation("Successfully clicked 'Remove' button for item: {ItemName}", itemName);
-
-            ClearComponentElementCache();
         }
         catch (Exception ex)
         {

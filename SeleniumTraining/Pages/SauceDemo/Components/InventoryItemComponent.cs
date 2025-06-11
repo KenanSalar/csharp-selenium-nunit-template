@@ -137,8 +137,6 @@ public class InventoryItemComponent : BasePageComponent
                 ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
                 button.Click();
                 ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
-
-                ClearComponentElementCache();
             },
             maxRetryAttempts: 2,
             initialDelay: TimeSpan.FromMilliseconds(500),
