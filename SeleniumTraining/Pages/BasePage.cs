@@ -1,20 +1,17 @@
 namespace SeleniumTraining.Pages;
 
 /// <summary>
-/// Provides a foundational abstract class for all Page Objects within the Selenium test automation framework.
-/// It encapsulates common functionalities such as WebDriver and WebDriverWait instances, logging,
-/// settings access, retry mechanisms, and standardized page initialization routines (including
-/// waiting for page load and ensuring critical element visibility).
+/// Initializes a new instance of the <see cref="BasePage"/> abstract class.
+/// Sets up WebDriver, WebDriverWait, logging, settings, retry service, and performs
+/// initial page load and critical element visibility checks.
 /// </summary>
-/// <remarks>
-/// Derived Page Object classes must implement <see cref="CriticalElementsToEnsureVisible"/>.
-/// The constructor handles the initialization of core services and properties, and then orchestrates
-/// a multi-step page readiness check.
-/// This robust initialization helps in creating stable and reliable page object interactions.
-/// It provides the <see cref="FindElementOnPage(By)"/> method to locate elements. All lookups are performed "live"
-/// against the DOM to ensure element references are always current, which avoids stale element issues by design.
-/// This base class is designed to be used in conjunction with a DI container that provides the necessary services.
-/// </remarks>
+/// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
+/// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
+/// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
+/// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
+/// <exception cref="ArgumentNullException">Thrown if <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
+/// <exception cref="WebDriverTimeoutException">Thrown if <see cref="WaitForPageLoad"/>, <see cref="EnsureCriticalElementsAreDisplayed"/>, or the additional readiness checks time out.</exception>
+/// <exception cref="Exception">Thrown for other unexpected errors during initialization.</exception>
 public abstract class BasePage
 {
     /// <summary>
@@ -103,8 +100,7 @@ public abstract class BasePage
         IWebDriver driver,
         ILoggerFactory loggerFactory,
         ISettingsProviderService settingsProvider,
-        IRetryService retryService,
-        int defaultTimeoutSeconds = 5
+        IRetryService retryService
     )
     {
         Driver = driver ?? throw new ArgumentNullException(nameof(driver));
@@ -117,12 +113,12 @@ public abstract class BasePage
         PageSettingsProvider = settingsProvider;
         FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
 
-        Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(defaultTimeoutSeconds));
+        Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
 
         PageLogger.LogInformation(
             "Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s. HighlightOnInteraction: {HighlightSetting}",
             PageName,
-            defaultTimeoutSeconds,
+            FrameworkSettings.DefaultExplicitWaitSeconds,
             FrameworkSettings.HighlightElementsOnInteraction
         );
 
