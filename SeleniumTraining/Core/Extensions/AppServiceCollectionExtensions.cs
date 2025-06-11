@@ -101,7 +101,7 @@ public static class AppServiceCollectionExtensions
     /// catching configuration errors early.
     /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> or <paramref name="configuration"/> is null (though <paramref name="services"/> as 'this' parameter won't be null).</exception>
-    /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">May be thrown at application startup (during <c>BuildServiceProvider</c>) if any options validation fails.</exception>
+    /// <exception cref="OptionsValidationException">May be thrown at application startup (during <c>BuildServiceProvider</c>) if any options validation fails.</exception>
     private static IServiceCollection AddApplicationOptions(this IServiceCollection services, IConfiguration configuration)
     {
         _ = services.AddOptions<ChromeSettings>()
@@ -126,6 +126,11 @@ public static class AppServiceCollectionExtensions
 
         _ = services.AddOptions<VisualTestSettings>()
             .Bind(configuration.GetSection("VisualTestSettings"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        _ = services.AddOptions<RetryPolicySettings>()
+            .Bind(configuration.GetSection("RetryPolicySettings"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

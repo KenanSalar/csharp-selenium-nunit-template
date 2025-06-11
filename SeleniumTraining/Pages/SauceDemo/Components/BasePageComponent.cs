@@ -77,15 +77,13 @@ public abstract class BasePageComponent
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
     /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
     /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
-    /// <param name="defaultWaitSeconds">The default timeout in seconds for the <see cref="WebDriverWait"/> instance specific to this component. Defaults to 5 seconds.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="rootElement"/>, <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
     protected BasePageComponent(
         IWebElement rootElement,
         IWebDriver driver,
         ILoggerFactory loggerFactory,
         ISettingsProviderService settingsProvider,
-        IRetryService retryService,
-        int defaultWaitSeconds = 5
+        IRetryService retryService
     )
     {
         RootElement = rootElement ?? throw new ArgumentNullException(nameof(rootElement));
@@ -97,7 +95,7 @@ public abstract class BasePageComponent
         ArgumentNullException.ThrowIfNull(settingsProvider);
         FrameworkSettings = settingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
 
-        Wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(defaultWaitSeconds));
+        Wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
     }
 
     /// <summary>
