@@ -40,10 +40,10 @@ public class ShoppingCartPage : BasePage
     /// <summary>
     /// Retrieves all items currently displayed in the shopping cart as a list of <see cref="CartItemComponent"/>s.
     /// </summary>
-    /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="CartItemComponent"/> representing the items in the cart.
-    /// Returns an empty collection if no items are found.</returns>
+    /// <returns>A <see cref="List{T}"/> of <see cref="CartItemComponent"/> representing the items in the cart.
+    /// Returns an empty list if no items are found.</returns>
     [AllureStep("Get all items from the shopping cart")]
-    public IEnumerable<CartItemComponent> GetCartItems()
+    public List<CartItemComponent> GetCartItems()
     {
         PageLogger.LogDebug("Attempting to find all cart item elements.");
 
