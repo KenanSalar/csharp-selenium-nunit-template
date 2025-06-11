@@ -42,7 +42,7 @@ public class RetryService : BaseService, IRetryService
         {
             try
             {
-                var exceptionType = Type.GetType(name, throwOnError: false); // Set throwOnError to false for graceful handling
+                var exceptionType = Type.GetType(name, throwOnError: false);
                 if (exceptionType != null)
                 {
                     _retryableExceptionTypes.Add(exceptionType);
