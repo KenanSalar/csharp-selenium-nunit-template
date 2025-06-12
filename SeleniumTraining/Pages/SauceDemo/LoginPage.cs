@@ -24,8 +24,7 @@ public class LoginPage : BasePage
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoginPage"/> class.
-    /// It calls the base constructor and then performs LoginPage-specific initialization checks,
-    /// such as verifying the page title.
+    /// /// Call <see cref="AssertPageIsLoaded()"/> to perform validation after instantiation.
     /// </summary>
     /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Passed to base.</param>
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Passed to base.</param>
