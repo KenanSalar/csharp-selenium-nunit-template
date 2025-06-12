@@ -124,6 +124,60 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
     }
 
     /// <summary>
+    /// Applies a dictionary of user profile preferences to the provided ChromiumOptions object.
+    /// This method is virtual to allow derived classes to override or extend this behavior.
+    /// </summary>
+    /// <param name="options">The ChromiumOptions object (e.g., ChromeOptions, EdgeOptions) to modify.</param>
+    /// <param name="preferences">The dictionary of preferences to apply.</param>
+    protected virtual void ApplyUserProfilePreferences(ChromiumOptions options, Dictionary<string, object> preferences)
+    {
+        if (preferences == null || preferences.Count == 0)
+        {
+            return;
+        }
+
+        ServiceLogger.LogDebug(
+            "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
+            preferences.Count
+        );
+
+        foreach (KeyValuePair<string, object> pref in preferences)
+        {
+            try
+            {
+                string key = pref.Key;
+                string? stringValue = pref.Value?.ToString();
+
+                if (stringValue is null)
+                {
+                    ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
+                    continue;
+                }
+
+                object finalValue;
+                if (bool.TryParse(stringValue, out bool boolResult))
+                {
+                    finalValue = boolResult;
+                }
+                else if (int.TryParse(stringValue, out int intResult))
+                {
+                    finalValue = intResult;
+                }
+                else
+                {
+                    finalValue = stringValue;
+                }
+
+                options.AddUserProfilePreference(key, finalValue);
+            }
+            catch (Exception ex)
+            {
+                ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
+            }
+        }
+    }
+
+    /// <summary>
     /// Generates the window size command-line argument string (e.g., "--window-size=1920,1080").
     /// </summary>
     /// <param name="settings">The settings containing width and height.</param>
