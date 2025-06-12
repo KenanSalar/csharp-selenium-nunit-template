@@ -63,9 +63,19 @@ public class CheckoutStepOnePage : BasePage
             firstNameInput.Clear();
             firstNameInput.SendKeys(firstName);
         }
+        catch (ElementNotInteractableException ex)
+        {
+            PageLogger.LogError(ex, "Failed to enter First Name - element was not interactable.");
+            throw;
+        }
+        catch (WebDriverException ex) // Catches StaleElement, NoSuchElement, etc.
+        {
+            PageLogger.LogError(ex, "A WebDriver error occurred while trying to enter the First Name.");
+            throw;
+        }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "Failed to enter First Name.");
+            PageLogger.LogError(ex, "An unexpected error occurred while entering the First Name.");
             throw;
         }
         return this;
