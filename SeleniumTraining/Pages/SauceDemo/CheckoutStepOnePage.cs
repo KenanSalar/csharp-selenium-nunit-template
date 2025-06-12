@@ -21,13 +21,28 @@ public class CheckoutStepOnePage : BasePage
     public CheckoutStepOnePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the CheckoutStepOnePage is fully loaded by performing base checks and
+    /// verifying the page URL and title.
+    /// </summary>
+    /// <returns>The current CheckoutStepOnePage instance for fluent chaining.</returns>
+    public override CheckoutStepOnePage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
+
+        PageLogger.LogDebug("Performing {PageName}-specific validation (URL and Title check).", PageName);
         string expectedPath = CheckoutStepOnePageMap.PageUrlPath;
         bool urlCorrect = Wait.Until(d => d.Url.Contains(expectedPath, StringComparison.OrdinalIgnoreCase));
         urlCorrect.ShouldBeTrue($"Landed on Checkout Step One page, but URL was expected to contain '{expectedPath}'. Current URL: '{Driver.Url}'.");
 
         IWebElement titleElement = FindElementOnPage(CheckoutStepOnePageMap.PageTitle);
         titleElement.Text.ShouldBe(CheckoutStepOnePageMap.PageTitleText, $"Page title should be '{CheckoutStepOnePageMap.PageTitleText}'.");
-        PageLogger.LogInformation("{PageName} loaded and URL/Title verified.", PageName);
+        PageLogger.LogInformation("{PageName} URL and Title verified.", PageName);
+
+        return this;
     }
 
     /// <summary>

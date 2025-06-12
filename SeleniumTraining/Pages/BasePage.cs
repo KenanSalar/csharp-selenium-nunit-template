@@ -116,12 +116,20 @@ public abstract class BasePage
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
 
         PageLogger.LogInformation(
-            "Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s. HighlightOnInteraction: {HighlightSetting}",
-            PageName,
-            FrameworkSettings.DefaultExplicitWaitSeconds,
-            FrameworkSettings.HighlightElementsOnInteraction
+            "Instantiated {PageName}. Page-load validation will be performed by AssertPageIsLoaded().",
+            PageName
         );
+    }
 
+    /// <summary>
+    /// Asserts that the page is fully loaded by waiting for the document to be ready
+    /// and ensuring all critical elements are visible. This method should be called
+    /// immediately after instantiating a page object.
+    /// </summary>
+    /// <returns>The current page instance for fluent chaining.</returns>
+    [AllureStep("Asserting that page '{PageName}' is loaded and ready")]
+    public virtual BasePage AssertPageIsLoaded()
+    {
         var pageLoadTimer = new PerformanceTimer(
             $"PageLoad_{PageName}",
             PageLogger,
@@ -153,17 +161,17 @@ public abstract class BasePage
                 PageLogger.LogInformation("Additional base readiness conditions met for {PageName}.", PageName);
             }
 
-            PageLogger.LogInformation("{PageName} fully initialized successfully.", PageName);
+            PageLogger.LogInformation("{PageName} fully loaded and validated successfully.", PageName);
             initializationSuccessful = true;
         }
         catch (WebDriverTimeoutException ex)
         {
-            PageLogger.LogError(ex, "{PageName} timed out during initialization. Timeout: {TimeoutSeconds}s.", PageName, Wait.Timeout.TotalSeconds);
+            PageLogger.LogError(ex, "{PageName} timed out during page load validation. Timeout: {TimeoutSeconds}s.", PageName, Wait.Timeout.TotalSeconds);
             throw;
         }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "An unexpected error occurred during page initialization for {PageName}.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred during page load validation for {PageName}.", PageName);
             throw;
         }
         finally
@@ -176,6 +184,8 @@ public abstract class BasePage
                     : null
             );
         }
+
+        return this;
     }
 
     /// <summary>

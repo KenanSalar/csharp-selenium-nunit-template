@@ -31,10 +31,27 @@ public class ShoppingCartPage : BasePage
     public ShoppingCartPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the ShoppingCartPage is fully loaded by performing base checks and
+    /// verifying the page URL.
+    /// </summary>
+    /// <returns>The current ShoppingCartPage instance for fluent chaining.</returns>
+    public override ShoppingCartPage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
+
+        PageLogger.LogDebug("Performing ShoppingCartPage-specific validation (URL check).");
+
         string expectedPath = ShoppingCartPageMap.PageUrlPath;
         Wait.Until(d => d.Url.Contains(expectedPath, StringComparison.OrdinalIgnoreCase))
             .ShouldBeTrue($"Expected URL to contain '{expectedPath}' but was '{Driver.Url}'.");
-        PageLogger.LogInformation("{PageName} loaded and URL verified.", PageName);
+
+        PageLogger.LogInformation("{PageName} URL verified.", PageName);
+
+        return this;
     }
 
     /// <summary>
