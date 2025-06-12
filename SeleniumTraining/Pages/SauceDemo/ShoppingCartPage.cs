@@ -124,9 +124,19 @@ public class ShoppingCartPage : BasePage
 
             PageLogger.LogInformation("Successfully clicked 'Checkout' button using JavaScript.");
         }
+        catch (ElementClickInterceptedException ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Checkout' button because it was intercepted by another element.");
+            throw;
+        }
+        catch (WebDriverException ex)
+        {
+            PageLogger.LogError(ex, "A WebDriver error occurred while trying to click the 'Checkout' button.");
+            throw;
+        }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "Could not click the 'Checkout' button. The test will likely fail on the next page validation.");
+            PageLogger.LogError(ex, "An unexpected error occurred while clicking the 'Checkout' button.");
             throw;
         }
 
