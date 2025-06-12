@@ -37,50 +37,7 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
         }
 
         EdgeOptions edgeOptions = ConfigureCommonChromiumOptions<EdgeOptions>(settings, options, out _);
-
-        if (settings.UserProfilePreferences != null && settings.UserProfilePreferences.Count != 0)
-        {
-            ServiceLogger.LogDebug(
-                "Applying {PrefCount} user profile preferences via 'prefs' experimental option.",
-                settings.UserProfilePreferences.Count
-            );
-
-            foreach (KeyValuePair<string, object> pref in settings.UserProfilePreferences)
-            {
-                try
-                {
-                    string key = pref.Key;
-                    string? stringValue = pref.Value?.ToString();
-
-                    if (stringValue is null)
-                    {
-                        ServiceLogger.LogWarning("Skipping user profile preference '{PrefKey}' because its value is null.", key);
-                        continue;
-                    }
-
-                    object finalValue;
-
-                    if (bool.TryParse(stringValue, out bool boolResult))
-                    {
-                        finalValue = boolResult;
-                    }
-                    else if (int.TryParse(stringValue, out int intResult))
-                    {
-                        finalValue = intResult;
-                    }
-                    else
-                    {
-                        finalValue = stringValue;
-                    }
-
-                    edgeOptions.AddUserProfilePreference(key, finalValue);
-                }
-                catch (Exception ex)
-                {
-                    ServiceLogger.LogError(ex, "Failed to apply user profile preference '{PrefKey}' with value '{PrefValue}'.", pref.Key, pref.Value);
-                }
-            }
-        }
+        ApplyUserProfilePreferences(edgeOptions, settings.UserProfilePreferences);
 
         string edgeExecutablePath = GetEdgeExecutablePathInternal();
         if (!string.IsNullOrEmpty(edgeExecutablePath))

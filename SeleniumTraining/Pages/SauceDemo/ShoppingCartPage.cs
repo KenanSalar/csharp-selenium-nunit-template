@@ -31,10 +31,27 @@ public class ShoppingCartPage : BasePage
     public ShoppingCartPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the ShoppingCartPage is fully loaded by performing base checks and
+    /// verifying the page URL.
+    /// </summary>
+    /// <returns>The current ShoppingCartPage instance for fluent chaining.</returns>
+    public override ShoppingCartPage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
+
+        PageLogger.LogDebug("Performing ShoppingCartPage-specific validation (URL check).");
+
         string expectedPath = ShoppingCartPageMap.PageUrlPath;
         Wait.Until(d => d.Url.Contains(expectedPath, StringComparison.OrdinalIgnoreCase))
             .ShouldBeTrue($"Expected URL to contain '{expectedPath}' but was '{Driver.Url}'.");
-        PageLogger.LogInformation("{PageName} loaded and URL verified.", PageName);
+
+        PageLogger.LogInformation("{PageName} URL verified.", PageName);
+
+        return this;
     }
 
     /// <summary>
@@ -107,9 +124,19 @@ public class ShoppingCartPage : BasePage
 
             PageLogger.LogInformation("Successfully clicked 'Checkout' button using JavaScript.");
         }
+        catch (ElementClickInterceptedException ex)
+        {
+            PageLogger.LogError(ex, "Could not click the 'Checkout' button because it was intercepted by another element.");
+            throw;
+        }
+        catch (WebDriverException ex)
+        {
+            PageLogger.LogError(ex, "A WebDriver error occurred while trying to click the 'Checkout' button.");
+            throw;
+        }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "Could not click the 'Checkout' button. The test will likely fail on the next page validation.");
+            PageLogger.LogError(ex, "An unexpected error occurred while clicking the 'Checkout' button.");
             throw;
         }
 

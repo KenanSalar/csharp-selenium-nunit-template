@@ -19,13 +19,28 @@ public class CheckoutCompletePage : BasePage
     public CheckoutCompletePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the CheckoutCompletePage is fully loaded by performing base checks and
+    /// verifying the page URL and title.
+    /// </summary>
+    /// <returns>The current CheckoutCompletePage instance for fluent chaining.</returns>
+    public override CheckoutCompletePage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
+
+        PageLogger.LogDebug("Performing {PageName}-specific validation (URL and Title check).", PageName);
         string expectedPath = CheckoutCompletePageMap.PageUrlPath;
         bool urlCorrect = Wait.Until(d => d.Url.Contains(expectedPath, StringComparison.OrdinalIgnoreCase));
         urlCorrect.ShouldBeTrue($"Landed on Checkout Complete page, but URL was expected to contain '{expectedPath}'. Current URL: '{Driver.Url}'.");
 
         IWebElement titleElement = FindElementOnPage(CheckoutCompletePageMap.PageTitle);
         titleElement.Text.ShouldBe(CheckoutCompletePageMap.PageTitleText, $"Page title should be '{CheckoutCompletePageMap.PageTitleText}'.");
-        PageLogger.LogInformation("{PageName} loaded and URL/Title verified.", PageName);
+        PageLogger.LogInformation("{PageName} URL and Title verified.", PageName);
+
+        return this;
     }
 
     /// <summary>

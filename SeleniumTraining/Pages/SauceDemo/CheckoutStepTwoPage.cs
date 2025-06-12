@@ -20,13 +20,28 @@ public class CheckoutStepTwoPage : BasePage
     public CheckoutStepTwoPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the CheckoutStepTwoPage is fully loaded by performing base checks and
+    /// verifying the page URL and title.
+    /// </summary>
+    /// <returns>The current CheckoutStepTwoPage instance for fluent chaining.</returns>
+    public override CheckoutStepTwoPage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
+
+        PageLogger.LogDebug("Performing {PageName}-specific validation (URL and Title check).", PageName);
         string expectedPath = CheckoutStepTwoPageMap.PageUrlPath;
         bool urlCorrect = Wait.Until(d => d.Url.Contains(expectedPath, StringComparison.OrdinalIgnoreCase));
         urlCorrect.ShouldBeTrue($"Landed on Checkout Step Two page, but URL was expected to contain '{expectedPath}'. Current URL: '{Driver.Url}'.");
 
         IWebElement titleElement = FindElementOnPage(CheckoutStepTwoPageMap.PageTitle);
         titleElement.Text.ShouldBe(CheckoutStepTwoPageMap.PageTitleText, $"Page title should be '{CheckoutStepTwoPageMap.PageTitleText}'.");
-        PageLogger.LogInformation("{PageName} loaded and URL/Title verified.", PageName);
+        PageLogger.LogInformation("{PageName} URL and Title verified.", PageName);
+
+        return this;
     }
 
     /// <summary>
