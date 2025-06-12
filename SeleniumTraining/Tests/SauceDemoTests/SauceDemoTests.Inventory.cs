@@ -60,7 +60,8 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+                .AssertPageIsLoaded();
 
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
@@ -166,7 +167,9 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+                .AssertPageIsLoaded();
+
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameProblemUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
@@ -303,7 +306,9 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+                .AssertPageIsLoaded();
+
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernamePerformanceGlitchUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
@@ -399,7 +404,9 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+                .AssertPageIsLoaded();
+
             resultPage = loginPage
                 .EnterUsername(_sauceDemoSettings.LoginUsernameErrorUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
@@ -573,7 +580,8 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage for {TestName}.", currentTestName);
-            LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+                .AssertPageIsLoaded();
 
             TestLogger.LogInformation(
                 "Attempting login with username: {LoginUsername} (visual_user) using Click action for {TestName}.",

@@ -42,11 +42,6 @@ public partial class SauceDemoTests : BaseTest
         var checkoutStepOnePage = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
         TestLogger.LogInformation("Navigated to Checkout Step One page.");
 
-        // --- Navigate to Cart and Proceed to Checkout ---
-        _ = inventoryPage.ClickShoppingCartLink().ShouldBeOfType<ShoppingCartPage>();
-        _ = (CheckoutStepOnePage)shoppingCartPage.ClickCheckout();
-        TestLogger.LogInformation("Navigated to Checkout Step One page.");
-
         // --- Fill Information and Continue ---
         var fillInfoTimer = new PerformanceTimer("TestStep_FillCheckoutStepOneInfo", TestLogger, resourceMonitor: ResourceMonitor);
         CheckoutStepTwoPage checkoutStepTwoPage;

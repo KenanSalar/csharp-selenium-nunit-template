@@ -40,8 +40,20 @@ public class InventoryPage : BasePage
     public InventoryPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
-        PageLogger.LogDebug("{PageName} instance fully created and validated (critical elements checked by BasePage).", PageName);
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
+
+    /// <summary>
+    /// Asserts that the InventoryPage is fully loaded by performing base checks and
+    /// waiting for the page to be fully ready with a minimum number of items.
+    /// </summary>
+    /// <returns>The current InventoryPage instance for fluent chaining.</returns>
+    public override InventoryPage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
         WaitForPageToBeFullyReady();
+
+        return this;
     }
 
     /// <summary>
