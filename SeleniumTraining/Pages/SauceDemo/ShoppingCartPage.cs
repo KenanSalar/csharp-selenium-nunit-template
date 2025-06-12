@@ -103,11 +103,7 @@ public class ShoppingCartPage : BasePage
     /// <summary>
     /// Clicks the "Checkout" button to proceed to the first step of the checkout process.
     /// </summary>
-    /// <returns>
-    /// This method should return an instance of the page object representing the first step of checkout (e.g., CheckoutStepOnePage).
-    /// Currently, it throws a <see cref="NotImplementedException"/> as the target page object is not yet implemented.
-    /// </returns>
-    /// <exception cref="NotImplementedException">Always thrown as the checkout page flow is not yet implemented beyond this point.</exception>
+    /// <returns>A new, validated <see cref="CheckoutStepOnePage"/> instance.</returns>
     [AllureStep("Click 'Checkout' button")]
     public BasePage ClickCheckout()
     {
