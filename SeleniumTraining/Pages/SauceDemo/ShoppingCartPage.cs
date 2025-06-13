@@ -103,7 +103,12 @@ public class ShoppingCartPage : BasePage
     /// <summary>
     /// Clicks the "Checkout" button to proceed to the first step of the checkout process.
     /// </summary>
-    /// <returns>A new, validated <see cref="CheckoutStepOnePage"/> instance.</returns>
+    /// <remarks>
+    /// This method returns a generic <see cref="BasePage"/> to provide flexibility. 
+    /// The caller is responsible for casting the returned object to the expected page type,
+    /// for example: `(CheckoutStepOnePage)shoppingCartPage.ClickCheckout();`.
+    /// </remarks>
+    /// <returns>A new <see cref="BasePage"/> instance representing the loaded checkout page, which needs to be cast to the correct type.</returns>
     [AllureStep("Click 'Checkout' button")]
     public BasePage ClickCheckout()
     {
