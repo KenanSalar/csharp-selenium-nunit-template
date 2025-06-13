@@ -1,4 +1,0 @@
-Operation: PageLoad_CheckoutCompletePage
-Duration: 41 ms (0.042 s)
-Expected Max: 3000 ms
-Status: PASS
