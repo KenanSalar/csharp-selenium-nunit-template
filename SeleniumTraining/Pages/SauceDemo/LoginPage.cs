@@ -24,8 +24,7 @@ public class LoginPage : BasePage
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoginPage"/> class.
-    /// It calls the base constructor and then performs LoginPage-specific initialization checks,
-    /// such as verifying the page title.
+    /// /// Call <see cref="AssertPageIsLoaded()"/> to perform validation after instantiation.
     /// </summary>
     /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Passed to base.</param>
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Passed to base.</param>
@@ -36,21 +35,31 @@ public class LoginPage : BasePage
     public LoginPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
+        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
+    }
 
-        PageLogger.LogDebug("Performing LoginPage-specific initialization checks for {PageName}.", PageName);
+    /// <summary>
+    /// Asserts that the LoginPage is fully loaded by performing base checks and
+    /// verifying the page title.
+    /// </summary>
+    /// <returns>The current LoginPage instance for fluent chaining.</returns>
+    public override LoginPage AssertPageIsLoaded()
+    {
+        _ = base.AssertPageIsLoaded();
 
+        PageLogger.LogDebug("Performing LoginPage-specific validation (Page Title).");
         try
         {
             Wait.WaitForPageTitle(Driver, PageLogger, PageName, LoginPageMap.PageTitle);
-            PageLogger.LogInformation("Page title 'Swag Labs' verified for {PageName}.", PageName);
+            PageLogger.LogInformation("Page title '{PageTitle}' verified for {PageName}.", LoginPageMap.PageTitle, PageName);
         }
         catch (WebDriverTimeoutException ex)
         {
-            PageLogger.LogError(ex, "{PageName} did not load with the expected title 'Swag Labs'.", PageName);
+            PageLogger.LogError(ex, "{PageName} did not load with the expected title '{PageTitle}'.", PageName, LoginPageMap.PageTitle);
             throw;
         }
 
-        PageLogger.LogDebug("{PageName} instance fully created and validated.", PageName);
+        return this;
     }
 
     /// <summary>

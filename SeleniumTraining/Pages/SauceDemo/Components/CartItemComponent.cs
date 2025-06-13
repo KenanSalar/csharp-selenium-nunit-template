@@ -95,9 +95,19 @@ public class CartItemComponent : BasePageComponent
 
             ComponentLogger.LogInformation("Successfully clicked 'Remove' button for item: {ItemName}", itemName);
         }
+        catch (WebDriverTimeoutException ex)
+        {
+            ComponentLogger.LogError(ex, "Timed out waiting for the 'Remove' button to be clickable for item '{ItemName}'.", itemName);
+            throw;
+        }
+        catch (WebDriverException ex)
+        {
+            ComponentLogger.LogError(ex, "A WebDriver error occurred while trying to click the 'Remove' button for item '{ItemName}'.", itemName);
+            throw;
+        }
         catch (Exception ex)
         {
-            ComponentLogger.LogError(ex, "Failed to click 'Remove' button for item '{ItemName}'.", itemName);
+            ComponentLogger.LogError(ex, "An unexpected error occurred while clicking the 'Remove' button for item '{ItemName}'.", itemName);
             throw;
         }
     }

@@ -23,7 +23,9 @@ public partial class SauceDemoTests : BaseTest
             resourceMonitor: ResourceMonitor
         );
 
-        LoginPage loginPage = new(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService);
+        LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
+            .AssertPageIsLoaded();
+
         BasePage resultPage = loginPage
             .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
             .EnterPassword(_sauceDemoSettings.LoginPassword)

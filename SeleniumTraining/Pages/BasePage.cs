@@ -85,17 +85,18 @@ public abstract class BasePage
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BasePage"/> abstract class.
-    /// Sets up WebDriver, WebDriverWait, logging, settings, retry service, and performs
-    /// initial page load and critical element visibility checks.
+    /// Sets up WebDriver, WebDriverWait, logging, settings, and retry service.
+    /// Does NOT perform page load validation; call <see cref="AssertPageIsLoaded"/> for that purpose.
     /// </summary>
+    /// <remarks>
+    /// This constructor is responsible for initializing all the essential services and properties for the page object.
+    /// All page load and readiness checks have been moved to the <see cref="AssertPageIsLoaded"/> method
+    /// to make verification an explicit step in the test flow.
+    /// </remarks>
     /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
     /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
     /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
-    /// <param name="defaultTimeoutSeconds">The default timeout in seconds for the <see cref="WebDriverWait"/> instance. Defaults to 5 seconds.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
-    /// <exception cref="WebDriverTimeoutException">Thrown if <see cref="WaitForPageLoad"/>, <see cref="EnsureCriticalElementsAreDisplayed"/>, or the additional readiness checks time out.</exception>
-    /// <exception cref="Exception">Thrown for other unexpected errors during initialization.</exception>
     protected BasePage(
         IWebDriver driver,
         ILoggerFactory loggerFactory,
@@ -116,12 +117,21 @@ public abstract class BasePage
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
 
         PageLogger.LogInformation(
-            "Initializing {PageName}. Default explicit wait timeout: {DefaultTimeoutSeconds}s. HighlightOnInteraction: {HighlightSetting}",
-            PageName,
-            FrameworkSettings.DefaultExplicitWaitSeconds,
-            FrameworkSettings.HighlightElementsOnInteraction
+            "Instantiated {PageName}. Page-load validation will be performed by AssertPageIsLoaded().",
+            PageName
         );
+    }
 
+    /// <summary>
+    /// Asserts that the page is fully loaded by waiting for the document to be ready
+    /// and ensuring all critical elements are visible. This method should be called
+    /// immediately after instantiating a page object.
+    /// </summary>
+    /// <returns>The current page instance for fluent chaining.</returns>
+    /// <exception cref="WebDriverTimeoutException">Thrown if the page or its critical elements do not load within the configured timeout.</exception>
+    [AllureStep("Asserting that page '{PageName}' is loaded and ready")]
+    public virtual BasePage AssertPageIsLoaded()
+    {
         var pageLoadTimer = new PerformanceTimer(
             $"PageLoad_{PageName}",
             PageLogger,
@@ -153,17 +163,17 @@ public abstract class BasePage
                 PageLogger.LogInformation("Additional base readiness conditions met for {PageName}.", PageName);
             }
 
-            PageLogger.LogInformation("{PageName} fully initialized successfully.", PageName);
+            PageLogger.LogInformation("{PageName} fully loaded and validated successfully.", PageName);
             initializationSuccessful = true;
         }
         catch (WebDriverTimeoutException ex)
         {
-            PageLogger.LogError(ex, "{PageName} timed out during initialization. Timeout: {TimeoutSeconds}s.", PageName, Wait.Timeout.TotalSeconds);
+            PageLogger.LogError(ex, "{PageName} timed out during page load validation. Timeout: {TimeoutSeconds}s.", PageName, Wait.Timeout.TotalSeconds);
             throw;
         }
         catch (Exception ex)
         {
-            PageLogger.LogError(ex, "An unexpected error occurred during page initialization for {PageName}.", PageName);
+            PageLogger.LogError(ex, "An unexpected error occurred during page load validation for {PageName}.", PageName);
             throw;
         }
         finally
@@ -176,6 +186,8 @@ public abstract class BasePage
                     : null
             );
         }
+
+        return this;
     }
 
     /// <summary>
