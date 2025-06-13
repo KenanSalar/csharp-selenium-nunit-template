@@ -20,6 +20,7 @@ global using SeleniumTraining.Core.Services;
 global using SeleniumTraining.Core.Services.Drivers;
 global using SeleniumTraining.Core.Services.Drivers.Contracts;
 global using SeleniumTraining.Core.Services.Contracts;
+global using SeleniumTraining.Tests.SauceDemoTests.TestDataModels;
 global using Newtonsoft.Json;
 global using OpenQA.Selenium;
 global using OpenQA.Selenium.Support.UI;

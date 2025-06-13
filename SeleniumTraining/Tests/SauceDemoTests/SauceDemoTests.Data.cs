@@ -27,4 +27,32 @@ public partial class SauceDemoTests : BaseTest
         new(SortByType.Value, "lohi"),
         new(SortByType.Value, "hilo")
     ];
+
+    /// <summary>
+    /// Provides test case data for checkout scenarios by reading from a JSON file.
+    /// </summary>
+    public static IEnumerable<TestCaseData> CheckoutScenarios
+    {
+        get
+        {
+            string filePath = Path.Combine(AppContext.BaseDirectory, "Tests/SauceDemoTests/TestData/CheckoutScenarios.json");
+
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("The test data file 'CheckoutScenarios.json' was not found.", filePath);
+            }
+
+            string jsonContent = File.ReadAllText(filePath);
+            List<CheckoutTestData>? testDataList = JsonConvert.DeserializeObject<List<CheckoutTestData>>(jsonContent)
+                ?? throw new InvalidOperationException("Failed to deserialize test data from CheckoutScenarios.json.");
+
+            foreach (CheckoutTestData testData in testDataList)
+            {
+                var testCase = new TestCaseData(testData.FirstName, testData.LastName, testData.PostalCode, testData.ItemsToOrder);
+                _ = testCase.SetName(testData.TestCaseName);
+                
+                yield return testCase;
+            }
+        }
+    }
 }

@@ -1,0 +1,32 @@
+[
+  {
+    "TestCaseName": "Checkout with a Single Item (Backpack)",
+    "FirstName": "Test",
+    "LastName": "UserOne",
+    "PostalCode": "12345",
+    "ItemsToOrder": [
+      "Sauce Labs Backpack"
+    ]
+  },
+  {
+    "TestCaseName": "Checkout with Multiple Items (Jacket and T-Shirt)",
+    "FirstName": "Standard",
+    "LastName": "UserTwo",
+    "PostalCode": "54321",
+    "ItemsToOrder": [
+      "Sauce Labs Fleece Jacket",
+      "Sauce Labs Bolt T-Shirt"
+    ]
+  },
+  {
+    "TestCaseName": "Checkout with 3 Mixed Items",
+    "FirstName": "Bulk",
+    "LastName": "Buyer",
+    "PostalCode": "90210",
+    "ItemsToOrder": [
+      "Sauce Labs Bike Light",
+      "Sauce Labs Onesie",
+      "Test.allTheThings() T-Shirt (Red)"
+    ]
+  }
+]
