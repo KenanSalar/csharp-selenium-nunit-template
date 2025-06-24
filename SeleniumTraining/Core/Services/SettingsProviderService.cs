@@ -50,16 +50,20 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
     }
 
     /// <summary>
-    /// Retrieves browser-specific settings based on the provided <see cref="BrowserType"/>.
+    /// Retrieves and configures browser-specific settings based on the provided <see cref="BrowserType"/>.
     /// </summary>
     /// <param name="browserType">The type of browser for which to retrieve settings.</param>
-    /// <returns>A <see cref="BaseBrowserSettings"/> object containing the configuration for the specified browser.</returns>
+    /// <returns>
+    /// An immutable <see cref="BaseBrowserSettings"/> record containing the final, effective configuration
+    /// for the specified browser.
+    /// </returns>
     /// <exception cref="NotSupportedException">Thrown if the provided <paramref name="browserType"/> is not configured in the service.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the configuration section for the browser settings is not found or is invalid.</exception>
     /// <remarks>
-    /// This implementation maps the <paramref name="browserType"/> to a specific configuration section name
-    /// (e.g., "ChromeBrowserOptions", "EdgeBrowserOptions") and binds the settings to the correct type.
-    /// It also automatically applies Selenium Grid and CI-specific settings.
+    /// This method first binds the appropriate configuration section (e.g., "ChromeBrowserOptions") to an immutable settings record.
+    /// It then conditionally applies overrides for Selenium Grid and CI environments. Since the settings objects are
+    /// immutable records, these overrides are applied non-destructively using a `with` expression, which creates
+    /// a new, modified copy of the record. The final, fully configured record is then returned.
     /// </remarks>
     [AllureStep("Retrieving browser settings for {browserType}")]
     public BaseBrowserSettings GetBrowserSettings(BrowserType browserType)
@@ -93,8 +97,8 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
             SeleniumGridSettings gridSettings = GetSettings<SeleniumGridSettings>("SeleniumGrid");
             if (gridSettings?.Enabled == true)
             {
-                ServiceLogger.LogInformation("Selenium Grid is enabled. Setting remote URL to: {GridUrl}", gridSettings.Url);
-                settings.SeleniumGridUrl = gridSettings.Url;
+                ServiceLogger.LogInformation("Selenium Grid is enabled. Creating a new settings object with remote URL: {GridUrl}", gridSettings.Url);
+                settings = settings with { SeleniumGridUrl = gridSettings.Url };
             }
         }
         catch (Exception ex)
@@ -107,8 +111,8 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
         {
             if (!settings.Headless)
             {
-                ServiceLogger.LogInformation("CI environment detected (CI={CIValue}). Overriding Headless mode to true, as configured settings had Headless=false.", ciEnvironmentVariable);
-                settings.Headless = true;
+                ServiceLogger.LogInformation("CI environment detected (CI={CIValue}). Creating a new settings object with Headless=true.", ciEnvironmentVariable);
+                settings = settings with { Headless = true };
             }
             else
             {
