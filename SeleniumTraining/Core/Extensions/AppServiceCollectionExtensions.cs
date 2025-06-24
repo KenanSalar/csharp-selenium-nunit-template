@@ -54,7 +54,7 @@ public static class AppServiceCollectionExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> or <paramref name="configuration"/> is null (though <paramref name="services"/> as 'this' parameter won't be null).</exception>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services = services.AddSingleton(configuration)
+        return services.AddSingleton(configuration)
             .AddLogging(loggingBuilder =>
                 loggingBuilder.ClearProviders()
                 .AddSerilog(dispose: true)
@@ -76,8 +76,6 @@ public static class AppServiceCollectionExtensions
             .AddTransient<IResourceMonitorService, ResourceMonitorService>()
             .AddScoped<IVisualTestService, VisualTestService>()
             .AddSingleton<IRetryService, RetryService>();
-
-        return services;
     }
 
     /// <summary>

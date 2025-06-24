@@ -65,8 +65,7 @@ public abstract class BasePageComponent
     /// or functions with retry policies to handle transient failures within the component.
     /// </summary>
     /// <value>The retry service.</value>
-    protected IRetryService Retry { get; private set; }
-
+    protected IRetryService Retry { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BasePageComponent"/> abstract class.

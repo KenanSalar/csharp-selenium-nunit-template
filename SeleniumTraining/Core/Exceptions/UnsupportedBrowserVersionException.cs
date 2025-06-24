@@ -43,6 +43,5 @@ public class UnsupportedBrowserVersionException : Exception
     public UnsupportedBrowserVersionException(string browserName, string detectedVersion, string minimumRequiredVersion)
         : base($"Browser '{browserName}' version '{detectedVersion}' is not supported. Minimum required version is '{minimumRequiredVersion}'.")
     {
-
     }
 }

@@ -16,5 +16,4 @@ namespace SeleniumTraining.Utils.Settings.BrowserSettings;
 /// </remarks>
 public class ChromeSettings : ChromiumBasedSettings
 {
-
 }

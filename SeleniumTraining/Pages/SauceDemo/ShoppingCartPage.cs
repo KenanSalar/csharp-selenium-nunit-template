@@ -104,7 +104,7 @@ public class ShoppingCartPage : BasePage
     /// Clicks the "Checkout" button to proceed to the first step of the checkout process.
     /// </summary>
     /// <remarks>
-    /// This method returns a generic <see cref="BasePage"/> to provide flexibility. 
+    /// This method returns a generic <see cref="BasePage"/> to provide flexibility.
     /// The caller is responsible for casting the returned object to the expected page type,
     /// for example: `(CheckoutStepOnePage)shoppingCartPage.ClickCheckout();`.
     /// </remarks>
@@ -115,15 +115,10 @@ public class ShoppingCartPage : BasePage
         PageLogger.LogInformation("Clicking 'Checkout' button.");
         try
         {
-            IWebElement checkoutButton = FindElementOnPage(ShoppingCartPageMap.CheckoutButton);
+            FindElementOnPage(ShoppingCartPageMap.CheckoutButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(checkoutButton));
-
-            _ = HighlightIfEnabled(checkoutButton);
-
-            checkoutButton.ClickStandard(Wait, PageLogger);
-
-            PageLogger.LogInformation("Successfully clicked 'Checkout' button using JavaScript.");
+            PageLogger.LogInformation("Successfully clicked 'Checkout' button.");
         }
         catch (ElementClickInterceptedException ex)
         {
@@ -154,15 +149,10 @@ public class ShoppingCartPage : BasePage
         PageLogger.LogInformation("Clicking 'Continue Shopping' button.");
         try
         {
-            IWebElement continueButton = FindElementOnPage(ShoppingCartPageMap.ContinueShoppingButton);
+            FindElementOnPage(ShoppingCartPageMap.ContinueShoppingButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(continueButton));
-
-            _ = HighlightIfEnabled(continueButton);
-
-            continueButton.ClickStandard(Wait, PageLogger);
-
-            PageLogger.LogInformation("Successfully clicked 'Continue Shopping' button using JavaScript.");
+            PageLogger.LogInformation("Successfully clicked 'Continue Shopping' button.");
         }
         catch (Exception ex)
         {

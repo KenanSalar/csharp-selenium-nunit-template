@@ -62,4 +62,3 @@ public class ScreenshotService : BaseService, IScreenshotService
         }
     }
 }
-

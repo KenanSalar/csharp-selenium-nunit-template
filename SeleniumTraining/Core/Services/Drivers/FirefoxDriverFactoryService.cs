@@ -48,6 +48,9 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
     ///   <item><description>Performs a browser version check against the minimum supported version.</description></item>
     /// </list>
     /// </remarks>
+    /// <param name="settingsBase">The browser settings to use for driver creation. Must be of type <see cref="FirefoxSettings"/>.</param>
+    /// <param name="options">Optional additional driver options to apply. Currently not used in Firefox implementation.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="settingsBase"/> is not of type <see cref="FirefoxSettings"/>.</exception>
     public IWebDriver CreateDriver(BaseBrowserSettings settingsBase, DriverOptions? options = null)
     {
         if (settingsBase is not FirefoxSettings settings)
@@ -172,14 +175,12 @@ public class FirefoxDriverFactoryService : DriverFactoryServiceBase, IBrowserDri
 
             return localDriver;
         }
-        else
-        {
-            ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Firefox Grid at {GridUrl}", settings.SeleniumGridUrl);
 
-            var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), firefoxOptions);
-            PerformVersionCheck(remoteDriver, Type.ToString(), _minimumSupportedVersion);
+        ServiceLogger.LogInformation("Creating RemoteWebDriver instance for Firefox Grid at {GridUrl}", settings.SeleniumGridUrl);
 
-            return remoteDriver;
-        }
+        var remoteDriver = new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), firefoxOptions);
+        PerformVersionCheck(remoteDriver, Type.ToString(), _minimumSupportedVersion);
+
+        return remoteDriver;
     }
 }

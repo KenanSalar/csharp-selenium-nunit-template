@@ -1,5 +1,3 @@
-using OpenQA.Selenium;
-
 namespace SeleniumTraining.Utils.Extensions;
 
 public static partial class ExtensionMethods
@@ -12,7 +10,13 @@ public static partial class ExtensionMethods
     /// <param name="wait">The WebDriverWait instance.</param>
     /// <param name="logger">The logger for logging actions and errors.</param>
     [AllureStep("Performing standard click on element: {element}")]
-    public static void ClickStandard(this IWebElement element, WebDriverWait wait, ILogger logger)
+    public static void ClickStandard(
+        this IWebElement element,
+        IWebDriver driver,
+        WebDriverWait wait,
+        ILogger logger,
+        TestFrameworkSettings settings
+    )
     {
         string elementDesc = WebElementHighlightingExtensions.GetElementDescription(element);
         try
@@ -20,6 +24,12 @@ public static partial class ExtensionMethods
             logger.LogDebug("Attempting standard click on element: {ElementDescription}", elementDesc);
 
             _ = wait.Until(ExpectedConditions.ElementToBeClickable(element));
+
+            if (settings.HighlightElementsOnInteraction)
+            {
+                _ = element.HighlightElement(driver, logger, settings.HighlightDurationMs);
+            }
+
             element.Click();
 
             logger.LogInformation("Successfully performed standard click on element: {ElementDescription}", elementDesc);

@@ -35,15 +35,14 @@ public class VisualTestService : BaseService, IVisualTestService
     /// Initializes a new instance of the <see cref="VisualTestService"/> class.
     /// </summary>
     /// <param name="loggerFactory">The logger factory, passed to the base <see cref="BaseService"/>.</param>
-    /// <param name="webDriver">The current <see cref="IWebDriver"/> instance to use for taking screenshots. Must not be null.</param>
     /// <param name="directoryManager">Service for managing directory paths for visual test artifacts. Must not be null.</param>
-    /// <param name="settingsProvider">Service for accessing application settings, including <see cref="VisualTestSettings"/>. Must not be null.</param>
+    /// <param name="webDriverManager">Service for managing WebDriver instances for taking screenshots. Must not be null.</param>
+    /// <param name="visualTestSettings">Options containing <see cref="VisualTestSettings"/> configuration. Must not be null.</param>
     /// <exception cref="ArgumentNullException">Thrown if any of the required service parameters are null.</exception>
     /// <remarks>
-    /// The constructor retrieves <see cref="VisualTestSettings"/> and <see cref="TestFrameworkSettings"/>
-    /// using the provided <paramref name="settingsProvider"/>.
-    /// The <paramref name="webDriver"/> parameter needs careful consideration regarding its lifecycle and how it's provided,
-    /// especially in parallel testing scenarios (e.g., it should be the thread-specific driver).
+    /// The constructor retrieves <see cref="VisualTestSettings"/> from the provided <paramref name="visualTestSettings"/> options.
+    /// The <paramref name="webDriverManager"/> parameter manages WebDriver lifecycle and provides thread-safe access
+    /// to WebDriver instances, especially important in parallel testing scenarios.
     /// </remarks>
     public VisualTestService(
         ILoggerFactory loggerFactory,
@@ -238,7 +237,7 @@ public class VisualTestService : BaseService, IVisualTestService
             if (validCropArea.Width <= 0 || validCropArea.Height <= 0)
             {
                 throw new InvalidOperationException(
-                    $"Specified cropArea for visual comparison resulted in an invalid crop area after intersection. " +
+                    "Specified cropArea for visual comparison resulted in an invalid crop area after intersection. " +
                     "CropArea: {cropArea.Value}. Image Bounds: {image.Width}x{image.Height}"
                 );
             }
@@ -313,7 +312,7 @@ public class VisualTestService : BaseService, IVisualTestService
         string diffImageDir = Path.Combine(testClassScreenshotsDir, "VisualDiffs", browserName);
         string diffImagePath = Path.Combine(diffImageDir, $"{SanitizeFilename(baselineIdentifier)}_diff_{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff}.png");
 
-        _ = Directory.CreateDirectory(baselineTestPath); ;
+        _ = Directory.CreateDirectory(baselineTestPath);
         _ = Directory.CreateDirectory(actualImageDir);
         _ = Directory.CreateDirectory(diffImageDir);
 
@@ -355,4 +354,3 @@ public class VisualTestService : BaseService, IVisualTestService
         return Regex.Replace(name, invalidRegStr, "_");
     }
 }
-

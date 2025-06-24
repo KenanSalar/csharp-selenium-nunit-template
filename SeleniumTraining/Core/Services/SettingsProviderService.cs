@@ -91,7 +91,7 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
         try
         {
             SeleniumGridSettings gridSettings = GetSettings<SeleniumGridSettings>("SeleniumGrid");
-            if (gridSettings != null && gridSettings.Enabled)
+            if (gridSettings?.Enabled == true)
             {
                 ServiceLogger.LogInformation("Selenium Grid is enabled. Setting remote URL to: {GridUrl}", gridSettings.Url);
                 settings.SeleniumGridUrl = gridSettings.Url;

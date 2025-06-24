@@ -51,11 +51,10 @@ public class ChromeDriverFactoryService : ChromiumDriverFactoryServiceBase
             ServiceLogger.LogInformation("Creating local ChromeDriver. Selenium Manager will ensure the driver is available.");
             return CreateDriverInstanceWithChecks(chromeOptions, opts => new ChromeDriver(opts));
         }
-        else
-        {
-            ServiceLogger.LogInformation("Creating RemoteWebDriver for Chrome Grid at {GridUrl}", settings.SeleniumGridUrl);
-            return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), chromeOptions);
-        }
+
+        ServiceLogger.LogInformation("Creating RemoteWebDriver for Chrome Grid at {GridUrl}", settings.SeleniumGridUrl);
+
+        return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), chromeOptions);
     }
 
     /// <summary>

@@ -27,7 +27,6 @@ public abstract class ChromiumDriverFactoryServiceBase : DriverFactoryServiceBas
     protected ChromiumDriverFactoryServiceBase(ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
-
     }
 
     /// <inheritdoc/>

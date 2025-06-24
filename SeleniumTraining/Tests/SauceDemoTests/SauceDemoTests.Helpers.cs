@@ -73,7 +73,7 @@ public partial class SauceDemoTests : BaseTest
             itemComponent.ClickActionButton();
             TestLogger.LogDebug("Setup Helper: Added '{ItemName}' to cart.", itemName);
 
-            _ = wait.Until(d => itemComponent.GetActionButtonText() == "Remove");
+            _ = wait.Until(_ => itemComponent.GetActionButtonText() == "Remove");
         }
 
         inventoryPage.GetShoppingCartBadgeCount().ShouldBe(itemsToAddToCart.Count());

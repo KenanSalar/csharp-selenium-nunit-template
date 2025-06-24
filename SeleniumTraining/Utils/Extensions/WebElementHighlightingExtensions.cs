@@ -190,7 +190,7 @@ public static class WebElementHighlightingExtensions
             string? id = element.GetAttribute("id");
             string? name = element.GetAttribute("name");
             string? classAttr = element.GetAttribute("class");
-            string? text = element.Text?.Length > 50 ? string.Concat(element.Text.AsSpan(0, 50), "...") : element.Text;
+            string? text = element.Text?.Length > 50 ? $"{element.Text.AsSpan(0, 50)}..." : element.Text;
 
             var parts = new List<string>();
 
