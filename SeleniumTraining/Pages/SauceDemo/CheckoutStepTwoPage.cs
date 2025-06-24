@@ -106,13 +106,8 @@ public class CheckoutStepTwoPage : BasePage
         PageLogger.LogInformation("Clicking 'Finish' button.");
         try
         {
-            IWebElement finishButton = FindElementOnPage(CheckoutStepTwoPageMap.FinishButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(finishButton));
-
-            _ = HighlightIfEnabled(finishButton);
-
-            finishButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepTwoPageMap.FinishButton)
+                .ClickStandard(Driver,Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Finish' button using JavaScript.");
         }
@@ -135,13 +130,8 @@ public class CheckoutStepTwoPage : BasePage
         PageLogger.LogInformation("Clicking 'Cancel' button.");
         try
         {
-            IWebElement cancelButton = FindElementOnPage(CheckoutStepTwoPageMap.CancelButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cancelButton));
-
-            _ = HighlightIfEnabled(cancelButton);
-
-            cancelButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepTwoPageMap.CancelButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Cancel' button using JavaScript.");
         }

@@ -148,11 +148,8 @@ public class CheckoutStepOnePage : BasePage
         PageLogger.LogInformation("Clicking 'Continue' button.");
         try
         {
-            IWebElement continueButton = FindElementOnPage(CheckoutStepOnePageMap.ContinueButton);
-
-            _ = HighlightIfEnabled(continueButton);
-
-            continueButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepOnePageMap.ContinueButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Continue' button using JavaScript.");
         }
@@ -176,13 +173,8 @@ public class CheckoutStepOnePage : BasePage
         PageLogger.LogInformation("Clicking 'Cancel' button.");
         try
         {
-            IWebElement cancelButton = FindElementOnPage(CheckoutStepOnePageMap.CancelButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cancelButton));
-
-            _ = HighlightIfEnabled(cancelButton);
-
-            cancelButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepOnePageMap.CancelButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Cancel' button using JavaScript.");
         }

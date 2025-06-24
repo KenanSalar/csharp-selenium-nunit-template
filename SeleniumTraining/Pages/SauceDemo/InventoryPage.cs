@@ -492,13 +492,8 @@ public class InventoryPage : BasePage
         PageLogger.LogInformation("Attempting to click shopping cart link.");
         try
         {
-            IWebElement cartLink = FindElementOnPage(InventoryPageMap.ShoppingCartLink);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cartLink));
-
-            _ = HighlightIfEnabled(cartLink);
-
-            cartLink.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(InventoryPageMap.ShoppingCartLink)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked shopping cart link using JavaScript.");
         }

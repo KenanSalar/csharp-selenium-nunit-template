@@ -124,10 +124,8 @@ public class LoginPage : BasePage
         else
         {
             PageLogger.LogDebug("Clicking login button on {PageName}.", PageName);
-            IWebElement loginButton = FindElementOnPage(LoginPageMap.LoginButton);
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(loginButton));
-            _ = HighlightIfEnabled(loginButton);
-            loginButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(LoginPageMap.LoginButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
         }
 
         Wait.EnsureElementIsVisible(PageLogger, PageName, InventoryPageMap.InventoryContainer);
@@ -160,10 +158,8 @@ public class LoginPage : BasePage
         }
         else
         {
-            IWebElement loginButton = FindElementOnPage(LoginPageMap.LoginButton);
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(loginButton));
-            _ = HighlightIfEnabled(loginButton);
-            loginButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(LoginPageMap.LoginButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
         }
 
         return this;

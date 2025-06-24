@@ -91,13 +91,8 @@ public class CheckoutCompletePage : BasePage
         PageLogger.LogInformation("Clicking 'Back Home' button.");
         try
         {
-            IWebElement backHomeButton = FindElementOnPage(CheckoutCompletePageMap.BackHomeButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(backHomeButton));
-
-            _ = HighlightIfEnabled(backHomeButton);
-
-            backHomeButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutCompletePageMap.BackHomeButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Back Home' button using JavaScript.");
         }

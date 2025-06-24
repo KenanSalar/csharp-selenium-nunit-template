@@ -115,15 +115,10 @@ public class ShoppingCartPage : BasePage
         PageLogger.LogInformation("Clicking 'Checkout' button.");
         try
         {
-            IWebElement checkoutButton = FindElementOnPage(ShoppingCartPageMap.CheckoutButton);
+            FindElementOnPage(ShoppingCartPageMap.CheckoutButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(checkoutButton));
-
-            _ = HighlightIfEnabled(checkoutButton);
-
-            checkoutButton.ClickStandard(Wait, PageLogger);
-
-            PageLogger.LogInformation("Successfully clicked 'Checkout' button using JavaScript.");
+            PageLogger.LogInformation("Successfully clicked 'Checkout' button.");
         }
         catch (ElementClickInterceptedException ex)
         {
@@ -154,15 +149,10 @@ public class ShoppingCartPage : BasePage
         PageLogger.LogInformation("Clicking 'Continue Shopping' button.");
         try
         {
-            IWebElement continueButton = FindElementOnPage(ShoppingCartPageMap.ContinueShoppingButton);
+            FindElementOnPage(ShoppingCartPageMap.ContinueShoppingButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(continueButton));
-
-            _ = HighlightIfEnabled(continueButton);
-
-            continueButton.ClickStandard(Wait, PageLogger);
-
-            PageLogger.LogInformation("Successfully clicked 'Continue Shopping' button using JavaScript.");
+            PageLogger.LogInformation("Successfully clicked 'Continue Shopping' button.");
         }
         catch (Exception ex)
         {
