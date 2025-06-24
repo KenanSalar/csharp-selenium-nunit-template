@@ -1,5 +1,3 @@
-using OpenQA.Selenium;
-
 namespace SeleniumTraining.Utils.Extensions;
 
 public static partial class ExtensionMethods
