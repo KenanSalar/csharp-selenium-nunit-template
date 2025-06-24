@@ -66,19 +66,16 @@ public class TestLifecycleManager : BaseService, ITestLifecycleManager
 
         // CI Browser Check Logic
         string? targetBrowserCiEnv = Environment.GetEnvironmentVariable("TARGET_BROWSER_CI");
-        if (!string.IsNullOrEmpty(targetBrowserCiEnv) && Enum.TryParse(targetBrowserCiEnv, true, out BrowserType ciBrowserType))
+        if (!string.IsNullOrEmpty(targetBrowserCiEnv) && Enum.TryParse(targetBrowserCiEnv, true, out BrowserType ciBrowserType) && browserType != ciBrowserType)
         {
-            if (browserType != ciBrowserType)
-            {
-                string skipMessage = $"Skipping test fixture: Fixture is for '{browserType}', but CI job is targeting '{ciBrowserType}'.";
-                ServiceLogger.LogWarning(
-                    "Skipping test fixture: Fixture is for '{BrowserType}', but CI job is targeting '{CiBrowserType}'.",
-                    browserType,
-                    ciBrowserType
-                );
-                Assert.Ignore(skipMessage);
-                return;
-            }
+            string skipMessage = $"Skipping test fixture: Fixture is for '{browserType}', but CI job is targeting '{ciBrowserType}'.";
+            ServiceLogger.LogWarning(
+                "Skipping test fixture: Fixture is for '{BrowserType}', but CI job is targeting '{CiBrowserType}'.",
+                browserType,
+                ciBrowserType
+            );
+            Assert.Ignore(skipMessage);
+            return;
         }
 
         CorrelationId = Guid.NewGuid().ToString("N")[..12];

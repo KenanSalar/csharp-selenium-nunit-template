@@ -224,6 +224,7 @@ public class RetryService : BaseService, IRetryService
     /// Builds a Polly <see cref="PolicyBuilder{TResult}"/> configured to handle a default set of
     /// common Selenium exceptions for functions returning <typeparamref name="TResult"/>.
     /// </summary>
+    /// <typeparam name="TResult">The return type of the function that will be wrapped by the retry policy.</typeparam>
     private PolicyBuilder<TResult> BuildPolicyForDefaultExceptions<TResult>()
     {
         if (_retryableExceptionTypes.Count == 0)

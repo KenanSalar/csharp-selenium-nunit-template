@@ -81,5 +81,3 @@ public static class SmartLocators
         return By.XPath($".//{tagName}[contains(@class, '{classNameContains}') and text()='{text}']");
     }
 }
-
-

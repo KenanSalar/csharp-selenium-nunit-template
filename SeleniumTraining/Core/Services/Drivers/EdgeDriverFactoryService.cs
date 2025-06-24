@@ -50,11 +50,10 @@ public class EdgeDriverFactoryService : ChromiumDriverFactoryServiceBase
             ServiceLogger.LogInformation("Creating local EdgeDriver. Selenium Manager will ensure the driver is available.");
             return CreateDriverInstanceWithChecks(edgeOptions, options => new EdgeDriver(options));
         }
-        else
-        {
-            ServiceLogger.LogInformation("Creating RemoteWebDriver for Edge Grid at {GridUrl}", settings.SeleniumGridUrl);
-            return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), edgeOptions);
-        }
+
+        ServiceLogger.LogInformation("Creating RemoteWebDriver for Edge Grid at {GridUrl}", settings.SeleniumGridUrl);
+
+        return new RemoteWebDriver(new Uri(settings.SeleniumGridUrl), edgeOptions);
     }
 
     /// <summary>

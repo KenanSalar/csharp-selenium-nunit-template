@@ -104,8 +104,8 @@ public class LoginPage : BasePage
     /// <param name="mode">The <see cref="LoginMode"/> to use for the login attempt. Defaults to <see cref="LoginMode.Submit"/>.</param>
     /// <returns>A new instance of the <see cref="InventoryPage"/> upon successful navigation.</returns>
     /// <remarks>
-    /// This method implements a "fail-fast" strategy. After performing the login action (submit or click), 
-    /// it explicitly waits for a critical element on the destination page (<see cref="InventoryPageMap.InventoryContainer"/>) 
+    /// This method implements a "fail-fast" strategy. After performing the login action (submit or click),
+    /// it explicitly waits for a critical element on the destination page (<see cref="InventoryPageMap.InventoryContainer"/>)
     /// to become visible. If navigation does not occur within the configured timeout, this method will
     /// throw a <see cref="WebDriverTimeoutException"/>, immediately failing the test at the root cause of the failure.
     /// </remarks>

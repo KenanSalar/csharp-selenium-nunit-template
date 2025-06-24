@@ -18,6 +18,10 @@ public partial class SauceDemoTests : BaseTest
     ///   <item><description>Returns to the inventory page and confirms the cart is empty.</description></item>
     /// </list>
     /// </remarks>
+    /// <param name="firstName">The first name to use during checkout.</param>
+    /// <param name="lastName">The last name to use during checkout.</param>
+    /// <param name="postalCode">The postal code to use during checkout.</param>
+    /// <param name="itemsToOrder">The list of item names to add to the cart before checkout.</param>
     [Test]
     [Retry(2)]
     [TestCaseSource(typeof(SauceDemoTests), nameof(CheckoutScenarios))]

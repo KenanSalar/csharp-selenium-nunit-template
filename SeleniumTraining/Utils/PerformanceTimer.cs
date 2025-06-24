@@ -47,7 +47,6 @@ public class PerformanceTimer : IDisposable
     /// <value>A <see langword="long"/> representing the elapsed time in milliseconds.</value>
     public long ElapsedMilliseconds => _stopwatch.ElapsedMilliseconds;
 
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PerformanceTimer"/> class, starts the timer,
     /// and optionally captures initial memory usage.

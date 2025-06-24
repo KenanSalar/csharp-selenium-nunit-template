@@ -73,14 +73,13 @@ public class DriverInitializationService : BaseService, IDriverInitializationSer
                        browserSettings.Headless,
                        browserSettings.TimeoutSeconds
                     );
-                    
+
                     return driver;
                 }
-                else
-                {
-                    ServiceLogger.LogError("WebDriver initialization failed: BrowserFactory returned null for {BrowserType} during test {TestName}.", browserType, testName);
-                    throw new WebDriverException($"WebDriver failed to initialize (factory returned null) for {browserType} in test {testName}.");
-                }
+
+                ServiceLogger.LogError("WebDriver initialization failed: BrowserFactory returned null for {BrowserType} during test {TestName}.", browserType, testName);
+
+                throw new WebDriverException($"WebDriver failed to initialize (factory returned null) for {browserType} in test {testName}.");
             }
             catch (Exception ex)
             {

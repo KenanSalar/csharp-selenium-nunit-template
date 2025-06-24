@@ -18,6 +18,10 @@ public class CheckoutStepOnePage : BasePage
     /// Initializes a new instance of the <see cref="CheckoutStepOnePage"/> class.
     /// Verifies that the current page is indeed the checkout step one page by checking URL and title.
     /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
+    /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
+    /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
+    /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
     public CheckoutStepOnePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
@@ -57,7 +61,7 @@ public class CheckoutStepOnePage : BasePage
         try
         {
             IWebElement firstNameInput = FindElementOnPage(CheckoutStepOnePageMap.FirstNameInput);
-            _ = Wait.Until(d => firstNameInput.Displayed && firstNameInput.Enabled);
+            _ = Wait.Until(_ => firstNameInput.Displayed && firstNameInput.Enabled);
             _ = HighlightIfEnabled(firstNameInput);
 
             firstNameInput.Clear();
@@ -93,7 +97,7 @@ public class CheckoutStepOnePage : BasePage
         try
         {
             IWebElement lastNameInput = FindElementOnPage(CheckoutStepOnePageMap.LastNameInput);
-            _ = Wait.Until(d => lastNameInput.Displayed && lastNameInput.Enabled);
+            _ = Wait.Until(_ => lastNameInput.Displayed && lastNameInput.Enabled);
             _ = HighlightIfEnabled(lastNameInput);
 
             lastNameInput.Clear();
@@ -119,7 +123,7 @@ public class CheckoutStepOnePage : BasePage
         try
         {
             IWebElement postalCodeInput = FindElementOnPage(CheckoutStepOnePageMap.PostalCodeInput);
-            _ = Wait.Until(d => postalCodeInput.Displayed && postalCodeInput.Enabled);
+            _ = Wait.Until(_ => postalCodeInput.Displayed && postalCodeInput.Enabled);
             _ = HighlightIfEnabled(postalCodeInput);
 
             postalCodeInput.Clear();

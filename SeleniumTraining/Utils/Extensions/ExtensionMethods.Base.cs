@@ -417,15 +417,14 @@ public static partial class ExtensionMethods
                 );
                 return elements;
             }
-            else
-            {
-                logger.LogWarning(
-                    "No elements found on {PageName} for locator {ElementLocator} after wait, though no timeout occurred.",
-                    pageName,
-                    locator.ToString()
-                );
-                return [];
-            }
+
+            logger.LogWarning(
+                "No elements found on {PageName} for locator {ElementLocator} after wait, though no timeout occurred.",
+                pageName,
+                locator.ToString()
+            );
+
+            return [];
         }
         catch (WebDriverTimeoutException ex)
         {

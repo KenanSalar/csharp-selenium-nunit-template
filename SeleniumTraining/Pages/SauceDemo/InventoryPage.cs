@@ -151,7 +151,7 @@ public class InventoryPage : BasePage
         }
         finally
         {
-            long expectedDuration = 2000;
+            const long expectedDuration = 2000;
             timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? expectedDuration : null);
             timer.Dispose();
         }
@@ -311,7 +311,7 @@ public class InventoryPage : BasePage
             {
                 elementIdSnippet = outerHtml.Length <= 100
                     ? outerHtml
-                    : string.Concat(outerHtml.AsSpan(0, 100), "...");
+                    : $"{outerHtml.AsSpan(0, 100)}...";
             }
 
             PageLogger.LogTrace("Creating InventoryItemComponent for element snippet: {ElementIdSnippet}", elementIdSnippet);
@@ -352,7 +352,7 @@ public class InventoryPage : BasePage
         try
         {
             bool isPageReady = Wait.Until(CustomExpectedConditions.AllOf(
-                driver =>
+                _ =>
                 {
                     try
                     {
@@ -364,7 +364,7 @@ public class InventoryPage : BasePage
                     }
                 },
 
-                driver =>
+                _ =>
                 {
                     try
                     {
@@ -381,7 +381,7 @@ public class InventoryPage : BasePage
                     Func<IWebDriver, IEnumerable<IWebElement>?> itemsFunc = CustomExpectedConditions.ElementCountToBeGreaterThanOrEqual(InventoryPageMap.InventoryItem, expectedMinItemCount);
                     IEnumerable<IWebElement>? items = itemsFunc(driver);
 
-                    return items != null && items.Any() && items.All(item =>
+                    return items?.Any() == true && items.All(item =>
                         {
                             try
                             {
@@ -430,7 +430,7 @@ public class InventoryPage : BasePage
     /// <inheritdoc cref="BasePage.GetAdditionalBaseReadinessConditions()" />
     protected override IEnumerable<Func<IWebDriver, bool>> GetAdditionalBaseReadinessConditions()
     {
-        yield return driver =>
+        yield return _ =>
         {
             try
             {

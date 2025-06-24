@@ -59,7 +59,7 @@ public static class InventoryPageMap
     /// </summary>
     /// <value>A <see cref="By"/> object for the name of the first inventory item.</value>
     public static By FirstInventoryItemName =>
-        By.CssSelector($"[data-test='inventory-list'] [data-test='inventory-item']:first-child [data-test='inventory-item-name']");
+        By.CssSelector("[data-test='inventory-list'] [data-test='inventory-item']:first-child [data-test='inventory-item-name']");
 
     /// <summary>
     /// Gets an array of <see cref="By"/> locators representing elements considered critical

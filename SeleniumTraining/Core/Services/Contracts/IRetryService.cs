@@ -19,7 +19,7 @@ public interface IRetryService
     /// <param name="action">The action to execute.</param>
     /// <param name="maxRetryAttempts">Maximum number of retry attempts.</param>
     /// <param name="initialDelay">Initial delay for backoff.</param>
-    /// <param name="logger">Logger for retry attempts.</param>
+    /// <param name="actionLogger">Logger for retry attempts.</param>
     public void ExecuteWithRetry(
         Action action,
         int maxRetryAttempts = 3,
@@ -35,7 +35,7 @@ public interface IRetryService
     /// <param name="func">The function to execute.</param>
     /// <param name="maxRetryAttempts">Maximum number of retry attempts.</param>
     /// <param name="initialDelay">Initial delay for backoff.</param>
-    /// <param name="logger">Logger for retry attempts.</param>
+    /// <param name="actionLogger">Logger for retry attempts.</param>
     /// <param name="resultCondition">Optional condition to check on the result. If it returns false, a retry is triggered.</param>
     /// <returns>The result of the function if successful.</returns>
     public TResult ExecuteWithRetry<TResult>(

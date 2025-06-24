@@ -104,7 +104,7 @@ public class ShoppingCartPage : BasePage
     /// Clicks the "Checkout" button to proceed to the first step of the checkout process.
     /// </summary>
     /// <remarks>
-    /// This method returns a generic <see cref="BasePage"/> to provide flexibility. 
+    /// This method returns a generic <see cref="BasePage"/> to provide flexibility.
     /// The caller is responsible for casting the returned object to the expected page type,
     /// for example: `(CheckoutStepOnePage)shoppingCartPage.ClickCheckout();`.
     /// </remarks>
