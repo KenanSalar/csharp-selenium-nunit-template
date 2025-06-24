@@ -9,6 +9,10 @@
     <UserSecretsId>24b6c7f2-23e5-49ce-956e-3b0afc7eb258</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NUnit_NumberOfTestWorkers>6</NUnit_NumberOfTestWorkers>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Allure.Net.Commons" Version="2.12.1" />
     <PackageReference Include="Allure.NUnit" Version="2.12.1" />
