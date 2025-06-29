@@ -115,14 +115,11 @@ public abstract class BasePage
 
         ArgumentNullException.ThrowIfNull(settingsProvider);
         PageSettingsProvider = settingsProvider;
-        FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
+        FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>(ConfigurationKeys.TestFrameworkSettings);
 
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
 
-        PageLogger.LogInformation(
-            "Instantiated {PageName}. Page-load validation will be performed by AssertPageIsLoaded().",
-            PageName
-        );
+        _ = AssertPageIsLoaded();
     }
 
     /// <summary>

@@ -92,7 +92,7 @@ public abstract class BasePageComponent
         Retry = retryService;
 
         ArgumentNullException.ThrowIfNull(settingsProvider);
-        FrameworkSettings = settingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
+        FrameworkSettings = settingsProvider.GetSettings<TestFrameworkSettings>(ConfigurationKeys.TestFrameworkSettings);
 
         Wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
     }

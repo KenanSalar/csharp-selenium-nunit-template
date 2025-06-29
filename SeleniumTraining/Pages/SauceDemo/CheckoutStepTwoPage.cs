@@ -24,7 +24,6 @@ public class CheckoutStepTwoPage : BasePage
     public CheckoutStepTwoPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
-        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
     }
 
     /// <summary>

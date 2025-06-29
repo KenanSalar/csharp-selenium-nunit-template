@@ -59,10 +59,8 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage.");
-            LoginPage initialPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
 
-            loginPage = initialPage
+            loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernameLockedOutUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectFailure(loginMode);

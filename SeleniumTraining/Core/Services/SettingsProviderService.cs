@@ -70,9 +70,9 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
     {
         string sectionName = browserType switch
         {
-            BrowserType.Chrome => "ChromeBrowserOptions",
-            BrowserType.Edge => "EdgeBrowserOptions",
-            BrowserType.Firefox => "FirefoxBrowserOptions",
+            BrowserType.Chrome => ConfigurationKeys.ChromeBrowserOptions,
+            BrowserType.Edge => ConfigurationKeys.EdgeBrowserOptions,
+            BrowserType.Firefox => ConfigurationKeys.FirefoxBrowserOptions,
             _ => throw new NotSupportedException($"Browser type '{browserType}' is not supported for specific settings.")
         };
 
@@ -94,7 +94,7 @@ public class SettingsProviderService : BaseService, ISettingsProviderService
 
         try
         {
-            SeleniumGridSettings gridSettings = GetSettings<SeleniumGridSettings>("SeleniumGrid");
+            SeleniumGridSettings gridSettings = GetSettings<SeleniumGridSettings>(ConfigurationKeys.SeleniumGrid);
             if (gridSettings?.Enabled == true)
             {
                 ServiceLogger.LogInformation("Selenium Grid is enabled. Creating a new settings object with remote URL: {GridUrl}", gridSettings.Url);
