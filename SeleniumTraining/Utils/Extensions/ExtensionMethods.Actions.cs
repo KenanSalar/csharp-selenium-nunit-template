@@ -40,34 +40,4 @@ public static partial class ExtensionMethods
             throw;
         }
     }
-
-    /// <summary>
-    /// Performs a robust click on an element by first waiting for it to be clickable,
-    /// and then using a JavaScript click, which is more reliable in CI/headless environments.
-    /// </summary>
-    /// <param name="element">The IWebElement to click.</param>
-    /// <param name="driver">The IWebDriver instance.</param>
-    /// <param name="wait">The WebDriverWait instance.</param>
-    /// <param name="logger">The logger for logging actions and errors.</param>
-    [AllureStep("Performing robust click on element: {element}")]
-    public static void ClickRobustly(this IWebElement element, IWebDriver driver, WebDriverWait wait, ILogger logger)
-    {
-        string elementDesc = WebElementHighlightingExtensions.GetElementDescription(element);
-        try
-        {
-            logger.LogDebug("Attempting robust click on element: {ElementDescription}", elementDesc);
-
-            _ = wait.Until(ExpectedConditions.ElementToBeClickable(element));
-
-            _ = ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", element);
-
-            logger.LogInformation("Successfully performed robust click on element: {ElementDescription}", elementDesc);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Robust click failed for element: {ElementDescription}", elementDesc);
-
-            throw;
-        }
-    }
 }

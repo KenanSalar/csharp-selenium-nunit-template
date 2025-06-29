@@ -98,7 +98,7 @@ public static class WebElementHighlightingExtensions
 
             if (durationMs > 0)
             {
-                Thread.Sleep(durationMs);
+                Task.Delay(durationMs).Wait();
                 _ = UnhighlightElement(element, driver, logger);
             }
         }

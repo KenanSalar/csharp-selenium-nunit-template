@@ -104,32 +104,32 @@ public static class AppServiceCollectionExtensions
     private static IServiceCollection AddApplicationOptions(this IServiceCollection services, IConfiguration configuration)
     {
         _ = services.AddOptions<ChromeSettings>()
-            .Bind(configuration.GetSection("ChromeBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.ChromeBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<EdgeSettings>()
-            .Bind(configuration.GetSection("EdgeBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.EdgeBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<FirefoxSettings>()
-            .Bind(configuration.GetSection("FirefoxBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.FirefoxBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<SauceDemoSettings>()
-            .Bind(configuration.GetSection("SauceDemo"))
+            .Bind(configuration.GetSection(ConfigurationKeys.SauceDemo))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<VisualTestSettings>()
-            .Bind(configuration.GetSection("VisualTestSettings"))
+            .Bind(configuration.GetSection(ConfigurationKeys.VisualTestSettings))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<RetryPolicySettings>()
-            .Bind(configuration.GetSection("RetryPolicySettings"))
+            .Bind(configuration.GetSection(ConfigurationKeys.RetryPolicySettings))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

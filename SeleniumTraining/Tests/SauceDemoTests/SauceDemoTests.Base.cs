@@ -58,7 +58,7 @@ public partial class SauceDemoTests : BaseTest
         TestLogger.LogDebug("Retrieving SauceDemo application settings.");
         try
         {
-            _sauceDemoSettings = SettingsProvider.GetSettings<SauceDemoSettings>("SauceDemo");
+            _sauceDemoSettings = SettingsProvider.GetSettings<SauceDemoSettings>(ConfigurationKeys.SauceDemo);
             TestLogger.LogInformation("SauceDemo settings loaded successfully.");
         }
         catch (Exception ex)
