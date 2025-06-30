@@ -31,6 +31,8 @@ public partial class SauceDemoTests : BaseTest
     /// <summary>
     /// Provides test case data for checkout scenarios by reading from a JSON file.
     /// </summary>
+    /// <exception cref="FileNotFoundException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public static IEnumerable<TestCaseData> CheckoutScenarios
     {
         get
@@ -50,7 +52,7 @@ public partial class SauceDemoTests : BaseTest
             {
                 var testCase = new TestCaseData(testData.FirstName, testData.LastName, testData.PostalCode, testData.ItemsToOrder);
                 _ = testCase.SetName(testData.TestCaseName);
-                
+
                 yield return testCase;
             }
         }

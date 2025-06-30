@@ -1,17 +1,19 @@
 namespace SeleniumTraining.Pages;
 
 /// <summary>
-/// Initializes a new instance of the <see cref="BasePage"/> abstract class.
-/// Sets up WebDriver, WebDriverWait, logging, settings, retry service, and performs
-/// initial page load and critical element visibility checks.
+/// Abstract base class for page objects following the Page Object Model pattern.
+/// Provides WebDriver management, logging, settings access, retry operations, and page load validation.
 /// </summary>
-/// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
-/// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
-/// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
-/// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
-/// <exception cref="ArgumentNullException">Thrown if <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
-/// <exception cref="WebDriverTimeoutException">Thrown if <see cref="WaitForPageLoad"/>, <see cref="EnsureCriticalElementsAreDisplayed"/>, or the additional readiness checks time out.</exception>
-/// <exception cref="Exception">Thrown for other unexpected errors during initialization.</exception>
+/// <remarks>
+/// This class encapsulates common functionality needed by all page objects including:
+/// WebDriver instance management, configured WebDriverWait for explicit waits, structured logging,
+/// settings provider access, retry service for handling transient failures, and standardized
+/// page load validation through critical element checks.
+/// <para>
+/// Derived classes must implement <see cref="CriticalElementsToEnsureVisible"/> to define
+/// which elements are essential for the page to be considered fully loaded.
+/// </para>
+/// </remarks>
 public abstract class BasePage
 {
     /// <summary>
@@ -97,6 +99,7 @@ public abstract class BasePage
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
     /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
     /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="driver"/>, <paramref name="loggerFactory"/>, <paramref name="settingsProvider"/>, or <paramref name="retryService"/> is null.</exception>
     protected BasePage(
         IWebDriver driver,
         ILoggerFactory loggerFactory,
@@ -112,14 +115,11 @@ public abstract class BasePage
 
         ArgumentNullException.ThrowIfNull(settingsProvider);
         PageSettingsProvider = settingsProvider;
-        FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>("TestFrameworkSettings");
+        FrameworkSettings = PageSettingsProvider.GetSettings<TestFrameworkSettings>(ConfigurationKeys.TestFrameworkSettings);
 
         Wait = new WebDriverWait(driver, TimeSpan.FromSeconds(FrameworkSettings.DefaultExplicitWaitSeconds));
 
-        PageLogger.LogInformation(
-            "Instantiated {PageName}. Page-load validation will be performed by AssertPageIsLoaded().",
-            PageName
-        );
+        _ = AssertPageIsLoaded();
     }
 
     /// <summary>

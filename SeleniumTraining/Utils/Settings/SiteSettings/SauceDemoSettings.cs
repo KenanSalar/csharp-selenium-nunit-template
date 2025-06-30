@@ -1,20 +1,16 @@
 namespace SeleniumTraining.Utils.Settings.SiteSettings;
 
 /// <summary>
-/// Defines application-specific settings for interacting with the SauceDemo website (saucedemo.com).
+/// Defines application-specific settings for interacting with the SauceDemo website as an immutable record.
 /// This includes the base URL for the site and various sets of login credentials for different test user types.
 /// </summary>
 /// <remarks>
-/// This class is typically bound to a configuration section (e.g., "SauceDemo" in appsettings.json)
-/// and provides strongly-typed access to these essential settings.
-/// All properties are marked as <c>required</c> and validated using data annotations
-/// (<see cref="RequiredAttribute"/>, <see cref="UrlAttribute"/>) to ensure that
+/// This record is bound to the "SauceDemo" configuration section (e.g., in appsettings.json).
+/// As an immutable record with `init`-only properties, its state is fixed after being loaded, preventing accidental changes during runtime.
+/// All properties are marked as <c>required</c> and validated using data annotations to ensure that
 /// necessary configuration values are present and valid when loaded.
-/// These settings are fundamental for running automated tests ([user_input_previous_message_with_filename_BasePage.cs]) against the SauceDemo application.
-/// In CI/CD environments, some of these settings (like URLs for different test environments)
-/// might be overridden via environment variables or environment-specific configuration files.
 /// </remarks>
-public class SauceDemoSettings
+public record SauceDemoSettings
 {
     /// <summary>
     /// Gets or sets the base URL for the SauceDemo application (e.g., "https://www.saucedemo.com").
@@ -28,7 +24,7 @@ public class SauceDemoSettings
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo PageUrl is required.")]
     [Url(ErrorMessage = "SauceDemo PageUrl must be a valid absolute URL (e.g., http://example.com).")]
-    public required string PageUrl { get; set; }
+    public required string PageUrl { get; init; }
 
     /// <summary>
     /// Gets or sets the username for the standard, successfully logging-in user on SauceDemo.
@@ -40,7 +36,7 @@ public class SauceDemoSettings
     /// This property is validated by <see cref="RequiredAttribute"/> (cannot be empty).
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernameStandardUser is required.")]
-    public required string LoginUsernameStandardUser { get; set; }
+    public required string LoginUsernameStandardUser { get; init; }
 
     /// <summary>
     /// Gets or sets the username for a user who is "locked out" and cannot log in to SauceDemo.
@@ -53,7 +49,7 @@ public class SauceDemoSettings
     /// Used for testing locked-out user scenarios.
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernameLockedOutUser is required.")]
-    public required string LoginUsernameLockedOutUser { get; set; }
+    public required string LoginUsernameLockedOutUser { get; init; }
 
     /// <summary>
     /// Gets or sets the username for a "problem user" on SauceDemo, who might exhibit
@@ -67,7 +63,7 @@ public class SauceDemoSettings
     /// Used for testing how the application handles problematic user scenarios or data.
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernameProblemUser is required.")]
-    public required string LoginUsernameProblemUser { get; set; }
+    public required string LoginUsernameProblemUser { get; init; }
 
     /// <summary>
     /// Gets or sets the username for a "performance glitch user" on SauceDemo, who experiences
@@ -81,7 +77,7 @@ public class SauceDemoSettings
     /// Used for testing application behavior under simulated performance issues or for performance testing itself.
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernamePerformanceGlitchUser is required.")]
-    public required string LoginUsernamePerformanceGlitchUser { get; set; }
+    public required string LoginUsernamePerformanceGlitchUser { get; init; }
 
     /// <summary>
     /// Gets or sets the username for an "error user" on SauceDemo.
@@ -95,7 +91,7 @@ public class SauceDemoSettings
     /// Used for testing specific error handling paths in the application.
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernameErrorUser is required.")]
-    public required string LoginUsernameErrorUser { get; set; }
+    public required string LoginUsernameErrorUser { get; init; }
 
     /// <summary>
     /// Gets or sets the username for a "visual user" on SauceDemo.
@@ -110,7 +106,7 @@ public class SauceDemoSettings
     /// Often used in conjunction with visual regression testing tools.
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginUsernameVisualUser is required.")]
-    public required string LoginUsernameVisualUser { get; set; }
+    public required string LoginUsernameVisualUser { get; init; }
 
     /// <summary>
     /// Gets or sets the common password used for all SauceDemo test users.
@@ -122,5 +118,5 @@ public class SauceDemoSettings
     /// This property is validated by <see cref="RequiredAttribute"/> (cannot be empty).
     /// </remarks>
     [Required(AllowEmptyStrings = false, ErrorMessage = "SauceDemo LoginPassword is required.")]
-    public required string LoginPassword { get; set; }
+    public required string LoginPassword { get; init; }
 }

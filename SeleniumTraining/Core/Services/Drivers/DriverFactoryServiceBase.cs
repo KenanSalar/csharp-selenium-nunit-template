@@ -20,7 +20,6 @@ public abstract class DriverFactoryServiceBase : BaseService
     protected DriverFactoryServiceBase(ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
-
     }
 
     /// <summary>

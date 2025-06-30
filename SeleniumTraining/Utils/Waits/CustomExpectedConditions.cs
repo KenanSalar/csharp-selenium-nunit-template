@@ -30,7 +30,7 @@ public static class CustomExpectedConditions
                 IWebElement element = driver.FindElement(locator);
                 string? actualValue = element.GetAttribute(attributeName);
 
-                return element.Displayed && actualValue != null && actualValue.Equals(expectedValue, StringComparison.OrdinalIgnoreCase)
+                return element.Displayed && actualValue?.Equals(expectedValue, StringComparison.OrdinalIgnoreCase) == true
                     ? element
                     : null;
             }
@@ -158,6 +158,7 @@ public static class CustomExpectedConditions
         {
             try
             {
+                _ = driver;
                 _ = element.Displayed;
                 return false;
             }

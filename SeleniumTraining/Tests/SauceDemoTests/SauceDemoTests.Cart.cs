@@ -32,7 +32,7 @@ public partial class SauceDemoTests : BaseTest
         // --- ARRANGE ---
         var itemsToAdd = new List<string> { "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
         var itemsToRemove = new List<string> { "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt" };
-        string itemToRemain = "Sauce Labs Backpack";
+        const string itemToRemain = "Sauce Labs Backpack";
         var wait = new WebDriverWait(LifecycleManager.WebDriverManager.GetDriver(), TimeSpan.FromSeconds(10));
 
         // --- Login Step ---
@@ -58,7 +58,7 @@ public partial class SauceDemoTests : BaseTest
             TestLogger.LogInformation("Clicked 'Remove' for '{ItemName}'. Waiting for item to disappear from cart.", itemName);
 
             // Explicitly wait for the item to be gone from the DOM
-            _ = wait.Until(d => !shoppingCartPage.GetCartItems().Any(i => i.ItemName == itemName));
+            _ = wait.Until(_ => !shoppingCartPage.GetCartItems().Any(i => i.ItemName == itemName));
             TestLogger.LogInformation("Verified item '{ItemName}' is no longer visible in the cart.", itemName);
         }
 

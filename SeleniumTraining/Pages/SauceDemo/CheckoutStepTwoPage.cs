@@ -17,10 +17,13 @@ public class CheckoutStepTwoPage : BasePage
     /// Initializes a new instance of the <see cref="CheckoutStepTwoPage"/> class.
     /// Verifies that the current page is indeed the checkout overview page.
     /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
+    /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
+    /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
+    /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
     public CheckoutStepTwoPage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
-        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
     }
 
     /// <summary>
@@ -92,7 +95,6 @@ public class CheckoutStepTwoPage : BasePage
         return FindElementOnPage(CheckoutStepTwoPageMap.TotalLabel).Text;
     }
 
-
     /// <summary>
     /// Clicks the "Finish" button to complete the purchase.
     /// </summary>
@@ -103,13 +105,8 @@ public class CheckoutStepTwoPage : BasePage
         PageLogger.LogInformation("Clicking 'Finish' button.");
         try
         {
-            IWebElement finishButton = FindElementOnPage(CheckoutStepTwoPageMap.FinishButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(finishButton));
-
-            _ = HighlightIfEnabled(finishButton);
-
-            finishButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepTwoPageMap.FinishButton)
+                .ClickStandard(Driver,Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Finish' button using JavaScript.");
         }
@@ -132,13 +129,8 @@ public class CheckoutStepTwoPage : BasePage
         PageLogger.LogInformation("Clicking 'Cancel' button.");
         try
         {
-            IWebElement cancelButton = FindElementOnPage(CheckoutStepTwoPageMap.CancelButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(cancelButton));
-
-            _ = HighlightIfEnabled(cancelButton);
-
-            cancelButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutStepTwoPageMap.CancelButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Cancel' button using JavaScript.");
         }
