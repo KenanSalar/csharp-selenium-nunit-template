@@ -46,12 +46,12 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
     /// <inheritdoc cref="ITestWebDriverManager.IsDriverActive" />
     public bool IsDriverActive => _driverStore.IsDriverInitialized();
 
-    /// <inheritdoc cref="ITestWebDriverManager.InitializeDriver(BrowserType, string, string)" />
+    /// <inheritdoc />
     /// <remarks>
-    /// This implementation checks if a driver is already active for the current thread.
-    /// If so, a warning is logged, and the existing driver context will be overwritten by the new one.
-    /// It then delegates the actual driver creation to the <see cref="IDriverInitializationService"/>
-    /// and stores the created driver and its context using <see cref="IThreadLocalDriverStorageService"/>.
+    /// This implementation orchestrates the driver initialization by calling the <see cref="IDriverInitializationService"/>.
+    /// It consumes the returned <see cref="Result{TSuccess, TFailure}"/> and uses a <c>switch</c> statement to handle the outcome.
+    /// On success, it stores the driver. On failure, it throws a critical <see cref="InvalidOperationException"/> to halt the test,
+    /// as a missing driver is an unrecoverable state for a test's execution.
     /// </remarks>
     public void InitializeDriver(BrowserType browserType, string testName, string correlationId)
     {
@@ -61,9 +61,22 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
         }
 
         ServiceLogger.LogInformation("Orchestrating WebDriver initialization for test: {TestName}, browser: {BrowserType}", testName, browserType);
-        IWebDriver driver = _driverInitializer.InitializeDriver(browserType, testName, correlationId);
-        _driverStore.SetDriverContext(driver, testName, correlationId);
-        ServiceLogger.LogInformation("WebDriver initialization orchestrated successfully for test: {TestName}", testName);
+        Result<IWebDriver, string> initializationResult = _driverInitializer.InitializeDriver(browserType, testName, correlationId);
+
+        switch (initializationResult)
+        {
+            case Result<IWebDriver, string>.SuccessResult success:
+                _driverStore.SetDriverContext(success.Value, testName, correlationId);
+                ServiceLogger.LogInformation("WebDriver initialization orchestrated successfully for test: {TestName}", testName);
+                break;
+
+            case Result<IWebDriver, string>.FailureResult failure:
+                ServiceLogger.LogCritical("CRITICAL: Failed to initialize WebDriver for test {TestName}. Error: {ErrorMessage}. The test will be aborted.", testName, failure.Error);
+                throw new InvalidOperationException($"Could not initialize WebDriver for test '{testName}'. Reason: {failure.Error}");
+
+            default:
+                throw new InvalidOperationException("An unknown error occurred during WebDriver initialization.");
+        }
     }
 
     /// <inheritdoc cref="ITestWebDriverManager.GetDriver()" />
@@ -72,9 +85,8 @@ public class TestWebDriverManager : BaseService, ITestWebDriverManager
     /// An <see cref="InvalidOperationException"/> will be thrown by the storage service if no driver is currently set for the thread.
     /// </remarks>
     public IWebDriver GetDriver()
-    {
-        return _driverStore.GetDriver();
-    }
+        => _driverStore.GetDriver();
+
 
     /// <inheritdoc cref="ITestWebDriverManager.QuitDriver()" />
     /// <remarks>
