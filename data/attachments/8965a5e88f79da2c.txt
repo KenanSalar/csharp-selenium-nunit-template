@@ -1,8 +1,0 @@
-Operation: TestStep_VerifyAllSortOptions
-Duration: 2732 ms (2.732 s)
-Expected Max: 10000 ms
-Status: PASS
-Start Memory: WorkingSet: 170.46 MB, PrivateMemory: 488.34 MB, PagedMemory: 0.00 MB
-End Memory: WorkingSet: 170.59 MB, PrivateMemory: 488.47 MB, PagedMemory: 0.00 MB
-Delta WorkingSet: 0.12 MB
-Delta PrivateMemory: 0.12 MB
