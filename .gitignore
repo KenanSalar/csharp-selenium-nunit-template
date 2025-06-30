@@ -548,3 +548,4 @@ fabric.properties
 SeleniumTraining/bin
 SeleniumTraining/obj
 .env
+.github/instructions/

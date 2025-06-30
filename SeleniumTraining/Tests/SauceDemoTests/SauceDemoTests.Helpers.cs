@@ -23,10 +23,7 @@ public partial class SauceDemoTests : BaseTest
             resourceMonitor: ResourceMonitor
         );
 
-        LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-            .AssertPageIsLoaded();
-
-        BasePage resultPage = loginPage
+        BasePage resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
             .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
             .EnterPassword(_sauceDemoSettings.LoginPassword)
             .LoginAndExpectNavigation(LoginMode.Click);
@@ -73,7 +70,7 @@ public partial class SauceDemoTests : BaseTest
             itemComponent.ClickActionButton();
             TestLogger.LogDebug("Setup Helper: Added '{ItemName}' to cart.", itemName);
 
-            _ = wait.Until(d => itemComponent.GetActionButtonText() == "Remove");
+            _ = wait.Until(_ => itemComponent.GetActionButtonText() == "Remove");
         }
 
         inventoryPage.GetShoppingCartBadgeCount().ShouldBe(itemsToAddToCart.Count());

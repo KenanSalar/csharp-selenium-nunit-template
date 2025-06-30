@@ -85,13 +85,8 @@ public class CartItemComponent : BasePageComponent
 
         try
         {
-            IWebElement removeButton = FindElement(CartItemComponentMap.RemoveButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(removeButton));
-
-            _ = HighlightIfEnabled(removeButton);
-
-            removeButton.ClickStandard(Wait, ComponentLogger);
+            FindElement(CartItemComponentMap.RemoveButton)
+                .ClickStandard(Driver, Wait, ComponentLogger, FrameworkSettings);
 
             ComponentLogger.LogInformation("Successfully clicked 'Remove' button for item: {ItemName}", itemName);
         }

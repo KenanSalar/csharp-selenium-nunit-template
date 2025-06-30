@@ -54,7 +54,7 @@ public static class AppServiceCollectionExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> or <paramref name="configuration"/> is null (though <paramref name="services"/> as 'this' parameter won't be null).</exception>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services = services.AddSingleton(configuration)
+        return services.AddSingleton(configuration)
             .AddLogging(loggingBuilder =>
                 loggingBuilder.ClearProviders()
                 .AddSerilog(dispose: true)
@@ -76,8 +76,6 @@ public static class AppServiceCollectionExtensions
             .AddTransient<IResourceMonitorService, ResourceMonitorService>()
             .AddScoped<IVisualTestService, VisualTestService>()
             .AddSingleton<IRetryService, RetryService>();
-
-        return services;
     }
 
     /// <summary>
@@ -106,32 +104,32 @@ public static class AppServiceCollectionExtensions
     private static IServiceCollection AddApplicationOptions(this IServiceCollection services, IConfiguration configuration)
     {
         _ = services.AddOptions<ChromeSettings>()
-            .Bind(configuration.GetSection("ChromeBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.ChromeBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<EdgeSettings>()
-            .Bind(configuration.GetSection("EdgeBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.EdgeBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<FirefoxSettings>()
-            .Bind(configuration.GetSection("FirefoxBrowserOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.FirefoxBrowserOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<SauceDemoSettings>()
-            .Bind(configuration.GetSection("SauceDemo"))
+            .Bind(configuration.GetSection(ConfigurationKeys.SauceDemo))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<VisualTestSettings>()
-            .Bind(configuration.GetSection("VisualTestSettings"))
+            .Bind(configuration.GetSection(ConfigurationKeys.VisualTestSettings))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         _ = services.AddOptions<RetryPolicySettings>()
-            .Bind(configuration.GetSection("RetryPolicySettings"))
+            .Bind(configuration.GetSection(ConfigurationKeys.RetryPolicySettings))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

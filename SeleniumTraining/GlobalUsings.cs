@@ -12,6 +12,7 @@ global using SeleniumTraining.Pages.SauceDemo;
 global using SeleniumTraining.Pages.SauceDemo.Components;
 global using SeleniumTraining.Pages.SauceDemo.ElementMap;
 global using SeleniumTraining.Core;
+global using SeleniumTraining.Core.Constants;
 global using SeleniumTraining.Core.Enums;
 global using SeleniumTraining.Core.Exceptions;
 global using SeleniumTraining.Core.Extensions;

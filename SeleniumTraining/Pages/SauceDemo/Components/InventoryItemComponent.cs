@@ -128,15 +128,12 @@ public class InventoryItemComponent : BasePageComponent
     {
         Retry.ExecuteWithRetry(() =>
             {
-                ComponentLogger.LogTrace("Attempting to find ActionButton element using locator: {Locator}", InventoryItemComponentMap.ActionButton);
                 IWebElement button = FindElement(InventoryItemComponentMap.ActionButton);
                 string buttonText = button.Text;
+                ComponentLogger.LogInformation("Attempting to click action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
 
-                _ = HighlightIfEnabled(button);
-
-                ComponentLogger.LogInformation("Clicking action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
-                button.Click();
-                ComponentLogger.LogInformation("Successfully clicked action button with text '{ButtonText}' for item '{ItemName}'.", buttonText, ItemName);
+                button.ClickStandard(Driver, Wait, ComponentLogger, FrameworkSettings);
+                ComponentLogger.LogInformation("Successfully clicked action button for item '{ItemName}'.", ItemName);
             },
             maxRetryAttempts: 2,
             initialDelay: TimeSpan.FromMilliseconds(500),

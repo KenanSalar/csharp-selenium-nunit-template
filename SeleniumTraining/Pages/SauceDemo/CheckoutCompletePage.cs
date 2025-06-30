@@ -16,10 +16,13 @@ public class CheckoutCompletePage : BasePage
     /// Initializes a new instance of the <see cref="CheckoutCompletePage"/> class.
     /// Verifies that the current page is indeed the checkout complete page.
     /// </summary>
+    /// <param name="driver">The <see cref="IWebDriver"/> instance for browser interaction. Must not be null.</param>
+    /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> for creating loggers. Must not be null.</param>
+    /// <param name="settingsProvider">The <see cref="ISettingsProviderService"/> for accessing configurations. Must not be null.</param>
+    /// <param name="retryService">The <see cref="IRetryService"/> for executing operations with retry logic. Must not be null.</param>
     public CheckoutCompletePage(IWebDriver driver, ILoggerFactory loggerFactory, ISettingsProviderService settingsProvider, IRetryService retryService)
         : base(driver, loggerFactory, settingsProvider, retryService)
     {
-        PageLogger.LogDebug("{PageName} instance created. Call AssertPageIsLoaded() to verify.", PageName);
     }
 
     /// <summary>
@@ -87,13 +90,8 @@ public class CheckoutCompletePage : BasePage
         PageLogger.LogInformation("Clicking 'Back Home' button.");
         try
         {
-            IWebElement backHomeButton = FindElementOnPage(CheckoutCompletePageMap.BackHomeButton);
-
-            _ = Wait.Until(ExpectedConditions.ElementToBeClickable(backHomeButton));
-
-            _ = HighlightIfEnabled(backHomeButton);
-
-            backHomeButton.ClickStandard(Wait, PageLogger);
+            FindElementOnPage(CheckoutCompletePageMap.BackHomeButton)
+                .ClickStandard(Driver, Wait, PageLogger, FrameworkSettings);
 
             PageLogger.LogInformation("Successfully clicked 'Back Home' button using JavaScript.");
         }

@@ -39,7 +39,7 @@ public partial class SauceDemoTests : BaseTest
         var loginOperationProps = new Dictionary<string, object>
         {
             { "Username", _sauceDemoSettings.LoginUsernameStandardUser },
-            { "LoginAction", LoginMode.Click.ToString() }
+            { "LoginAction", nameof(LoginMode.Click) }
         };
 
         var loginTimer = new PerformanceTimer(
@@ -60,10 +60,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
-
-            resultPage = loginPage
+            resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernameStandardUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(loginMode);
@@ -167,10 +164,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
-
-            resultPage = loginPage
+            resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernameProblemUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(loginMode);
@@ -205,7 +199,7 @@ public partial class SauceDemoTests : BaseTest
                 try
                 {
                     IWebElement itemImageElement = item.ItemImage;
-                    if (itemImageElement != null && itemImageElement.Displayed)
+                    if (itemImageElement?.Displayed == true)
                     {
                         string? imgSrc = itemImageElement.GetAttribute("src");
                         if (!string.IsNullOrEmpty(imgSrc))
@@ -234,8 +228,16 @@ public partial class SauceDemoTests : BaseTest
             if (productImageSources.Count != 0)
             {
                 int distinctImageSourcesCount = productImageSources.Distinct().Count();
-                distinctImageSourcesCount.ShouldBe(1, $"Expected all product images to be the same for problem_user, but found {distinctImageSourcesCount} distinct image sources. Sources: [{string.Join(", ", productImageSources.Distinct())}]");
-                TestLogger.LogInformation("Verified that all {ImageCount} product images have the same source: {ImageSrc_Example}", productImageSources.Count, productImageSources.First());
+                distinctImageSourcesCount.ShouldBe(
+                    1,
+                    $"Expected all product images to be the same for problem_user, but found {distinctImageSourcesCount} distinct image sources. Sources: [{string.Join(", ", productImageSources.Distinct())}]"
+                );
+
+                TestLogger.LogInformation(
+                    "Verified that all {ImageCount} product images have the same source: {ImageSrc_Example}",
+                    productImageSources.Count,
+                    productImageSources.First()
+                );
             }
             else
             {
@@ -306,10 +308,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
-
-            resultPage = loginPage
+            resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernamePerformanceGlitchUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(loginMode);
@@ -404,10 +403,7 @@ public partial class SauceDemoTests : BaseTest
 
         try
         {
-            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
-
-            resultPage = loginPage
+            resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernameErrorUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(loginMode);
@@ -454,7 +450,7 @@ public partial class SauceDemoTests : BaseTest
             {
                 if (BrowserType == BrowserType.Firefox && buttonTextBeforeAdd == "Add to cart")
                 {
-                    _ = shortWait.Until(d => firstItem.ActionButtonElement.Text == "Remove");
+                    _ = shortWait.Until(_ => firstItem.ActionButtonElement.Text == "Remove");
                     TestLogger.LogDebug("Button text changed to 'Remove' as expected for Firefox 'add to cart' action.");
                 }
                 else
@@ -565,7 +561,7 @@ public partial class SauceDemoTests : BaseTest
         string currentTestName = TestContext.CurrentContext.Test.Name;
         TestLogger.LogInformation("Starting visual test: {TestName} for visual_user", currentTestName);
 
-        long expectedMaxDurationMs = 30000;
+        const long expectedMaxDurationMs = 30000;
         var visualTestTimer = new PerformanceTimer(
             $"TestStep_VisualAssertion_{currentTestName}",
             TestLogger,
@@ -580,15 +576,13 @@ public partial class SauceDemoTests : BaseTest
         try
         {
             TestLogger.LogDebug("Instantiating LoginPage for {TestName}.", currentTestName);
-            LoginPage loginPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
-                .AssertPageIsLoaded();
 
             TestLogger.LogInformation(
                 "Attempting login with username: {LoginUsername} (visual_user) using Click action for {TestName}.",
                 _sauceDemoSettings.LoginUsernameVisualUser,
                 currentTestName
             );
-            BasePage resultPage = loginPage
+            BasePage resultPage = new LoginPage(LifecycleManager.WebDriverManager.GetDriver(), PageObjectLoggerFactory, SettingsProvider, RetryService)
                 .EnterUsername(_sauceDemoSettings.LoginUsernameVisualUser)
                 .EnterPassword(_sauceDemoSettings.LoginPassword)
                 .LoginAndExpectNavigation(LoginMode.Click);
@@ -608,7 +602,7 @@ public partial class SauceDemoTests : BaseTest
                 TestLogger.LogWarning("Short wait for visual stability (InventoryContainer visibility) timed out for {TestName}. Visuals might capture an intermediate state.", currentTestName);
             }
 
-            string fullPageBaselineId = "InventoryPage_VisualUser_FullPage";
+            const string fullPageBaselineId = "InventoryPage_VisualUser_FullPage";
             TestLogger.LogInformation(
                 "Performing full-page visual assertion for ID '{BaselineID}' in test '{TestName}'.",
                 fullPageBaselineId,
@@ -623,21 +617,19 @@ public partial class SauceDemoTests : BaseTest
 
             TestLogger.LogInformation("Full-page visual assertion completed for ID '{BaselineID}' in {TestName}.", fullPageBaselineId, currentTestName);
 
-            string boltTShirtImageBaselineId = "InventoryPage_VisualUser_BoltTShirtImage";
+            const string boltTShirtImageBaselineId = "InventoryPage_VisualUser_BoltTShirtImage";
             try
             {
-
                 TestLogger.LogDebug("Attempting to locate the 'Sauce Labs Bolt T-Shirt' image element for visual check in {TestName}.", currentTestName);
-
                 InventoryItemComponent? boltTShirtComponent = inventoryPage.GetInventoryItems()
-                    .FirstOrDefault(item => item.ItemName == "Sauce Labs Bolt T-Shirt");
+                    .FirstOrDefault(static item => item.ItemName == "Sauce Labs Bolt T-Shirt");
 
                 if (boltTShirtComponent != null)
                 {
                     TestLogger.LogInformation("Found 'Sauce Labs Bolt T-Shirt' component. Proceeding with image visual check.");
                     IWebElement boltTShirtImageElement = boltTShirtComponent.ItemImage;
 
-                    if (boltTShirtImageElement != null && boltTShirtImageElement.Displayed)
+                    if (boltTShirtImageElement?.Displayed == true)
                     {
                         TestLogger.LogInformation(
                             "Performing element-specific visual assertion for ID '{BaselineID}' (Bolt T-Shirt Image) in test '{TestName}'.",
@@ -658,7 +650,7 @@ public partial class SauceDemoTests : BaseTest
                             currentTestName
                         );
                     }
-                    else if (boltTShirtImageElement != null && !boltTShirtImageElement.Displayed)
+                    else if (boltTShirtImageElement?.Displayed == false)
                     {
                         TestLogger.LogWarning(
                             "'Sauce Labs Bolt T-Shirt' image element found via component but was not displayed. Skipping element-specific visual check for {BaselineID} in {TestName}.",
