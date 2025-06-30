@@ -127,7 +127,7 @@ csharp_style_expression_bodied_constructors = false:silent # Default: false:sile
 csharp_style_expression_bodied_indexers = true:warning # Default: true:silent
 csharp_style_expression_bodied_lambdas = true:warning # Default: true:suggestion
 csharp_style_expression_bodied_local_functions = true:warning # Default: false:silent
-csharp_style_expression_bodied_methods = false:silent # Default: false:silent
+csharp_style_expression_bodied_methods = when_on_single_line:none # Default: false:silent
 csharp_style_expression_bodied_operators = true:warning # Default: false:silent
 csharp_style_expression_bodied_properties = true:warning # Default: true:silent
 

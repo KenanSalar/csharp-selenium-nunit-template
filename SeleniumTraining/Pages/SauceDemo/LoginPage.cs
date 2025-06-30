@@ -168,26 +168,17 @@ public class LoginPage : BasePage
     /// Retrieves the text of the error message displayed on the login page, if any.
     /// This method uses a retry policy to handle cases where the error message might appear with a delay.
     /// </summary>
-    /// <returns>The text of the error message. Returns an empty string if no error message is found or if the text is empty after retries.</returns>
-    /// <exception cref="Exception">Re-throws exceptions that occur if all retry attempts to get the error message fail (e.g., <see cref="WebDriverTimeoutException"/>).</exception>
-    /// <remarks>
-    /// It utilizes the <see cref="IRetryService.ExecuteWithRetry{TResult}(Func{TResult}, int, TimeSpan?, ILogger?, Func{TResult, bool}?)"/>
-    /// method from the <see cref="Retry"/> service (available via <see cref="BasePage"/>).
-    /// The retry policy is configured to retry if the error message element is not found or if its text is initially empty.
-    /// Performance of this operation is measured.
-    /// </remarks>
+    /// <returns>A Result object containing the error message text on success, or an error string on failure (e.g., if the element is not found).</returns>
     [AllureStep("Getting error message from login page")]
-    public string GetErrorMessage()
+    public Result<string, string> GetErrorMessage()
     {
-        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", PageLogger); // Timer from your code
-        bool success = false;
-        string errorMessageText;
+        var timer = new PerformanceTimer($"GetErrorMessage_{PageName}", PageLogger);
 
         try
         {
             PageLogger.LogInformation("Attempting to retrieve error message from {PageName}.", PageName);
 
-            errorMessageText = Retry.ExecuteWithRetry(() =>
+            string errorMessageText = Retry.ExecuteWithRetry(() =>
                 {
                     IWebElement errorMessageElement = Wait.WaitForElement(PageLogger, PageName, LoginPageMap.ErrorMessageContainer);
                     string text = errorMessageElement.Text;
@@ -205,19 +196,16 @@ public class LoginPage : BasePage
             );
 
             PageLogger.LogInformation("Retrieved error message from {PageName}: '{ErrorMessage}'", PageName, errorMessageText);
-            success = true;
+            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 1000);
+
+            return Result.Success<string, string>(errorMessageText);
         }
         catch (Exception ex)
         {
             PageLogger.LogError(ex, "Failed to get error message from {PageName} after retries.", PageName);
+            timer.StopAndLog(attachToAllure: true);
 
-            throw;
+            return Result.Failure<string, string>("Error message was not found or did not appear in time.");
         }
-        finally
-        {
-            timer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: success ? 1000 : null);
-        }
-
-        return errorMessageText;
     }
 }

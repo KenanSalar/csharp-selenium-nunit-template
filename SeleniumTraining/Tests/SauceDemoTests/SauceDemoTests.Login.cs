@@ -73,26 +73,23 @@ public partial class SauceDemoTests : BaseTest
 
         TestLogger.LogInformation("Login attempt completed for {LoginUsername}. Verifying error message.", _sauceDemoSettings.LoginUsernameLockedOutUser);
 
-        var errorMsgTimer = new PerformanceTimer(
-            "TestStep_GetLoginErrorMessage_LockedOut",
-            TestLogger,
-            resourceMonitor: ResourceMonitor
-        );
+        Result<string, string> errorMessageResult = loginPage.GetErrorMessage();
 
-        string actualErrorMessage;
-        try
+        switch (errorMessageResult)
         {
-            actualErrorMessage = loginPage.GetErrorMessage();
-        }
-        finally
-        {
-            errorMsgTimer.StopAndLog(attachToAllure: true, expectedMaxMilliseconds: 1000);
-            errorMsgTimer.Dispose();
+            case Result<string, string>.SuccessResult success:
+                success.Value.ShouldBe(SauceDemoMessages.LockedOutUserError, "The error message was not as expected.");
+                TestLogger.LogInformation("Verified correct error message is displayed: '{ErrorMessage}'", success.Value);
+                break;
+
+            case Result<string, string>.FailureResult failure:
+                Assert.Fail($"Could not retrieve the login error message. Reason: {failure.Error}");
+                break;
+
+            default:
+                break;
         }
 
-        actualErrorMessage.ShouldBe(SauceDemoMessages.LockedOutUserError, "The error message was not as expected.");
-
-        TestLogger.LogInformation("Verified correct error message is displayed. Test passed.");
-        TestLogger.LogInformation("Finished test: {TestName}", currentTestName);
+        TestLogger.LogInformation("Finished test: {TestName}", TestContext.CurrentContext.Test.Name);
     }
 }
